@@ -1,0 +1,15 @@
+
+ukf_localization_node:
+  frequency: 30  # Tần số cập nhật UKF
+  sensor_timeout: 0.1
+  two_d_mode: true  # Kích hoạt chế độ 2D, giả định rằng robot di chuyển trên mặt phẳng
+  odom0: $(arg robot_namespace)/odom
+  odom0_config: [true, true, false, false, false, true, true, true, false, false, false, true]
+  imu0: $(arg robot_namespace)/imu/data
+  imu0_config: [false, false, false, true, true, true, false, false, false, true, true, true]
+  imu0_queue_size: 10
+  imu0_remove_gravitational_acceleration: true
+  odom_frame: $(arg robot_namespace)/odom
+  base_link_frame: dummy_base_link
+  world_frame: /map
+  publish_tf: true

@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+*.egg
+*.pyo
+*.pyd
+*.log
+
+# Môi trường ảo
+env/
+venv/
+ENV/
+VENV/
+*.env
+.venv/
+
+# Jupyter Notebook checkpoint
+.ipynb_checkpoints/
+
+# ROS build files
+build/
+devel/
+install/
+log/
+
+# ROS CMake và catkin tools
+catkin_generated/
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# ROS workspace config
+.cproject
+.project
+.settings/
+.rosinstall
+*.swp
+*.launch~
+
+# VSCode settings (nếu dùng)
+.vscode/
+
+# PyCharm (nếu dùng)
+.idea/
+
+# Khác
+*.bag
+*.db
+*.sqlite
+*.orig
+.DS_Store
+Thumbs.db
+
+# ROS2 colcon
+colcon.meta
+
+
+.vscode/*
