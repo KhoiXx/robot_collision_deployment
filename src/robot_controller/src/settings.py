@@ -36,7 +36,7 @@ ACTION_BOUND = ast.literal_eval(os.getenv('ACTION_BOUND', "[[0, -2], [1.1, 2]]")
 ROBOT_PORT = os.getenv("ROBOT_PORT", "/dev/ttyUSB0")
 BAUDRATE = int(os.getenv("BAUDRATE", "115200"))
 
-START_BYTE = 0x02
+START_BYTE = 0xAB
 END_BYTE = 0x03
 
 CMD_VEL = 0x01

@@ -7,12 +7,15 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
 from tf.transformations import quaternion_from_euler
 import numpy as np
+from queue import PriorityQueue, Empty
 
 from settings import *
+from threading import Thread
 
 
 class RobotControl:
     def __init__(self, index, port=ROBOT_PORT, baudrate=BAUDRATE) -> None:
+        self.queue = PriorityQueue()
         self.port = serial.Serial(port, baudrate, timeout=1)
         rospy.sleep(0.2)
         if self.port.is_open:
@@ -28,23 +31,36 @@ class RobotControl:
         self.current_y = 0.0
         self.current_theta = 0.0
         self.last_time = rospy.Time.now()
+        self.last_time_get_speed = rospy.Time.now()
 
         self.left_vel = 0.0
         self.right_vel = 0.0
         # rospy.loginfo("Robot")
         rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
-        
         self.odom_broadcaster = tf.TransformBroadcaster()
+        
+        self.request_speed()
+        self.read_serial()
+        Thread(target=self.serial_worker, daemon=True).start()
+
+    def serial_worker(self):
+        while not rospy.is_shutdown():
+            try:
+                _, (command_type, format, values) = self.queue.get_nowait()
+                self._send_command(command_type, format, *values)
+            except Empty:
+                continue
 
     def cmd_vel_callback(self, cmd: Twist):
         v = cmd.linear.x
         w = cmd.angular.z
-        rospy.loginfo(f"Sending command")
+        # rospy.loginfo(f"Sending command")
         self.send_command(
             CMD_VEL,
             "<ff",
             v,
             w,
+            priority=1
         )
 
     def clear_buffer(self, type: str) -> None:
@@ -61,23 +77,32 @@ class RobotControl:
         for byte in data:
             crc ^= byte
         return crc
+    
+    def send_command(self, command_type, format, *values, priority=1):
+        """
+        Add item to the priority queue in this format:
+        tuple: (priority, item)
+        """
+        self.queue.put_nowait((priority, (command_type, format, values)))
+        # print(self.queue.)
 
-    def send_command(self, command_type, format, *values):
+    def _send_command(self, command_type, format, *values):
+        """Send command to the ESP"""
         self.clear_buffer("output")
         frame_length = len(values) * 4 + 1
-        header = struct.pack('BB', command_type, frame_length)
+        header = struct.pack('BBB', START_BYTE, command_type, frame_length)
         send_data = header
         if frame_length > 1:
             data = struct.pack(format, *values)
             send_data += data
-            rospy.loginfo(f"Sent frame: {send_data}")
         crc = self.calculate_crc(send_data)
         send_frame = send_data + struct.pack('B', crc)
+        rospy.logdebug(f"Sent frame: {send_frame}")
         self.port.write(send_frame)
 
     def request_speed(self):
         self.clear_buffer("input")
-        self.send_command(GET_SPEED, None)
+        self.send_command(GET_SPEED, None, priority=10)
 
     def read_serial(self):
         num_bytes = self.port.in_waiting
@@ -101,10 +126,11 @@ class RobotControl:
 
     def update_odometry(self, timer):
         self.current_time = rospy.Time.now()
-        self.request_speed()
-        # rospy.sleep(0.04)
+        if (self.current_time - self.last_time_get_speed).to_sec() > 0.5:
+            self.request_speed()
+            self.read_serial()
+            self.last_time_get_speed = self.current_time
 
-        self.read_serial()
         
         # Tính toán vận tốc dài và vận tốc góc của robot
         linear_vel = (self.right_vel + self.left_vel) / 2

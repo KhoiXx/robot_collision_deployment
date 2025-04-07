@@ -1,7 +1,17 @@
 #include <Arduino.h>
 #include <MotorController.h>
 
-// #define START_BYTE 0x02
+
+enum ParseState { WAIT_START, WAIT_CMD, WAIT_LEN, WAIT_DATA, WAIT_CRC };
+ParseState parseState = WAIT_START;
+
+byte commandCode;
+byte dataLength;
+byte dataBuffer[32];
+byte dataIndex = 0;
+byte expectedCRC;
+
+#define START_BYTE 0xAB
 // #define END_BYTE 0x03
 // #define CMD_VEL 0x01
 // #define GET_SPEED 0x02
@@ -78,64 +88,93 @@ void sendSpeed() {
     Serial.flush();
 }
 
-void processSerialInput() {
+void handleCommand(byte commandCode, byte* data, byte length) {
     float v, w, setLeftWheelSpeed, setRightWheelSpeed;
-    int numBytes = Serial.available();
-    if (numBytes >= 3) {
-        byte commandCode = Serial.read();
-        byte length = Serial.read();
-        if (numBytes >= length) {
-            byte data[20]; // without crc
-            byte crcFromData = calculateCRC(&commandCode, 1) ^ calculateCRC(&length, 1);
-            if ((length - 1) > 0) {
-                Serial.readBytes(data, length - 1);
-                crcFromData ^= calculateCRC(data, length - 1);
-            } 
-            byte crc = Serial.read();
-            // Serial.print("S");
-            // Serial.print(commandCode);
-            // Serial.print(",");
-            // Serial.print(length);
-            // Serial.print(",");
-            // Serial.print(crc);
-            // Serial.print(",");
-            // Serial.println(crcFromData);
-            if (crcFromData == crc) {
-                switch (commandCode)
-                {
-                case CMD_VEL:
-                    v = *((float*) &data[0]);
-                    w = *((float*) &data[4]);
-                    setLeftWheelSpeed = v - (w * ROBOT_WHEEL_DISTANCE / 2.0);
-                    leftWheel.setSpeed(setLeftWheelSpeed);
-                    setRightWheelSpeed = v + (w * ROBOT_WHEEL_DISTANCE / 2.0);
-                    rightWheel.setSpeed(setRightWheelSpeed);
-                    break;
-                case CMD_VEL_LEFT:
-                    v = *((float*) &data[0]);
-                    leftWheel.setSpeed(v);
-                    break;
-                case CMD_VEL_RIGHT:
-                    v = *((float*) &data[0]);
-                    rightWheel.setSpeed(v);
-                    break;
-                case TUNE_PID_LEFT:
-                    tunePID("left", data);
-                    break;
-                case TUNE_PID_RIGHT:
-                    tunePID("right", data);
-                    break;
-                case GET_SPEED:
-                    sendSpeed();
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
+    // Serial.print("S");
+    // Serial.print(" Handling command: ");
+    Serial.println(commandCode);
+    switch (commandCode)
+    {
+        case CMD_VEL:
+            v = *((float*) &data[0]);
+            w = *((float*) &data[4]);
+            setLeftWheelSpeed = v - (w * ROBOT_WHEEL_DISTANCE / 2.0);
+            leftWheel.setSpeed(setLeftWheelSpeed);
+            setRightWheelSpeed = v + (w * ROBOT_WHEEL_DISTANCE / 2.0);
+            rightWheel.setSpeed(setRightWheelSpeed);
+            break;
+        case CMD_VEL_LEFT:
+            v = *((float*) &data[0]);
+            leftWheel.setSpeed(v);
+            break;
+        case CMD_VEL_RIGHT:
+            v = *((float*) &data[0]);
+            rightWheel.setSpeed(v);
+            break;
+        case TUNE_PID_LEFT:
+            tunePID("left", data);
+            break;
+        case TUNE_PID_RIGHT:
+            tunePID("right", data);
+            break;
+        case GET_SPEED:
+            sendSpeed();
+            break;
+        default:
+            break;
     }
-    while(Serial.available() > 0) {
-        char t = Serial.read();
+}
+
+void parseSerialOneByte() {
+    if (Serial.available()) {
+        byte incoming = Serial.read();
+        // Serial.print("S");
+        // Serial.print("State: ");
+        // Serial.print(parseState);
+        // Serial.print("; Read value: ");
+        // Serial.print("\\x");
+        // if (incoming < 16) Serial.print("0");
+        // Serial.print(incoming, HEX);
+        switch (parseState) {
+            case WAIT_START:
+                if (incoming == START_BYTE) {
+                    parseState = WAIT_CMD;
+                    expectedCRC = incoming;
+                }
+                break;
+
+            case WAIT_CMD:
+                commandCode = incoming;
+                expectedCRC ^= incoming;
+                parseState = WAIT_LEN;
+                break;
+
+            case WAIT_LEN:
+                expectedCRC ^= incoming;
+                dataLength = incoming - 1; // Remove CRC from length
+                dataIndex = 0;
+                parseState = (dataLength > 0) ? WAIT_DATA : WAIT_CRC;
+                break;
+
+            case WAIT_DATA:
+                dataBuffer[dataIndex++] = incoming;
+                expectedCRC ^= incoming;
+                if (dataIndex >= dataLength) {
+                    parseState = WAIT_CRC;
+                }
+                break;
+
+            case WAIT_CRC:
+                // Serial.print("; Expected CRC: ");
+                // Serial.print("\\x");
+                // if (expectedCRC < 16) Serial.print("0");
+                // Serial.print(expectedCRC, HEX);
+                if (incoming == expectedCRC) {
+                    handleCommand(commandCode, dataBuffer, dataLength);
+                }
+                parseState = WAIT_START;
+                break;
+        }
     }
 }
 
@@ -149,6 +188,6 @@ void loop() {
         leftWheel.runPID();
         rightWheel.runPID();
     }
-    processSerialInput();
+    parseSerialOneByte();
     // delay(50);
 }
