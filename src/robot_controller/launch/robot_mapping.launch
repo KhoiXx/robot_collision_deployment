@@ -12,6 +12,8 @@
     <!-- Launch teleop_twist_keyboard for controlling the robot -->
     <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
         <remap from="cmd_vel" to="$(arg robot_namespace)/cmd_vel"/>
+        <param name="scale_linear" value="0.35" />
+        <param name="scale_angular" value="1.0" />
     </node>
     <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base" args="0.0 0 0.0 0 0 0 /robot_0/odom /base_link "/> -->
 

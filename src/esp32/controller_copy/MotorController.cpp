@@ -11,7 +11,7 @@ MotorController::MotorController(
     double Kp, double Ki, double Kd,
     int sampleTime,
     float maxSpeed_,
-    int reverse_
+    int reverseAtStart_
 ) :
     pid(Kp, Ki, Kd, PID::Direct),
     encoder(),
@@ -27,7 +27,8 @@ MotorController::MotorController(
     wheelCircumference(2 * 3.14159 * wheelRadius_),
     maxSpeed(maxSpeed_),
     currentSpeed(0.0),
-    reverse(reverse_)
+    reverse(reverseAtStart_),
+    reverseAtStart(reverseAtStart_)
 {
     kp = Kp; ki = Ki; kd = Kd;
     pid.Start(0.0, 0.0, 0.0);
@@ -40,6 +41,7 @@ MotorController::MotorController(
     pinMode(in2Pin, OUTPUT);
     pinMode(enPin, OUTPUT);
     outputPwm = 0;
+    currentSpeedPulse = 0;
 }
 
 void MotorController::setTunings(double Kp, double Ki, double Kd) {
@@ -49,7 +51,12 @@ void MotorController::setTunings(double Kp, double Ki, double Kd) {
 
 void MotorController::setSpeed(float speed) {
     long setPulses = this->mapData(speed, -maxSpeed, maxSpeed, -255, 255);
-    pid.Setpoint(setPulses);
+    if (setPulses < 0){
+        this->reverse = this->reverseAtStart*-1;
+    } else {
+        this->reverse = this->reverseAtStart*1;
+    }
+    pid.Setpoint(abs(setPulses));
 }
 
 float MotorController::mapData(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -81,6 +88,7 @@ float MotorController::calculateSpeed() {
     prevPosition = currentPosition;
     prevTime = currentTime;
 
+    this->currentSpeed = speed;
     return speed;
 }
 
@@ -116,7 +124,7 @@ int MotorController::getOutput() {
 
 void MotorController::runPID() {
     currentSpeed = this->calculateSpeed();
-    int currentSpeedPulse = this->mapData(currentSpeed, -maxSpeed, maxSpeed, -255, 255);
+    currentSpeedPulse = this->mapData(currentSpeed, -maxSpeed, maxSpeed, -255, 255);
     const double output = pid.Run(currentSpeedPulse);
     this->controlMotor((int)output);
     outputPwm = (int)output;

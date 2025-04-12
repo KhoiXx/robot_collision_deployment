@@ -32,7 +32,6 @@ class RobotEnv:
 
         # Subscribe to IMU, Lidar, and Odometry topics
         # self.imu_sub = rospy.Subscriber(f'/robot_{self.index}/imu/data', Imu, self.imu_callback)
-        self.lidar_sub = rospy.Subscriber(f"/robot_{self.index}/scan", LaserScan, self.lidar_callback)
         self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odom/filtered", Odometry, self.odom_callback)
         self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
 
@@ -40,6 +39,7 @@ class RobotEnv:
         self.cmd_pose = rospy.Publisher(f"/robot_{self.index}/cmd_pose", Twist, queue_size=10)
         # Publish crash topic
         self.crash_pub = rospy.Publisher(f"/robot_{self.index}/is_crashed", Bool, queue_size=10)
+        self.lidar_sub = rospy.Subscriber(f"/robot_{self.index}/scan", LaserScan, self.lidar_callback)
 
         self.rate = rospy.Rate(10)  # 10 Hz
 
@@ -67,9 +67,10 @@ class RobotEnv:
         """
         scan_msg: LaserScan
         """
-        self.scan = data.ranges
+        self.scan = np.asarray(data.ranges)
         crash_distance = ROBOT_RADIUS + SAFE_DISTANCE
-        is_crash = np.any((self.scan <= crash_distance) & np.isfinite(self.scan))
+        valid_scan = self.scan[np.isfinite(self.scan)]
+        is_crash = np.any(valid_scan <= crash_distance)
         self.crash_pub.publish(is_crash)
         self.is_crash = is_crash
 

@@ -92,7 +92,7 @@ void handleCommand(byte commandCode, byte* data, byte length) {
     float v, w, setLeftWheelSpeed, setRightWheelSpeed;
     // Serial.print("S");
     // Serial.print(" Handling command: ");
-    Serial.println(commandCode);
+    // Serial.println(commandCode);
     switch (commandCode)
     {
         case CMD_VEL:
@@ -118,6 +118,15 @@ void handleCommand(byte commandCode, byte* data, byte length) {
             tunePID("right", data);
             break;
         case GET_SPEED:
+            // Serial.print("S");
+            // Serial.print(" CurrentSpeed: ");
+            // Serial.print(leftWheel.currentSpeed);
+            // Serial.print("; leftSetpoint: ");
+            // Serial.print(leftWheel.pid.GetSetpoint());
+            // Serial.print("; currentSpeedPulse: ");
+            // Serial.print(leftWheel.currentSpeedPulse);
+            // Serial.print("; leftOutput: ");
+            // Serial.println(leftWheel.getOutput());
             sendSpeed();
             break;
         default:

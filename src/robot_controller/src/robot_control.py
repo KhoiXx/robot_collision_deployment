@@ -54,7 +54,7 @@ class RobotControl:
     def cmd_vel_callback(self, cmd: Twist):
         v = cmd.linear.x
         w = cmd.angular.z
-        # rospy.loginfo(f"Sending command")
+        # rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
         self.send_command(
             CMD_VEL,
             "<ff",
@@ -97,7 +97,7 @@ class RobotControl:
             send_data += data
         crc = self.calculate_crc(send_data)
         send_frame = send_data + struct.pack('B', crc)
-        rospy.logdebug(f"Sent frame: {send_frame}")
+        # rospy.loginfo(f"Sent frame: {send_frame}")
         self.port.write(send_frame)
 
     def request_speed(self):
@@ -106,6 +106,7 @@ class RobotControl:
 
     def read_serial(self):
         num_bytes = self.port.in_waiting
+        # print(f"Bytes: {num_bytes}")
         if num_bytes >= 1:
             datatype = self.port.read(1)
             if datatype == b'S':
@@ -113,23 +114,30 @@ class RobotControl:
                 rospy.loginfo(f"Received string from serial: {received_string}")
             elif datatype == b'B':
                 received_data = self.port.read(num_bytes - 1)
-                crc = received_data[-1]
-                # print(f"Received frame: {received_data}")
-                calculated_crc =  self.calculate_crc(b'B' + received_data[:-1])
-                if crc == calculated_crc:
-                    if received_data[0] == GET_SPEED:
-                        left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
-                        self.left_vel = round(left_vel, 4)
-                        self.right_vel = round(right_vel, 4)
-                        # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
+                if received_data[0] == GET_SPEED:
+                    received_data = received_data[:10]
+                    crc = received_data[-1]
+                    calculated_crc =  self.calculate_crc(b'B' + received_data[:-1])
+                    if crc == calculated_crc:
+                        # rospy.loginfo("aaaaaaaa")
+                            left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
+                            self.left_vel = round(left_vel, 4)
+                            self.right_vel = round(right_vel, 4)
+                            # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
 
 
     def update_odometry(self, timer):
         self.current_time = rospy.Time.now()
-        if (self.current_time - self.last_time_get_speed).to_sec() > 0.5:
+        # print(f"Current: {self.current_time}")
+        # print(f"Last time: {self.last_time_get_speed}")
+        # print((self.current_time - self.last_time_get_speed).to_sec())
+        # self.read_serial()
+        if (self.current_time - self.last_time_get_speed).to_sec() > 0.1:
+        # self.read_serial()
             self.request_speed()
+            rospy.sleep(0.02)
             self.read_serial()
-            self.last_time_get_speed = self.current_time
+            # self.last_time_get_speed = self.current_time
 
         
         # Tính toán vận tốc dài và vận tốc góc của robot
@@ -177,5 +185,5 @@ class RobotControl:
             q,
             self.current_time,
             f"dummy_base_link",
-            "robot_0/odom",
+            "/robot_0/odom",
         )

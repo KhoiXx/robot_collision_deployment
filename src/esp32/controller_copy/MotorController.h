@@ -18,7 +18,7 @@ class MotorController{
             double Kp, double Ki, double Kd,
             int sampleTime,
             float maxSpeed_,
-            int reverse_
+            int reverseAtStart_
         );
         void setTunings(double Kp, double Ki, double Kd);
         void setSpeed(float speed);
@@ -28,7 +28,10 @@ class MotorController{
         long getEncoderPulse();
         int getOutput();
         double kp, ki, kd;
-    
+        float currentSpeed;
+        int outputPwm;
+        int currentSpeedPulse;
+        
     private:
         PID_v2 pid;
         ESP32Encoder encoder;
@@ -45,9 +48,8 @@ class MotorController{
         float mapData(float x, float in_min, float in_max, float out_min, float out_max);
         void controlMotor(int pwmValue);
         float maxSpeed;
-        float currentSpeed;
-        int outputPwm;
         int reverse;
+        int reverseAtStart;
 };
 
 #endif
