@@ -19,9 +19,8 @@ def get_index():
 
 if __name__ == "__main__":
     try:
-        # rospy.wait_for_service('/get_robot_counter')
-        # index = get_index()
-        index = 0
+        rospy.wait_for_service('/get_robot_counter')
+        index = get_index()
         rospy.init_node(f"robot_{index}_execute")
 
         robot_control_node = RobotControl(index, "/dev/esp", baudrate=115200)
