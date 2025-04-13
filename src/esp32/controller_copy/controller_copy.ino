@@ -26,7 +26,7 @@ byte expectedCRC;
 #define LEFT_WHEEL 0
 #define RIGHT_WHEEL 1
 
-#define ROBOT_WHEEL_DISTANCE 0.23
+#define ROBOT_WHEEL_DISTANCE 0.21
 
 unsigned long lastPIDUpdate = 0;
 const unsigned long pidSampleTime = 20; 
@@ -35,8 +35,8 @@ const int baudRate = 115200;
 float leftWheelSpeed = 0.0;
 float rightWheelSpeed = 0.0;
 
-MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, 1);
-MotorController rightWheel(2, 15, 21, 22, 23, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, -1);
+MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, DIRECT);
+MotorController rightWheel(2, 15, 21, 22, 23, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, REVERSE);
 
 void setup() {
     Serial.begin(baudRate);
@@ -75,6 +75,9 @@ void tunePID(String side, byte* data) {
 void sendSpeed() {
     leftWheelSpeed = leftWheel.getCurrentSpeed();
     rightWheelSpeed = rightWheel.getCurrentSpeed();
+    // Serial.print("S");
+    // Serial.print(" Current speed: ");
+    // Serial.println(leftWheelSpeed);
     uint8_t buffer[11];
     buffer[0] = 'B';
 

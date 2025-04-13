@@ -18,7 +18,7 @@ class MotorController{
             double Kp, double Ki, double Kd,
             int sampleTime,
             float maxSpeed_,
-            int reverseAtStart_
+            PID::Direction dir
         );
         void setTunings(double Kp, double Ki, double Kd);
         void setSpeed(float speed);
@@ -31,9 +31,10 @@ class MotorController{
         float currentSpeed;
         int outputPwm;
         int currentSpeedPulse;
+        PID::Direction direction;
+        PID_v2 pid;
         
     private:
-        PID_v2 pid;
         ESP32Encoder encoder;
         u_int8_t clkPin; // CLK of encoder
         u_int8_t dtPin;  // DT of encoder

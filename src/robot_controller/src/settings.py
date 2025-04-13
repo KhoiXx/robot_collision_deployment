@@ -28,7 +28,7 @@ BATCH_SIZE = int(os.getenv('BATCH_SIZE', "128"))
 LASER_HIST = int(os.getenv('LASER_HIST', "3"))
 
 ROBOT_RADIUS = float(os.getenv('ROBOT_RADIUS', "0.13"))
-ROBOT_WHEEL_DISTANCE = float(os.getenv('ROBOT_WHEEL_DISTANCE', "0.23"))
+ROBOT_WHEEL_DISTANCE = float(os.getenv('ROBOT_WHEEL_DISTANCE', "0.21"))
 SAFE_DISTANCE = float(os.getenv('SAFE_DISTANCE', "0.13"))
 NUM_ROBOTS = int(os.getenv('NUM_ROBOTS', "2"))
 

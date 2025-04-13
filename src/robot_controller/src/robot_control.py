@@ -15,7 +15,7 @@ from threading import Thread
 
 class RobotControl:
     def __init__(self, index, port=ROBOT_PORT, baudrate=BAUDRATE) -> None:
-        self.queue = PriorityQueue()
+        self.queue = PriorityQueue(maxsize=3)
         self.port = serial.Serial(port, baudrate, timeout=1)
         rospy.sleep(0.2)
         if self.port.is_open:
@@ -39,8 +39,6 @@ class RobotControl:
         rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
         self.odom_broadcaster = tf.TransformBroadcaster()
         
-        self.request_speed()
-        self.read_serial()
         Thread(target=self.serial_worker, daemon=True).start()
 
     def serial_worker(self):
@@ -98,15 +96,18 @@ class RobotControl:
         crc = self.calculate_crc(send_data)
         send_frame = send_data + struct.pack('B', crc)
         # rospy.loginfo(f"Sent frame: {send_frame}")
+        self.port.reset_output_buffer()
+        self.port.cancel_write()
         self.port.write(send_frame)
+        self.port.flush()
 
     def request_speed(self):
         self.clear_buffer("input")
-        self.send_command(GET_SPEED, None, priority=10)
+        self.send_command(GET_SPEED, None, priority=3)
+        # self.port.flush()
 
     def read_serial(self):
         num_bytes = self.port.in_waiting
-        # print(f"Bytes: {num_bytes}")
         if num_bytes >= 1:
             datatype = self.port.read(1)
             if datatype == b'S':
@@ -117,27 +118,24 @@ class RobotControl:
                 if received_data[0] == GET_SPEED:
                     received_data = received_data[:10]
                     crc = received_data[-1]
-                    calculated_crc =  self.calculate_crc(b'B' + received_data[:-1])
-                    if crc == calculated_crc:
-                        # rospy.loginfo("aaaaaaaa")
-                            left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
-                            self.left_vel = round(left_vel, 4)
-                            self.right_vel = round(right_vel, 4)
-                            # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
+                    left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
+                    self.left_vel = round(left_vel, 4)
+                    self.right_vel = round(right_vel, 4)
+                    rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
 
 
     def update_odometry(self, timer):
-        self.current_time = rospy.Time.now()
+        # self.current_time = rospy.Time.now()
         # print(f"Current: {self.current_time}")
         # print(f"Last time: {self.last_time_get_speed}")
         # print((self.current_time - self.last_time_get_speed).to_sec())
         # self.read_serial()
-        if (self.current_time - self.last_time_get_speed).to_sec() > 0.1:
+        # if (self.current_time - self.last_time_get_speed).to_sec() > 0.1:
         # self.read_serial()
-            self.request_speed()
-            rospy.sleep(0.02)
-            self.read_serial()
-            # self.last_time_get_speed = self.current_time
+        self.request_speed()
+        rospy.sleep(0.02)
+        self.read_serial()
+        # self.last_time_get_speed = self.current_time
 
         
         # Tính toán vận tốc dài và vận tốc góc của robot
@@ -146,6 +144,7 @@ class RobotControl:
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
+        self.current_time = current_time
         dt = (current_time - self.last_time).to_sec()
         delta_x = linear_vel * dt * np.cos(self.current_theta)
         delta_y = linear_vel * dt * np.sin(self.current_theta)
@@ -161,7 +160,7 @@ class RobotControl:
         odom = Odometry()
         odom.header = Header()
         odom.header.stamp = current_time
-        odom.header.frame_id = "odom"
+        odom.header.frame_id = "robot_0/odom"
         odom.child_frame_id = "dummy_base_link"
 
         # Thiết lập vị trí

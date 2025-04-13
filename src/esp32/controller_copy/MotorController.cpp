@@ -11,9 +11,9 @@ MotorController::MotorController(
     double Kp, double Ki, double Kd,
     int sampleTime,
     float maxSpeed_,
-    int reverseAtStart_
+    PID::Direction dir
 ) :
-    pid(Kp, Ki, Kd, PID::Direct),
+    pid(Kp, Ki, Kd, dir),
     encoder(),
     clkPin(clkPin_),
     dtPin(dtPin_),
@@ -26,12 +26,11 @@ MotorController::MotorController(
     prevTime(0),
     wheelCircumference(2 * 3.14159 * wheelRadius_),
     maxSpeed(maxSpeed_),
-    currentSpeed(0.0),
-    reverse(reverseAtStart_),
-    reverseAtStart(reverseAtStart_)
+    currentSpeed(0.0)
 {
     kp = Kp; ki = Ki; kd = Kd;
     pid.Start(0.0, 0.0, 0.0);
+    pid.SetOutputLimits(-255,255);
     pid.SetSampleTime(sampleTime);
     encoder.attachHalfQuad(dtPin, clkPin);
     encoder.setCount(0);
@@ -42,6 +41,7 @@ MotorController::MotorController(
     pinMode(enPin, OUTPUT);
     outputPwm = 0;
     currentSpeedPulse = 0;
+    direction = dir;
 }
 
 void MotorController::setTunings(double Kp, double Ki, double Kd) {
@@ -51,12 +51,7 @@ void MotorController::setTunings(double Kp, double Ki, double Kd) {
 
 void MotorController::setSpeed(float speed) {
     long setPulses = this->mapData(speed, -maxSpeed, maxSpeed, -255, 255);
-    if (setPulses < 0){
-        this->reverse = this->reverseAtStart*-1;
-    } else {
-        this->reverse = this->reverseAtStart*1;
-    }
-    pid.Setpoint(abs(setPulses));
+    pid.Setpoint(setPulses);
 }
 
 float MotorController::mapData(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -72,7 +67,8 @@ float MotorController::mapData(float x, float in_min, float in_max, float out_mi
 
 float MotorController::calculateSpeed() {
     unsigned long currentTime = millis();
-    long currentPosition = reverse * encoder.getCount() / 2;
+    // Direction: DIRECT = 0, REVERSE = 1 => make it DIRECT = 1, REVERSE=-1
+    long currentPosition = (1-2*int(direction)) * encoder.getCount() / 2;
 
     // Tính thay đổi vị trí và thời gian
     long positionChange = currentPosition - prevPosition;
@@ -93,7 +89,7 @@ float MotorController::calculateSpeed() {
 }
 
 void MotorController::controlMotor(int pwmValue) {
-    if ((pwmValue > 0 && reverse == 1) || (pwmValue < 0 && reverse == -1)) {
+    if (pwmValue >0) {
         digitalWrite(in1Pin, HIGH);
         digitalWrite(in2Pin, LOW);
     }
@@ -106,7 +102,7 @@ void MotorController::controlMotor(int pwmValue) {
         // Kích hoạt chế độ phanh hoàn toàn
         digitalWrite(in1Pin, HIGH);
         digitalWrite(in2Pin, HIGH);
-        delay(10);
+        delay(1);
     } 
 }
 
