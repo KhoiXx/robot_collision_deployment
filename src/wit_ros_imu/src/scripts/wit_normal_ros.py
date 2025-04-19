@@ -9,6 +9,7 @@ import serial.tools.list_ports
 from sensor_msgs.msg import Imu
 from sensor_msgs.msg import MagneticField
 from tf.transformations import quaternion_multiply, quaternion_from_euler
+from std_msgs.msg import Float32
 
 
 
@@ -21,7 +22,7 @@ def hex_to_short(raw_data):
 
 
 # Parsing serial Port Data
-def handleSerialData(raw_data):
+def handleSerialData(raw_data, frame_id):
     global buff, key, angle_degree, magnetometer, acceleration, angularVelocity, pub_flag
     angle_flag=False
     if python_version == '2':
@@ -72,10 +73,10 @@ def handleSerialData(raw_data):
             stamp = rospy.get_rostime()
 
             imu_msg.header.stamp = stamp
-            imu_msg.header.frame_id = "base_link"
+            imu_msg.header.frame_id = frame_id
 
             mag_msg.header.stamp = stamp
-            mag_msg.header.frame_id = "base_link"
+            mag_msg.header.frame_id = frame_id
             rotation_quaternion = quaternion_from_euler(0, 0, math.pi / 2)
 
             angle_radian = [angle_degree[i] * math.pi / 180 for i in range(3)]
@@ -101,6 +102,7 @@ def handleSerialData(raw_data):
 
             imu_pub.publish(imu_msg)
             mag_pub.publish(mag_msg)
+            yaw_pub.publish(angle_radian[2])
 
 
 key = 0
@@ -118,6 +120,7 @@ if __name__ == "__main__":
     rospy.init_node("imu")
     port = rospy.get_param("~port", "/dev/imu_usb")
     baudrate = rospy.get_param("~baud", 9600)
+    frame_id = rospy.get_param("~frame_id", "base_link")
     print("IMU Type: Normal Port:%s baud:%d" %(port,baudrate))
     imu_msg = Imu()
     mag_msg = MagneticField()
@@ -135,6 +138,7 @@ if __name__ == "__main__":
     else:
         imu_pub = rospy.Publisher("wit/imu", Imu, queue_size=10)
         mag_pub = rospy.Publisher("wit/mag", MagneticField, queue_size=10)
+        yaw_pub = rospy.Publisher("wit/yaw", Float32, queue_size=10)
 
         while not rospy.is_shutdown():
             try:
@@ -147,5 +151,5 @@ if __name__ == "__main__":
                 if buff_count > 0:
                     buff_data = wt_imu.read(buff_count)
                     for i in range(0, buff_count):
-                        handleSerialData(buff_data[i])
+                        handleSerialData(buff_data[i], frame_id)
 

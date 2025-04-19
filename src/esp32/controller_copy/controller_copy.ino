@@ -35,8 +35,17 @@ const int baudRate = 115200;
 float leftWheelSpeed = 0.0;
 float rightWheelSpeed = 0.0;
 
-MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, DIRECT);
-MotorController rightWheel(2, 15, 21, 22, 23, 15000, 0.033, 11.6, 4.9, 0.04, pidSampleTime, 1.15, REVERSE);
+MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, DIRECT);
+MotorController rightWheel(18, 19, 21, 22, 23, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, REVERSE);
+
+
+float Kpv(float set_vel){
+    if(set_vel < 0.08){
+        return 10.9;
+    } else {
+        return 16.8*set_vel*set_vel + 6.8*set_vel + 11.1;
+    }
+}
 
 void setup() {
     Serial.begin(baudRate);
@@ -89,6 +98,12 @@ void sendSpeed() {
 
     Serial.write(buffer, sizeof(buffer));
     Serial.flush();
+
+    // Serial.print("S,");
+    // Serial.print(rightWheelSpeed);
+    // Serial.print(",");
+    // Serial.println(rightWheel.outputPwm);
+
 }
 
 void handleCommand(byte commandCode, byte* data, byte length) {
@@ -102,17 +117,17 @@ void handleCommand(byte commandCode, byte* data, byte length) {
             v = *((float*) &data[0]);
             w = *((float*) &data[4]);
             setLeftWheelSpeed = v - (w * ROBOT_WHEEL_DISTANCE / 2.0);
-            leftWheel.setSpeed(setLeftWheelSpeed);
+            leftWheel.setSpeed(setLeftWheelSpeed, Kpv(setLeftWheelSpeed));
             setRightWheelSpeed = v + (w * ROBOT_WHEEL_DISTANCE / 2.0);
-            rightWheel.setSpeed(setRightWheelSpeed);
+            rightWheel.setSpeed(setRightWheelSpeed, Kpv(setRightWheelSpeed));
             break;
         case CMD_VEL_LEFT:
             v = *((float*) &data[0]);
-            leftWheel.setSpeed(v);
+            leftWheel.setSpeed(v, Kpv(v));
             break;
         case CMD_VEL_RIGHT:
             v = *((float*) &data[0]);
-            rightWheel.setSpeed(v);
+            rightWheel.setSpeed(v, Kpv(v));
             break;
         case TUNE_PID_LEFT:
             tunePID("left", data);
@@ -191,6 +206,10 @@ void parseSerialOneByte() {
 }
 
 
+float value=0.0;
+int pulse=0;
+unsigned long start = millis();
+bool first_time = true;
 void loop() {
     unsigned long currentMillis = millis();
     if (currentMillis - lastPIDUpdate >= pidSampleTime) {
@@ -202,4 +221,25 @@ void loop() {
     }
     parseSerialOneByte();
     // delay(50);
+    // if (Serial.available()) {
+    //     value = Serial.parseFloat();
+    //     pulse = leftWheel.mapData(value, -12, 12.0, -255, 255);
+    //     leftWheel.controlMotor(pulse);
+    //     if (first_time && value == 0.0) {
+    //         Serial.println("time,voltage,pwm,theta");
+    //         start = millis();
+    //         first_time = false;
+    //     }
+    // }
+    // unsigned long currentMillis = millis() - start;
+    // if (!first_time){
+
+    //     Serial.print(currentMillis);
+    //     Serial.print(",");
+    //     Serial.print(value);
+    //     Serial.print(",");
+    //     Serial.print(pulse);
+    //     Serial.print(",");
+    //     Serial.println(leftWheel.getEncoderPulse());
+    // }
 }

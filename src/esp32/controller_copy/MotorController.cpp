@@ -49,7 +49,10 @@ void MotorController::setTunings(double Kp, double Ki, double Kd) {
     kp = Kp; ki = Ki; kd = Kd;
 }
 
-void MotorController::setSpeed(float speed) {
+void MotorController::setSpeed(float speed, float Kp) {
+    if (Kp != -1.0f) {
+        setTunings(Kp, ki, kd);
+    }
     long setPulses = this->mapData(speed, -maxSpeed, maxSpeed, -255, 255);
     pid.Setpoint(setPulses);
 }
@@ -102,7 +105,7 @@ void MotorController::controlMotor(int pwmValue) {
         // Kích hoạt chế độ phanh hoàn toàn
         digitalWrite(in1Pin, HIGH);
         digitalWrite(in2Pin, HIGH);
-        delay(1);
+        delay(0.1);
     } 
 }
 
@@ -111,7 +114,7 @@ float MotorController::getCurrentSpeed() {
 }
 
 long MotorController::getEncoderPulse() {
-    return this->encoder.getCount() / 2;
+    return (1-2*int(direction)) * encoder.getCount() / 2;
 }
 
 int MotorController::getOutput() {

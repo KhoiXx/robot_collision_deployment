@@ -7,9 +7,11 @@ from sensor_msgs.msg import LaserScan
 def lidar_callback(msg: LaserScan):
     scan = msg.ranges
     print(len(scan))
-    crash_distance = 0.26
-    is_crash = np.any(np.array(scan) <= crash_distance)
-    print(f"Is crashed: {is_crash}")
+    print(f"Ranges 50:")
+    print(scan[:50])
+    # crash_distance = 0.26
+    # is_crash = np.any(np.array(scan) <= crash_distance)
+    # print(f"Is crashed: {is_crash}")
 
 if __name__=="__main__":
         

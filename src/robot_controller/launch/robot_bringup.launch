@@ -21,15 +21,17 @@
     <!-- Start IMU node -->
     <node pkg="wit_ros_imu" type="wit_normal_ros.py" name="imu" output="screen">
         <param name="port"               type = "str"    value="$(arg imu_port)"/>
-        <param name="baud"               type = "int"    value="9600"/>
+        <param name="baud"              type = "int"    value="9600"/>
+        <param name="frame_id"          value="dummy_base_link"/>
 	    <remap from="/wit/imu" to="$(arg robot_namespace)/imu/data"/>
+	    <remap from="/wit/yaw" to="$(arg robot_namespace)/imu/yaw"/>
     </node>
 
     
     <!-- Start robot_counter_service -->
     <node pkg="robot_controller" type="robot_counter_service.py" name="robot_counter_service" output="screen"/>
     <!-- Start robot_0_model -->
-    <node pkg="robot_controller" type="run_model.py" name="model" ns="$(arg robot_namespace)" output="screen"/>
+    <!-- <node pkg="robot_controller" type="run_model.py" name="model" ns="$(arg robot_namespace)" output="screen"/> -->
     <!-- Start robot_0_execute -->
     <node pkg="robot_controller" type="run_robot.py" name="execute" ns="$(arg robot_namespace)" output="screen">
 	    <!-- <remap from="/odom" to="$(arg robot_namespace)/odom"/> -->

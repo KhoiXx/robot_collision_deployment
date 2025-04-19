@@ -31,7 +31,6 @@ class RobotEnv:
         self.index = index
 
         # Subscribe to IMU, Lidar, and Odometry topics
-        # self.imu_sub = rospy.Subscriber(f'/robot_{self.index}/imu/data', Imu, self.imu_callback)
         self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odom/filtered", Odometry, self.odom_callback)
         self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
 

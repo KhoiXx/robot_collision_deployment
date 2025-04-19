@@ -5,6 +5,8 @@ import serial
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
+from sensor_msgs.msg import Imu
+from std_msgs.msg import Float32
 from tf.transformations import quaternion_from_euler
 import numpy as np
 from queue import PriorityQueue, Empty
@@ -26,17 +28,27 @@ class RobotControl:
         rospy.Subscriber(f'/robot_{index}/cmd_vel', Twist, self.cmd_vel_callback)
         # update odom topic
         self.odom_pub = rospy.Publisher(f'/robot_{index}/odom', Odometry, queue_size=10)
+        # self.imu_sub = rospy.Subscriber(f'/robot_{index}/imu/data', Imu, self.imu_callback)
+        self.imu_yaw_sub = rospy.Subscriber(f'/robot_{index}/imu/yaw', Float32, self.imu_yaw_callback)
 
         self.current_x = 0.0
         self.current_y = 0.0
         self.current_theta = 0.0
+        self.imu_yaw = 0.0
+        self.imu_yaw_start = None
         self.last_time = rospy.Time.now()
         self.last_time_get_speed = rospy.Time.now()
+
+        self.imu_vx = 0.0
+        self.imu_vy = 0.0
+        self.imu_x = 0.0
+        self.imu_y = 0.0
+        self.last_imu_time = rospy.Time.now()
 
         self.left_vel = 0.0
         self.right_vel = 0.0
         # rospy.loginfo("Robot")
-        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
+        # rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
         self.odom_broadcaster = tf.TransformBroadcaster()
         
         Thread(target=self.serial_worker, daemon=True).start()
@@ -60,6 +72,26 @@ class RobotControl:
             w,
             priority=1
         )
+
+    def imu_yaw_callback(self, msg: Float32):
+        if self.imu_yaw_start is None:
+            self.imu_yaw_start = msg.data
+        self.imu_yaw = msg.data - self.imu_yaw_start
+    # def imu_callback(self, msg: Imu):
+    #     now = rospy.Time.now()
+    #     dt = (now - self.last_imu_time).to_sec()
+    #     self.last_imu_time = now
+    #     # q = msg.orientation
+    #     # _, _, yaw = tf.transformations.euler_from_quaternion([q.x, q.y, q.z, q.w])
+    #     # self.imu_yaw = yaw
+
+    #     # Tích phân ra vận tốc
+    #     self.imu_vx += msg.linear_acceleration.x * dt
+    #     self.imu_vy += msg.linear_acceleration.y * dt
+
+    #     # Tích phân ra vị trí
+    #     self.imu_x += self.imu_vx * dt
+    #     self.imu_y += self.imu_vy * dt
 
     def clear_buffer(self, type: str) -> None:
         if type == "all":
@@ -112,6 +144,7 @@ class RobotControl:
             datatype = self.port.read(1)
             if datatype == b'S':
                 received_string = self.port.readline().decode().strip()
+                return received_string
                 rospy.loginfo(f"Received string from serial: {received_string}")
             elif datatype == b'B':
                 received_data = self.port.read(num_bytes - 1)
@@ -153,6 +186,11 @@ class RobotControl:
         # Cập nhật vị trí và hướng của robot
         self.current_x += delta_x
         self.current_y += delta_y
+
+        # rospy.loginfo(f"Encoder position: x: {self.current_x}, y: {self.current_y};")
+        # rospy.loginfo(f"IMU position: x: {self.imu_x}, y: {self.imu_y};")
+
+        # self.current_theta = self.imu_yaw
         self.current_theta += delta_theta
         self.last_time = current_time
 
@@ -183,6 +221,6 @@ class RobotControl:
             (self.current_x, self.current_y, 0.0),
             q,
             self.current_time,
-            f"dummy_base_link",
+            "dummy_base_link",
             "/robot_0/odom",
         )
