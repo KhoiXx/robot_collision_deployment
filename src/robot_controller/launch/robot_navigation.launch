@@ -1,0 +1,42 @@
+<launch>
+    <!-- Parameter for use_sim_time -->
+    <arg name="robot_namespace" default="/robot_0"/>
+    <arg name="map_file" default="$(find robot_controller)/maps/map_final.yaml" />
+
+    <param name="use_sim_time" value="false"/>
+    <!-- <include file="$(find robot_controller)/launch/robot_bringup.launch" /> -->
+
+
+    <!-- Load robot description (URDF file) -->
+    <!-- <group ns="robot_0">
+        <param name="robot_description" command="$(find xacro)/xacro '$(find robot_description)/urdf/robot_description_xacro.xacro' prefix:=robot_0" />
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="state_pub_0" />
+    </group> -->
+
+    <include file="$(find robot_description)/launch/single_robot.launch" />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_controller)/rviz/navigation.rviz"/>
+    <!-- Launch teleop_twist_keyboard for controlling the robot -->
+    <!-- <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
+        <remap from="cmd_vel" to="$(arg robot_namespace)/cmd_vel"/>
+        <param name="scale_linear" value="0.35" />
+        <param name="scale_angular" value="1.0" />
+    </node> -->
+    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base" args="0.0 0 0.0 0 0 0 /robot_0/odom /base_link "/> -->
+
+    <!-- Load static map -->
+    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" />
+    <node pkg="robot_controller" type="run_model.py" name="model" ns="$(arg robot_namespace)" output="screen"/>
+
+    <!-- Launch AMCL for localization -->
+    
+    <node pkg="amcl" type="amcl" name="amcl" ns="$(arg robot_namespace)" output="screen">
+        <param name="use_map_topic" value="true" />
+        <param name="odom_frame_id" value="/robot_0/odom" />
+        <param name="base_frame_id" value="dummy_base_link" />
+        <param name="global_frame_id" value="map" />
+        <param name="update_min_d" value="0.2" />
+        <param name="update_min_a" value="0.5" />
+        <remap from="/robot_0/map" to="/map" />
+        <remap from="/robot_0/initialpose" to="/initialpose" />
+    </node>
+</launch>

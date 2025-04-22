@@ -70,9 +70,9 @@ def generate_action(state_list: list, policy: CNNPolicy, action_bound: list):
         goal_list.append(i[1])
         speed_list.append(i[2])
 
-    s_list = np.asarray(s_list)  # 3 x226
-    goal_list = np.asarray(goal_list)
-    speed_list = np.asarray(speed_list)
+    s_list = np.asarray(s_list, dtype=np.float32)
+    goal_list = np.asarray(goal_list, dtype=np.float32)
+    speed_list = np.asarray(speed_list, dtype=np.float32)
 
     s_list = Variable(torch.from_numpy(s_list)).float().cuda()
     goal_list = Variable(torch.from_numpy(goal_list)).float().cuda()

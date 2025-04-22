@@ -31,7 +31,7 @@ class RobotEnv:
         self.index = index
 
         # Subscribe to IMU, Lidar, and Odometry topics
-        self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odom/filtered", Odometry, self.odom_callback)
+        self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odometry/filtered", Odometry, self.odom_callback)
         self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
 
         self.cmd_vel = rospy.Publisher(f"/robot_{self.index}/cmd_vel", Twist, queue_size=10)
@@ -66,7 +66,7 @@ class RobotEnv:
         """
         scan_msg: LaserScan
         """
-        self.scan = np.asarray(data.ranges)
+        self.scan = np.asarray(data.ranges)[:NUM_BEAMS]
         crash_distance = ROBOT_RADIUS + SAFE_DISTANCE
         valid_scan = self.scan[np.isfinite(self.scan)]
         is_crash = np.any(valid_scan <= crash_distance)
