@@ -23,7 +23,7 @@ from torch.optim import Adam
 # float32[] speed
 from custom_msgs.msg import RobotState
 from gather_node import GatherNode
-from model.net import CNNPolicy
+from model.net import ActorCriticNetwork  # FIXED: Use ActorCriticNetwork instead of CNNPolicy
 from model.ppo import (generate_action, generate_train_data, ppo_update,
                        transform_buffer)
 from robot_env import RobotEnv, RobotStatus
@@ -51,24 +51,36 @@ class RunModel:
         self.terminal_publish = rospy.Publisher(f"/robot_{index}/terminal", Bool, queue_size=10)
 
     def __load_policy(self):
-        self.policy = CNNPolicy(frames=3, action_space=2)
+        # FIXED: Use ActorCriticNetwork matching training architecture
+        self.policy = ActorCriticNetwork(frames=LASER_HIST, action_space=ACT_SIZE, hidden_size=128)
         self.policy.to(self.device)
+
+        # Use separate optimizers like in training for better performance
+        self.optimizers = [
+            Adam(self.policy.enc_critic_params(), lr=5e-4),  # Critic optimizer
+            Adam(self.policy.actor_params(), lr=1e-4)        # Actor optimizer
+        ]
+        # Keep single optimizer for compatibility
         self.optimizer = Adam(self.policy.parameters(), lr=LEARNING_RATE)
-        rospy.loginfo("Loading the policy")
-        # mse = nn.MSELoss()
+
+        rospy.loginfo("Loading the ActorCriticNetwork policy")
         if not os.path.exists(POLICY_PATH):
             rospy.logerr("No policy found")
             exit()
 
-        file = POLICY_PATH / Path("stage2_fix.pth")
+        # IMPORTANT: Update this to your actual trained model file!
+        # Copy your trained model: policy/stage2/cnn_gru_attention_5700.pth -> deployment/policy/
+        file = POLICY_PATH / Path("cnn_gru_attention_5700.pth")
         if os.path.exists(file):
             print("####################################")
-            print("############Loading Model###########")
+            print("####### Loading Trained Model ######")
             print("####################################")
-            state_dict = torch.load(file)
+            state_dict = torch.load(file, map_location=self.device)
             self.policy.load_state_dict(state_dict)
+            rospy.loginfo(f"Successfully loaded model from {file}")
         else:
-            rospy.logerr("Policy file not found")
+            rospy.logerr(f"Policy file not found: {file}")
+            rospy.logerr("Please copy your trained model to the policy directory!")
             exit()
 
     def run(self):
@@ -85,15 +97,17 @@ class RunModel:
         speed = np.asarray(self.robot.speed)
         state = [obs_stack, goal, speed]
 
-        self.publish_robot_state(state, self.state_publish)
+        # self.publish_robot_state(state, self.state_publish)
         self.gather_node.set_cur_robot_state(state)
         rospy.sleep(0.002)
 
+        rospy.loginfo("########### Start running ###########")
         while not self.terminal and not rospy.is_shutdown():
             start_time = time.time()
             state_list = self.gather_node.subscriber_states
             if None in state_list:
                 rospy.logerr("State were not correctly gathered")
+            print(f"Length state list: {len(state_list)}")
             v, a, logprob, scaled_action = generate_action(
                 state_list=state_list, policy=self.policy, action_bound=ACTION_BOUND
             )
@@ -102,6 +116,7 @@ class RunModel:
             # FIXME: not align with real world
             rospy.sleep(0.005)
             r, self.terminal, result = self.robot.get_reward_and_terminate(step)
+            print(f"Reward: {r}, step: {step}")
 
             self.reward_publish.publish(r)
             self.gather_node.set_cur_robot_reward(r)
@@ -152,7 +167,7 @@ class RunModel:
                     num_step=NUM_STEPS,
                     num_env=NUM_ROBOTS,
                     frames=LASER_HIST,
-                    obs_size=NUM_BEAMS,
+                    obs_size=NUM_OBS,
                     act_size=ACT_SIZE,
                 )
                 buff = []
@@ -165,6 +180,7 @@ class RunModel:
             torch.save(self.policy.state_dict(), "/policy/stage1_fix.pth")
 
     def goal_callback(self, goal_pose: PoseStamped):
+        rospy.loginfo("########### Goal callback ###########")
         self.terminal = True
 
         retries = 0
@@ -175,6 +191,7 @@ class RunModel:
             x = goal_pose.pose.position.x
             y = goal_pose.pose.position.y
             self.robot.set_new_goal([x, y])
+            rospy.loginfo(f"Setting new goal: x: {x}, y: {y}")
             rospy.sleep(0.01)
             self.run()
         rospy.logerr("Robot is not ready, please wait and set new goal")
