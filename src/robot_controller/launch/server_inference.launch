@@ -1,0 +1,26 @@
+<launch>
+    <!--
+    Server-side inference node for Stage 2 PPO
+    Runs model inference and online learning on server
+
+    Usage:
+        roslaunch robot_controller server_inference.launch
+    -->
+
+    <!-- Server inference node -->
+    <node pkg="robot_controller"
+          type="server_inference_node.py"
+          name="server_inference_node"
+          output="screen">
+
+        <!-- Remap topics if needed -->
+        <!-- <remap from="/robot_0/scan" to="/scan"/> -->
+        <!-- <remap from="/robot_0/odom" to="/odom"/> -->
+        <!-- <remap from="/robot_0/cmd_vel" to="/cmd_vel"/> -->
+
+    </node>
+
+    <!-- Optional: RViz for visualization -->
+    <!-- <node pkg="rviz" type="rviz" name="rviz" args="-d $(find robot_controller)/rviz/server_inference.rviz" if="$(arg use_rviz)"/> -->
+
+</launch>
