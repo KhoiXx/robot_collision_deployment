@@ -1,0 +1,24 @@
+<launch>
+    <!-- Khởi động teleop_twist_keyboard -->
+    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop" output="screen">
+        <remap from="/cmd_vel" to="/robot_0/cmd_vel"/>
+    </node>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base" args="0.5 0 0.2 0 0 0 /base_link /map"/>
+
+    <include file="$(find ldlidar_ros)/launch/ld19.launch">
+        <arg name="port_name" value="/dev/lidar"/>
+    </include>
+
+    <!-- Khởi động GMapping -->
+    <node pkg="gmapping" type="slam_gmapping" name="slam_gmapping" output="screen">
+        <!-- Remap các topic -->
+        <remap from="scan" to="/scan"/>
+        <remap from="tf" to="/tf"/>
+        <remap from="odom" to="/robot_0/odom"/>
+    </node>
+
+    <!-- RViz để hiển thị -->
+    <!-- <node pkg="rviz" type="rviz" name="rviz" output="screen">
+        <param name="config" value="$(find your_package)/config/slam.rviz"/>
+    </node> -->
+</launch>

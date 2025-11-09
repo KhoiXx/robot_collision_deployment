@@ -1,0 +1,106 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <gazebo reference="base_link">
+      <material>Gazebo/Yellow</material>
+  </gazebo>
+  <gazebo reference="left_wheel">
+      <material>Gazebo/Black</material>
+  </gazebo>
+  <gazebo reference="right_wheel">
+      <material>Gazebo/Black</material>
+  </gazebo>
+  <gazebo reference="lidar">
+      <material>Gazebo/Blue</material>
+  </gazebo>
+  <gazebo reference="bumper">
+      <material>Gazebo/Blue</material>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+      <!-- Plugin update rate in Hz -->
+      <updateRate>30</updateRate>
+      <!-- Name of left joint, defaults to `left_joint` -->
+      <leftJoint>left_wheel_jl</leftJoint>
+      <!-- Name of right joint, defaults to `right_joint` -->
+      <rightJoint>right_wheel_jl</rightJoint>
+      <!-- The distance from the center of one wheel to the other, in meters, defaults to 0.34 m -->
+      <wheelSeparation>0.16</wheelSeparation>
+      <!-- Diameter of the wheels, in meters, defaults to 0.15 m -->
+      <wheelDiameter>0.065</wheelDiameter>
+      <!-- Wheel acceleration, in rad/s^2, defaults to 0.0 rad/s^2 -->
+      <wheelAcceleration>1.0</wheelAcceleration>
+      <!-- Maximum torque which the wheels can produce, in Nm, defaults to 5 Nm -->
+      <wheelTorque>20</wheelTorque>
+      <!-- Topic to receive geometry_msgs/Twist message commands, defaults to `cmd_vel` -->
+      <commandTopic>/${robot_name}/cmd_vel</commandTopic>
+      <!-- Topic to publish nav_msgs/Odometry messages, defaults to `odom` -->
+      <odometryTopic>/${robot_name}/odom</odometryTopic>
+      <!-- Odometry frame, defaults to `odom` -->
+      <odometryFrame>odom</odometryFrame>
+      <!-- Robot frame to calculate odometry from, defaults to `base_footprint` -->
+      <robotBaseFrame>base_footprint</robotBaseFrame>
+      <!-- Odometry source, 0 for ENCODER, 1 for WORLD, defaults to WORLD -->
+      <odometrySource>1</odometrySource>
+      <!-- Set to true to publish transforms for the wheel links, defaults to false -->
+      <publishWheelTF>true</publishWheelTF>
+      <!-- Set to true to publish transforms for the odometry, defaults to true -->
+      <publishOdom>true</publishOdom>
+      <!-- Set to true to publish sensor_msgs/JointState on /joint_states for the wheel joints, defaults to false -->
+      <publishWheelJointState>true</publishWheelJointState>
+      <!-- Set to true to swap right and left wheels, defaults to true -->
+      <legacyMode>false</legacyMode>
+    </plugin>
+  </gazebo>
+    
+
+  
+
+   <!-- hokuyo -->
+  <gazebo reference="lidar">
+    <sensor type="ray" name="hokuyo_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>512</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>4.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/${robot_name}/scan</topicName>
+        <frameName>lidar</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+  <gazebo reference="bumper">
+    <sensor name="bumper_sensor" type="contact">
+      <always_on>true</always_on>
+      <update_rate>60</update_rate>
+      <contact>
+        <collision>base_link_fixed_joint_lump__bumper_collision_collision_1</collision>
+      </contact>
+      <plugin name="bumper_plugin" filename="libgazebo_ros_bumper.so">
+        <bumperTopicName>/${robot_name}/bumper_hit</bumperTopicName>
+        <frameName>bumper</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+</robot>
