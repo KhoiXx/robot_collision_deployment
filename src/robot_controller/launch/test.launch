@@ -1,3 +1,12 @@
 <launch>
     <node pkg="robot_controller" type="test.py" name="Test" output="screen"/>
+    <!-- <include file="$(find ldlidar_ros)/launch/ld19.launch">
+        <arg name="port_name" value="/dev/ttyUSB0"/>
+    </include> -->
+    <!-- <node pkg="robot_controller" type="test.py" name="Test" output="screen"/> -->
+    <!-- <arg name="lidar_port" default="/dev/ttyUSB0"/>
+    <include file="$(find ldlidar_ros)/launch/ld19.launch">
+        <arg name="port_name" value="$(arg lidar_port)"/>
+        <arg name="laser_scan_topic_name" value="/robot_0/scan"/>
+    </include> -->
 </launch>

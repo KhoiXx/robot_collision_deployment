@@ -1,3 +1,16 @@
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ENV{ID_REVISION}=="8233", MODE:="0777", SYMLINK+="imu"
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", ENV{ID_REVISION}=="0264", MODE:="0777", SYMLINK+="esp"
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ENV{ID_REVISION}=="0100", MODE:="0777", SYMLINK+="lidar"
+
+
+# # Create symlink for lidar when it is connected first
+# SUBSYSTEM=="tty", KERNEL=="ttyUSB0", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+#   PROGRAM="/bin/sh -c 'test ! -e /dev/lidar && echo 1'", SYMLINK+="lidar", MODE="0777"
+# SUBSYSTEM=="tty", KERNEL=="ttyUSB1", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+#   PROGRAM="/bin/sh -c 'test ! -e /dev/lidar && test ! -e /dev/esp && echo 1'", SYMLINK+="lidar", MODE="0777"
+
+# # Create symlink for ESP if lidar symlink already exists
+# SUBSYSTEM=="tty", KERNEL=="ttyUSB2", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+#   PROGRAM="/bin/sh -c 'test -e /dev/lidar && test ! -e /dev/esp && echo 1'", SYMLINK+="esp", MODE="0777"
+# SUBSYSTEM=="tty", KERNEL=="ttyUSB1", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", \
+#   PROGRAM="/bin/sh -c 'test -e /dev/lidar && test ! -e /dev/esp && echo 1'", SYMLINK+="esp", MODE="0777"

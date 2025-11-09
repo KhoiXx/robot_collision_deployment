@@ -48,9 +48,8 @@ class RobotControl:
         self.left_vel = 0.0
         self.right_vel = 0.0
         # rospy.loginfo("Robot")
+        # rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
         self.odom_broadcaster = tf.TransformBroadcaster()
-        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
-        # self.odom_broadcaster = tf.TransformBroadcaster()
         
         Thread(target=self.serial_worker, daemon=True).start()
 
@@ -145,6 +144,7 @@ class RobotControl:
             datatype = self.port.read(1)
             if datatype == b'S':
                 received_string = self.port.readline().decode().strip()
+                return received_string
                 rospy.loginfo(f"Received string from serial: {received_string}")
             elif datatype == b'B':
                 received_data = self.port.read(num_bytes - 1)
@@ -154,7 +154,7 @@ class RobotControl:
                     left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
                     self.left_vel = round(left_vel, 4)
                     self.right_vel = round(right_vel, 4)
-                    # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
+                    rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
 
 
     def update_odometry(self, timer):

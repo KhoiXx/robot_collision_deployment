@@ -63,3 +63,20 @@ https://github.com/dnovischi/jetson-tutorials/blob/main/jetson-nano-ros-noetic-i
 - Rviz se bao cac loi lien quan toi `qOverride`. Dung chatgpt  de thay doi cho can sua 
 - sudo ./src/catkin/bin/catkin_make_isolated --install --pkg rviz -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 --install-space /opt/ros/noetic  -j1
 Chay lenh nay de chi build rieng rviz
+
+## START UP
+Remote to robot 
+ssh khoixx@192.168.3.16
+
+#### On server
+export ROS_MASTER_URI=http://192.168.3.3:11311
+export ROS_HOSTNAME=192.168.3.3
+source devel/setup.bash
+ros_core
+roslaunch robot_controller robot_navigation.launch
+roslaunch robot_controller teleop.launch
+
+#### On robot
+export ROS_MASTER_URI=http://192.168.3.3:11311
+export ROS_HOSTNAME=192.168.3.
+roslaunch robot_controller robot_bringup.launch
