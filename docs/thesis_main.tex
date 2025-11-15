@@ -1,0 +1,103 @@
+% thesis_main.tex
+% Main LaTeX file for HCMUT Master's Thesis
+% Compile this file with XeLaTeX
+%
+% Author: Nguyễn Tấn Khôi (2171017)
+% Advisor: TS. Phạm Việt Cường
+% Title: Ứng Dụng Reinforcement Learning Điều Khiển Phân Tán Hệ Đa Robot Tránh Va Chạm
+% Institution: ĐH Bách Khoa - ĐHQG TP.HCM
+% Date: 2025-11-12
+%
+% Compilation commands:
+%   xelatex thesis_main.tex
+%   biber thesis_main
+%   xelatex thesis_main.tex
+%   xelatex thesis_main.tex
+%
+% Or simply use: make
+
+\documentclass[a4paper,13pt]{book}
+
+%% ============================================================================
+%% Load Preamble (all packages and configurations)
+%% ============================================================================
+
+\input{preamble}
+
+%% ============================================================================
+%% BEGIN DOCUMENT
+%% ============================================================================
+
+\begin{document}
+
+%% ============================================================================
+%% FRONT MATTER
+%% ============================================================================
+
+% Cover page and title page (no page numbers)
+\input{chapters/00_cover}
+
+% Roman numeral page numbering for front matter
+\frontmatter
+
+% Front matter sections: acknowledgments, abstracts, declaration
+\input{chapters/01_frontmatter}
+
+% Table of contents
+\tableofcontents
+\newpage
+
+% List of figures
+\listoffigures
+\newpage
+
+% List of tables
+\listoftables
+\newpage
+
+% List of symbols and abbreviations
+\input{symbols}
+\newpage
+
+%% ============================================================================
+%% MAIN CONTENT
+%% ============================================================================
+
+% Arabic numeral page numbering starting from 1
+\mainmatter
+
+% Chapter 1: Mở Đầu (Introduction)
+\input{chapters/02_chapter1_intro}
+
+% Chapter 2: Tổng Quan (Literature Review)
+\input{chapters/03_chapter2_overview}
+
+% Chapter 3: Phương Pháp Nghiên Cứu (Research Methodology)
+\input{chapters/04_chapter3_method}
+
+% Chapter 4: Kết Quả và Thảo Luận (Results and Discussion)
+\input{chapters/05_chapter4_results}
+
+% Chapter 5: Kết Luận và Kiến Nghị (Conclusions and Recommendations)
+\input{chapters/06_chapter5_conclusion}
+
+%% ============================================================================
+%% BACK MATTER
+%% ============================================================================
+
+\backmatter
+
+% Bibliography (IEEE style, numbered citations)
+\printbibliography[title={TÀI LIỆU THAM KHẢO}]
+
+% Appendices (if needed, uncomment below)
+% \begin{appendices}
+% \input{chapters/appendix_a}
+% \input{chapters/appendix_b}
+% \end{appendices}
+
+%% ============================================================================
+%% END DOCUMENT
+%% ============================================================================
+
+\end{document}

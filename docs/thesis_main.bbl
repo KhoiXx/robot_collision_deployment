@@ -1,0 +1,125 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{none/global//global/global}
+    \entry{long2018towards}{inproceedings}{}
+      \name{author}{6}{}{%
+        {{hash=180816e001f2570582f6d674a9d1eaca}{%
+           family={Long},
+           familyi={L\bibinitperiod},
+           given={Pinxin},
+           giveni={P\bibinitperiod}}}%
+        {{hash=58718e8d87cc0ea97d4a3df61b34fa0c}{%
+           family={Fan},
+           familyi={F\bibinitperiod},
+           given={Tingxiang},
+           giveni={T\bibinitperiod}}}%
+        {{hash=fdb62100d5197dc36061037caa85b822}{%
+           family={Liao},
+           familyi={L\bibinitperiod},
+           given={Xinyi},
+           giveni={X\bibinitperiod}}}%
+        {{hash=4d7abadc5cb4b3d12386d19915afdb2c}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Wenxi},
+           giveni={W\bibinitperiod}}}%
+        {{hash=8c6d18e2d167e1a3dc88c0166bbc3471}{%
+           family={Zhang},
+           familyi={Z\bibinitperiod},
+           given={Hao},
+           giveni={H\bibinitperiod}}}%
+        {{hash=df1387a006d560bfd3dd3eb81dfd5e3d}{%
+           family={Pan},
+           familyi={P\bibinitperiod},
+           given={Jia},
+           giveni={J\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {Brisbane, Australia}%
+      }
+      \list{publisher}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{46abb0ccefd682777150f60f60282b14}
+      \strng{fullhash}{ea4c738f87473d1f2e8b0faeb4d0a56c}
+      \strng{bibnamehash}{ea4c738f87473d1f2e8b0faeb4d0a56c}
+      \strng{authorbibnamehash}{ea4c738f87473d1f2e8b0faeb4d0a56c}
+      \strng{authornamehash}{46abb0ccefd682777150f60f60282b14}
+      \strng{authorfullhash}{ea4c738f87473d1f2e8b0faeb4d0a56c}
+      \field{sortinit}{1}
+      \field{sortinithash}{50c6687d7fc80f50136d75228e3c59ba}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proc. IEEE Int. Conf. Robot. Autom. (ICRA)}
+      \field{title}{Towards optimally decentralized multi-robot collision avoidance via deep reinforcement learning}
+      \field{year}{2018}
+      \field{pages}{6252\bibrangedash 6259}
+      \range{pages}{8}
+      \verb{doi}
+      \verb 10.1109/ICRA.2018.8461113
+      \endverb
+    \endentry
+    \entry{schulman2017proximal}{article}{}
+      \name{author}{5}{}{%
+        {{hash=3e09bd2a25d237ebdaed560a07c0451e}{%
+           family={Schulman},
+           familyi={S\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod}}}%
+        {{hash=674ede0b9cd02a2bf5fc662972efb9f0}{%
+           family={Wolski},
+           familyi={W\bibinitperiod},
+           given={Filip},
+           giveni={F\bibinitperiod}}}%
+        {{hash=4164e43d8cf919f5e3f8d80f5ea23f36}{%
+           family={Dhariwal},
+           familyi={D\bibinitperiod},
+           given={Prafulla},
+           giveni={P\bibinitperiod}}}%
+        {{hash=a812c46caad94fc8701be37871f303ba}{%
+           family={Radford},
+           familyi={R\bibinitperiod},
+           given={Alec},
+           giveni={A\bibinitperiod}}}%
+        {{hash=be38507da6ab98e7ac01ac2c6b7e13eb}{%
+           family={Klimov},
+           familyi={K\bibinitperiod},
+           given={Oleg},
+           giveni={O\bibinitperiod}}}%
+      }
+      \strng{namehash}{b88cba7e9e78fa0e04ba07dccafe7324}
+      \strng{fullhash}{a6c6ed5a5aeb74e536f16291276ae392}
+      \strng{bibnamehash}{a6c6ed5a5aeb74e536f16291276ae392}
+      \strng{authorbibnamehash}{a6c6ed5a5aeb74e536f16291276ae392}
+      \strng{authornamehash}{b88cba7e9e78fa0e04ba07dccafe7324}
+      \strng{authorfullhash}{a6c6ed5a5aeb74e536f16291276ae392}
+      \field{sortinit}{2}
+      \field{sortinithash}{ed39bb39cf854d5250e95b1c1f94f4ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:1707.06347}
+      \field{title}{Proximal policy optimization algorithms}
+      \field{year}{2017}
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

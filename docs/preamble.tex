@@ -1,0 +1,195 @@
+% preamble.tex
+% LaTeX preamble for HCMUT Master's Thesis
+% Configured for Vietnamese typesetting with Times New Roman font
+% Author: Nguyễn Tấn Khôi
+% Date: 2025-11-12
+
+%% ============================================================================
+%% Font and Language Configuration
+%% ============================================================================
+
+% Use fontspec for XeLaTeX font management
+\usepackage{fontspec}
+
+% Set Times New Roman as main font (required by HCMUT)
+% On Linux, use TeX Gyre Termes (Times New Roman clone from TeX Gyre project)
+\setmainfont{TeX Gyre Termes}
+
+% Vietnamese language support
+\usepackage[vietnamese]{babel}
+
+%% ============================================================================
+%% Page Layout and Formatting
+%% ============================================================================
+
+% Page margins (HCMUT requirement: Top 3cm, Bottom 3cm, Left 3.5cm, Right 2cm)
+\usepackage[
+    top=3cm,
+    bottom=3cm,
+    left=3.5cm,
+    right=2cm,
+    a4paper
+]{geometry}
+
+% Line spacing (HCMUT requirement: 1.5)
+\usepackage{setspace}
+\onehalfspacing  % 1.5 line spacing
+
+%% ============================================================================
+%% Graphics and Figures
+%% ============================================================================
+
+% Enhanced graphics support
+\usepackage{graphicx}
+
+% Set default graphics path
+\graphicspath{{figures/}}
+
+% Figure caption customization (Vietnamese style)
+\usepackage[labelsep=period]{caption}
+\captionsetup[figure]{name=Hình}
+\captionsetup[table]{name=Bảng}
+
+%% ============================================================================
+%% Mathematics
+%% ============================================================================
+
+% Advanced math typesetting
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% Number equations, figures, tables by chapter
+\numberwithin{equation}{chapter}
+\numberwithin{figure}{chapter}
+\numberwithin{table}{chapter}
+
+%% ============================================================================
+%% Bibliography and Citations (IEEE Style)
+%% ============================================================================
+
+% Use biblatex with biber backend for better Unicode support
+\usepackage[
+    backend=biber,
+    style=ieee,
+    sorting=none,     % Citations ordered by appearance
+    maxbibnames=99,   % Show all authors
+    giveninits=true   % Use initials for first names
+]{biblatex}
+
+% Add bibliography resource
+\addbibresource{references.bib}
+
+%% ============================================================================
+%% Hyperlinks and Cross-References
+%% ============================================================================
+
+% Hyperlinks in PDF (clickable TOC, references, citations)
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,      % Internal links (TOC, chapters)
+    citecolor=blue,       % Citation links
+    urlcolor=blue,        % URL links
+    bookmarksnumbered=true,
+    pdfencoding=unicode,
+    pdftitle={Ứng Dụng Reinforcement Learning Điều Khiển Phân Tán Hệ Đa Robot Tránh Va Chạm},
+    pdfauthor={Nguyễn Tấn Khôi},
+    pdfsubject={Luận văn Thạc sĩ - HCMUT},
+    pdfkeywords={Reinforcement Learning, Multi-Robot, Collision Avoidance, PPO}
+}
+
+%% ============================================================================
+%% Table of Contents Configuration
+%% ============================================================================
+
+% TOC depth (4 levels: chapter.section.subsection.subsubsection)
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+
+% Vietnamese TOC, LOF, LOT titles
+\addto\captionsvietnamese{%
+    \renewcommand{\contentsname}{MỤC LỤC}%
+    \renewcommand{\listfigurename}{DANH MỤC HÌNH}%
+    \renewcommand{\listtablename}{DANH MỤC BẢNG}%
+}
+
+%% ============================================================================
+%% Chapter and Section Formatting (Vietnamese Style)
+%% ============================================================================
+
+% Customize chapter headings to Vietnamese format
+\usepackage{titlesec}
+
+% Chapter format: centered, uppercase "CHƯƠNG X"
+\titleformat{\chapter}[display]
+    {\normalfont\huge\bfseries\centering}
+    {\MakeUppercase{Chương} \thechapter}
+    {20pt}
+    {\Huge\MakeUppercase}
+
+% Section, subsection formatting (keep default with Vietnamese numbering)
+\titleformat{\section}
+    {\normalfont\Large\bfseries}
+    {\thesection}
+    {1em}
+    {}
+
+\titleformat{\subsection}
+    {\normalfont\large\bfseries}
+    {\thesubsection}
+    {1em}
+    {}
+
+\titleformat{\subsubsection}
+    {\normalfont\normalsize\bfseries}
+    {\thesubsubsection}
+    {1em}
+    {}
+
+%% ============================================================================
+%% Additional Useful Packages
+%% ============================================================================
+
+% Enhanced table support
+\usepackage{booktabs}   % Professional table rules
+\usepackage{multirow}   % Multi-row cells
+\usepackage{array}      % Enhanced column formatting
+
+% Lists and enumerations
+\usepackage{enumitem}
+
+% Code listings (if needed)
+\usepackage{listings}
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    tabsize=2
+}
+
+% Colors (for highlighting, if needed)
+\usepackage{xcolor}
+
+% Appendices support
+\usepackage[toc,page]{appendix}
+
+%% ============================================================================
+%% Custom Commands and Macros
+%% ============================================================================
+
+% Thesis metadata (to be filled in chapters/00_cover.tex)
+\newcommand{\thesistitleVN}{Ứng Dụng Reinforcement Learning Điều Khiển Phân Tán Hệ Đa Robot Tránh Va Chạm}
+\newcommand{\thesistitleEN}{Application of Reinforcement Learning in Decentralized Multi-Robot Collision Avoidance Control System}
+\newcommand{\authorname}{Nguyễn Tấn Khôi}
+\newcommand{\studentid}{2171017}
+\newcommand{\major}{Kỹ thuật Điều khiển - Tự động hóa}
+\newcommand{\majorcode}{8520216}
+\newcommand{\advisorname}{TS. Phạm Việt Cường}
+\newcommand{\submissiondate}{Tháng 12 năm 2025}
+
+%% ============================================================================
+%% End of Preamble
+%% ============================================================================

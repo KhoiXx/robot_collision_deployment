@@ -47,3 +47,6 @@ results/
 *_workspace
 *.tar.gz
 *.zip
+
+.claude
+.specify

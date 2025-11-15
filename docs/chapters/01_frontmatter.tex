@@ -1,0 +1,79 @@
+% chapters/01_frontmatter.tex
+% Front matter: Acknowledgments, Abstracts, Declaration
+% Author: Nguyễn Tấn Khôi
+% Date: 2025-11-12
+
+%% ============================================================================
+%% LỜI CẢM ƠN (ACKNOWLEDGMENTS)
+%% ============================================================================
+
+\chapter*{LỜI CẢM ƠN}
+\addcontentsline{toc}{chapter}{LỜI CẢM ƠN}
+
+Tôi xin chân thành cảm ơn TS. Phạm Việt Cường, người đã tận tình hướng dẫn và định hướng cho tôi trong suốt quá trình thực hiện luận văn này. Những góp ý quý báu của thầy đã giúp tôi hoàn thiện nghiên cứu và phát triển kỹ năng nghiên cứu khoa học.
+
+Tôi cũng xin gửi lời cảm ơn đến các thầy cô trong Bộ môn Tự động hóa, Khoa Điện - Điện tử, Trường Đại học Bách Khoa TP.HCM đã truyền đạt kiến thức nền tảng vững chắc trong suốt quá trình học tập.
+
+Cuối cùng, tôi xin cảm ơn gia đình, bạn bè đã luôn động viên và hỗ trợ tôi trong suốt thời gian thực hiện luận văn.
+
+\vspace{1cm}
+\begin{flushright}
+\textit{Nguyễn Tấn Khôi}
+\end{flushright}
+
+\clearpage
+
+%% ============================================================================
+%% TÓM TẮT (VIETNAMESE ABSTRACT)
+%% ============================================================================
+
+\chapter*{TÓM TẮT}
+\addcontentsline{toc}{chapter}{TÓM TẮT}
+
+Luận văn này nghiên cứu ứng dụng học tăng cường sâu (Deep Reinforcement Learning) vào bài toán điều khiển phân tán hệ đa robot tránh va chạm. Dựa trên thuật toán Proximal Policy Optimization (PPO), nghiên cứu đề xuất các cải tiến về learning rate scheduling, value clipping và chiến lược huấn luyện hai giai đoạn để cải thiện hiệu suất và khả năng mở rộng của hệ thống.
+
+Kết quả thực nghiệm cho thấy mô hình đạt tỷ lệ thành công 71\% trong quá trình huấn luyện với 58 robots và 88\% trong kiểm thử với 50 robots. Các cải tiến đề xuất bao gồm Adaptive Learning Rate Scheduler, Value Clipping, và việc sử dụng hai optimizer riêng biệt cho actor và critic networks đã giúp cải thiện độ ổn định và tốc độ hội tụ của quá trình huấn luyện.
+
+Nghiên cứu cũng trình bày thiết kế phần cứng robot sử dụng cảm biến LiDAR 360 độ và Raspberry Pi, chuẩn bị cho việc triển khai thuật toán trên robot thực tế trong tương lai.
+
+\textbf{Từ khóa:} Học tăng cường, PPO, Đa robot, Tránh va chạm, Điều khiển phân tán
+
+\clearpage
+
+%% ============================================================================
+%% ABSTRACT (ENGLISH)
+%% ============================================================================
+
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+
+This thesis investigates the application of Deep Reinforcement Learning to decentralized multi-robot collision avoidance control systems. Based on the Proximal Policy Optimization (PPO) algorithm, the research proposes improvements in learning rate scheduling, value clipping, and two-stage training strategy to enhance system performance and scalability.
+
+Experimental results demonstrate that the model achieves a 71\% success rate during training with 58 robots and 88\% during testing with 50 robots. The proposed improvements, including Adaptive Learning Rate Scheduler, Value Clipping, and separate optimizers for actor and critic networks, have enhanced training stability and convergence speed.
+
+The research also presents a hardware design using 360-degree LiDAR sensors and Raspberry Pi, preparing for future deployment on real robots.
+
+\textbf{Keywords:} Reinforcement Learning, PPO, Multi-robot, Collision Avoidance, Decentralized Control
+
+\clearpage
+
+%% ============================================================================
+%% LỜI CAM ĐOAN (DECLARATION)
+%% ============================================================================
+
+\chapter*{LỜI CAM ĐOAN}
+\addcontentsline{toc}{chapter}{LỜI CAM ĐOAN}
+
+Tôi xin cam đoan rằng luận văn \textit{"\thesistitleVN"} là công trình nghiên cứu của riêng tôi dưới sự hướng dẫn của TS. Phạm Việt Cường.
+
+Các kết quả nghiên cứu và số liệu trong luận văn là trung thực, chưa từng được ai công bố trong bất kỳ công trình nào khác. Tôi xin hoàn toàn chịu trách nhiệm về tính chính xác và trung thực của nội dung luận văn này.
+
+\vspace{2cm}
+
+\begin{flushright}
+\textit{TP. Hồ Chí Minh, \submissiondate}\\
+\vspace{1cm}
+\textbf{\authorname}\\
+\end{flushright}
+
+\clearpage
