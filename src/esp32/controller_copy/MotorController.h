@@ -18,10 +18,10 @@ class MotorController{
             double Kp, double Ki, double Kd,
             int sampleTime,
             float maxSpeed_,
-            int reverseAtStart_
+            PID::Direction dir
         );
         void setTunings(double Kp, double Ki, double Kd);
-        void setSpeed(float speed);
+        void setSpeed(float speed, float Kp=-1.0f);
         float calculateSpeed();
         void runPID();
         float getCurrentSpeed();
@@ -31,9 +31,12 @@ class MotorController{
         float currentSpeed;
         int outputPwm;
         int currentSpeedPulse;
+        PID::Direction direction;
+        PID_v2 pid;
+        void controlMotor(int pwmValue);
+        float mapData(float x, float in_min, float in_max, float out_min, float out_max);
         
     private:
-        PID_v2 pid;
         ESP32Encoder encoder;
         u_int8_t clkPin; // CLK of encoder
         u_int8_t dtPin;  // DT of encoder
@@ -45,8 +48,6 @@ class MotorController{
         long prevPosition;
         unsigned long prevTime;
         const float wheelCircumference;
-        float mapData(float x, float in_min, float in_max, float out_min, float out_max);
-        void controlMotor(int pwmValue);
         float maxSpeed;
         int reverse;
         int reverseAtStart;

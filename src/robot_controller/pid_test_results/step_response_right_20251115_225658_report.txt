@@ -1,0 +1,191 @@
+================================================================================
+PID CONTROLLER STABILITY ANALYSIS REPORT
+================================================================================
+
+Test File: step_response_right_20251115_225658.csv
+Analysis Date: 2025-11-15 23:12:04
+Number of Step Tests: 6
+
+================================================================================
+EXECUTIVE SUMMARY - STABILITY VERIFICATION
+================================================================================
+
+⚠ VERDICT: STABILITY ISSUES DETECTED
+
+Some step responses show stability concerns. See detailed analysis below.
+
+================================================================================
+DETAILED STEP RESPONSE ANALYSIS
+================================================================================
+
+
+STEP 1: Target Speed = 0.20 m/s (Setpoint = 44 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time (10%-90%):         1.589 s
+  • Overshoot:                   0.00 %
+  • Steady-State Error:          0.667 pulses
+  • Steady-State Error (%):      1.52 %
+  • RMS Error:                   2.710 pulses
+  • Final Value:                 43.0 pulses
+
+Stability Assessment:
+  ✗ Does not settle within test duration
+  ✓ Minimal overshoot (0.0% < 5%)
+  ✓ Excellent steady-state accuracy (1.52%)
+
+Error Statistics:
+  • Maximum Error:               11.000 pulses
+  • Error Std Dev:               1.970 pulses
+  ⚠ Moderate oscillation (std dev = 1.97)
+
+
+STEP 2: Target Speed = 0.40 m/s (Setpoint = 88 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time:                  N/A
+  • Overshoot:                   0.00 %
+  • Steady-State Error:          0.667 pulses
+  • Steady-State Error (%):      0.76 %
+  • RMS Error:                   0.845 pulses
+  • Final Value:                 87.0 pulses
+
+Stability Assessment:
+  ✓ Fast settling time (0.00s < 3.0s)
+  ✓ Minimal overshoot (0.0% < 5%)
+  ✓ Excellent steady-state accuracy (0.76%)
+
+Error Statistics:
+  • Maximum Error:               1.000 pulses
+  • Error Std Dev:               0.460 pulses
+  ✓ Low oscillation (std dev < 1.0)
+
+
+STEP 3: Target Speed = 0.60 m/s (Setpoint = 133 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time:                  N/A
+  • Overshoot:                   0.00 %
+  • Steady-State Error:          0.167 pulses
+  • Steady-State Error (%):      0.13 %
+  • RMS Error:                   1.389 pulses
+  • Final Value:                 133.0 pulses
+
+Stability Assessment:
+  ✗ Does not settle within test duration
+  ✓ Minimal overshoot (0.0% < 5%)
+  ✓ Excellent steady-state accuracy (0.13%)
+
+Error Statistics:
+  • Maximum Error:               5.000 pulses
+  • Error Std Dev:               1.166 pulses
+  ⚠ Moderate oscillation (std dev = 1.17)
+
+
+STEP 4: Target Speed = -0.30 m/s (Setpoint = -66 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time (10%-90%):         3.815 s
+  • Overshoot:                   -1.52 %
+  • Steady-State Error:          1.333 pulses
+  • Steady-State Error (%):      2.02 %
+  • RMS Error:                   3.756 pulses
+  • Final Value:                 -64.0 pulses
+
+Stability Assessment:
+  ✗ Does not settle within test duration
+  ✓ Minimal overshoot (1.5% < 5%)
+  ✓ Good steady-state accuracy (2.02%)
+
+Error Statistics:
+  • Maximum Error:               10.000 pulses
+  • Error Std Dev:               1.917 pulses
+  ⚠ Moderate oscillation (std dev = 1.92)
+
+
+STEP 5: Target Speed = -0.50 m/s (Setpoint = -110 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time:                  N/A
+  • Overshoot:                   0.00 %
+  • Steady-State Error:          0.167 pulses
+  • Steady-State Error (%):      0.15 %
+  • RMS Error:                   0.947 pulses
+  • Final Value:                 -110.0 pulses
+
+Stability Assessment:
+  ✓ Fast settling time (0.00s < 3.0s)
+  ✓ Minimal overshoot (0.0% < 5%)
+  ✓ Excellent steady-state accuracy (0.15%)
+
+Error Statistics:
+  • Maximum Error:               2.000 pulses
+  • Error Std Dev:               0.577 pulses
+  ✓ Low oscillation (std dev < 1.0)
+
+
+STEP 6: Target Speed = 0.00 m/s (Setpoint = 0 pulses)
+--------------------------------------------------------------------------------
+
+Performance Metrics:
+  • Settling Time:              Did not settle
+  • Rise Time:                  N/A
+  • Overshoot:                   0.00 %
+  • Steady-State Error:          0.000 pulses
+  • RMS Error:                   0.186 pulses
+  • Final Value:                 0.0 pulses
+
+Stability Assessment:
+  ✓ Fast settling time (0.00s < 3.0s)
+  ✓ Minimal overshoot (0.0% < 5%)
+
+Error Statistics:
+  • Maximum Error:               1.000 pulses
+  • Error Std Dev:               0.186 pulses
+  ✓ Low oscillation (std dev < 1.0)
+
+
+================================================================================
+SUMMARY STATISTICS TABLE
+================================================================================
+
+Target     Setpoint     Settling     Overshoot    SS Error     RMS Error   
+Speed      (pulses)     Time (s)     (%)          (pulses)     (pulses)    
+--------------------------------------------------------------------------------
+0.20       44           N/A          0.00         0.667        2.710       
+0.40       88           N/A          0.00         0.667        0.845       
+0.60       133          N/A          0.00         0.167        1.389       
+-0.30      -66          N/A          -1.52        1.333        3.756       
+-0.50      -110         N/A          0.00         0.167        0.947       
+0.00       0            N/A          0.00         0.000        0.186       
+
+================================================================================
+CONCLUSIONS AND RECOMMENDATIONS
+================================================================================
+
+Average Performance Across All Steps:
+  • Average Settling Time:       0.000 s
+  • Average Overshoot:           0.25 %
+  • Average SS Error:            0.500 pulses
+
+Stability Conclusion:
+  The system shows some stability issues that may need attention:
+  - Step 1 (0.20 m/s): Slow settling
+  - Step 3 (0.60 m/s): Slow settling
+  - Step 4 (-0.30 m/s): Slow settling
+
+  Consider PID retuning if performance is critical.
+
+================================================================================
+END OF REPORT
+================================================================================
