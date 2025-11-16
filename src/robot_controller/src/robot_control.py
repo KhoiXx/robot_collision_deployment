@@ -215,6 +215,29 @@ class RobotControl:
         odom.twist.twist.linear.x = linear_vel
         odom.twist.twist.angular.z = angular_vel
 
+        # CRITICAL: Set covariance matrices to prevent UKF NaN errors
+        # Pose covariance (x, y, z, rotation about X, Y, Z) - 6x6 = 36 elements
+        # Wheel odometry is good for position but orientation drifts
+        odom.pose.covariance = [
+            0.001, 0,     0,     0,     0,     0,      # x variance = 0.001 m^2
+            0,     0.001, 0,     0,     0,     0,      # y variance = 0.001 m^2
+            0,     0,     1e6,   0,     0,     0,      # z variance = large (not measured)
+            0,     0,     0,     1e6,   0,     0,      # roll variance = large (not measured)
+            0,     0,     0,     0,     1e6,   0,      # pitch variance = large (not measured)
+            0,     0,     0,     0,     0,     0.05    # yaw variance = 0.05 rad^2 (drifts over time)
+        ]
+
+        # Twist covariance (vx, vy, vz, vroll, vpitch, vyaw) - 6x6 = 36 elements
+        # Wheel odometry velocity is reliable
+        odom.twist.covariance = [
+            0.001, 0,     0,     0,     0,     0,      # vx variance = 0.001 (m/s)^2
+            0,     0.001, 0,     0,     0,     0,      # vy variance = 0.001 (m/s)^2
+            0,     0,     1e6,   0,     0,     0,      # vz variance = large (not measured)
+            0,     0,     0,     1e6,   0,     0,      # vroll variance = large (not measured)
+            0,     0,     0,     0,     1e6,   0,      # vpitch variance = large (not measured)
+            0,     0,     0,     0,     0,     0.01    # vyaw variance = 0.01 (rad/s)^2
+        ]
+
         # Publish odom
         self.odom_pub.publish(odom)
         self.odom_broadcaster.sendTransform(

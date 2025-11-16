@@ -96,6 +96,28 @@ def handleSerialData(raw_data, frame_id):
             imu_msg.linear_acceleration.y = acceleration[1]
             imu_msg.linear_acceleration.z = acceleration[2]
 
+            # CRITICAL: Set covariance matrices to prevent UKF NaN errors
+            # Orientation covariance (roll, pitch, yaw) - Conservative values
+            imu_msg.orientation_covariance = [
+                0.0025, 0,      0,      # roll variance = 0.0025 rad^2 (~2.86 deg std)
+                0,      0.0025, 0,      # pitch variance
+                0,      0,      0.0025  # yaw variance
+            ]
+
+            # Angular velocity covariance (wx, wy, wz)
+            imu_msg.angular_velocity_covariance = [
+                0.02, 0,    0,    # wx variance
+                0,    0.02, 0,    # wy variance
+                0,    0,    0.02  # wz variance
+            ]
+
+            # Linear acceleration covariance (ax, ay, az)
+            imu_msg.linear_acceleration_covariance = [
+                0.04, 0,    0,    # ax variance
+                0,    0.04, 0,    # ay variance
+                0,    0,    0.04  # az variance
+            ]
+
             mag_msg.magnetic_field.x = magnetometer[0]
             mag_msg.magnetic_field.y = magnetometer[1]
             mag_msg.magnetic_field.z = magnetometer[2]
