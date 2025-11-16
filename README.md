@@ -49,9 +49,11 @@ python3 src/robot_controller/src/run_model_safe.py --robot_id 0
 
 ## 🏗️ ARCHITECTURE OVERVIEW
 
+### Decentralized Algorithm + Centralized Inference
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        MASTER PC                             │
+│                   MASTER PC (Inference)                      │
 │  ┌──────────┐  ┌──────┐  ┌────────────┐  ┌──────────────┐  │
 │  │ roscore  │  │ Map  │  │ AMCL (n×)  │  │ Model (n×)   │  │
 │  └──────────┘  └──────┘  └────────────┘  └──────────────┘  │
@@ -72,10 +74,20 @@ python3 src/robot_controller/src/run_model_safe.py --robot_id 0
        Robot 0                                         Robot 1
 ```
 
-**Why distributed?**
+**Terminology**:
+- **Algorithm**: Decentralized (each robot decides independently, no communication)
+- **Inference**: Centralized on Master PC (Jetson can't handle multiple models)
+- **Execution**: Distributed (motors on each robot)
+
+**Why centralized inference?**
 - Jetson (4GB RAM, weak GPU) can't run model inference for multiple robots
 - Master PC has powerful CPU/GPU for batch inference
 - Trade-off: Network latency (10-50ms) vs computational power
+
+**Still "decentralized" because**:
+- Each robot's policy uses ONLY its own observations (LiDAR, goal)
+- No inter-robot communication
+- Scalable (N robots = N independent policies)
 
 ---
 

@@ -18,7 +18,7 @@
 
 ## 🏗️ ARCHITECTURE
 
-### Distributed Multi-Robot System
+### Decentralized Algorithm with Centralized Inference
 
 ```
 ┌─────────────────────── MASTER PC (192.168.1.100) ────────────────────────┐
@@ -42,21 +42,24 @@
        Robot 0                                          Robot 1
 ```
 
-### Why Centralized Inference?
+### Why This Architecture?
 
-**Jetson Limitations**:
-- 4GB RAM, weak GPU (Maxwell architecture)
-- ARM CPU not optimized for PyTorch
-- Cannot handle multiple robot inferences simultaneously
+**Algorithm: Decentralized**
+- ✅ Each robot uses ONLY its own observations (LiDAR, goal position)
+- ✅ No inter-robot communication needed
+- ✅ Policy doesn't know what other robots are doing
+- ✅ Sees other robots as dynamic obstacles via LiDAR
+- ✅ Scalable: N robots = N independent policies
 
-**Master PC Advantages**:
-- Powerful CPU/GPU (can be desktop with NVIDIA GPU)
-- Can batch inference for N robots
-- 16GB+ RAM for model loading
+**Inference: Centralized on Master PC**
+- **Jetson limitations**: 4GB RAM, weak GPU, ARM CPU not optimized for PyTorch
+- **Master PC advantages**: Powerful CPU/GPU, can batch inference for N robots
+- **Trade-off**: Network latency 10-50ms (acceptable vs 100ms control period)
 
-**Trade-off**:
-- **Benefit**: Computational power, batch processing
-- **Cost**: Network latency 10-50ms (acceptable vs 100ms control period)
+**Key distinction**:
+- "Decentralized" refers to the ALGORITHM (independent decision making)
+- NOT the physical location of computation
+- Same as paper (Long et al. 2018) - decentralized multi-robot collision avoidance
 
 ---
 
