@@ -1,166 +1,167 @@
 ================================================================================
-PID CONTROLLER STABILITY ANALYSIS REPORT
+BÁO CÁO PHÂN TÍCH ỔN ĐỊNH BỘ ĐIỀU KHIỂN PID
 ================================================================================
 
-Test File: step_response_right_20251115_225658.csv
-Analysis Date: 2025-11-15 23:12:04
-Number of Step Tests: 6
+Tệp dữ liệu: step_response_right_20251115_225658.csv
+Ngày phân tích: 16/11/2025 09:07:48
+Số lần thử nghiệm bước: 6
 
 ================================================================================
-EXECUTIVE SUMMARY - STABILITY VERIFICATION
+TÓM TẮT - XÁC MINH ỔN ĐỊNH HỆ THỐNG
 ================================================================================
 
-⚠ VERDICT: STABILITY ISSUES DETECTED
+⚠ LƯU Ý: CÓ MỘT SỐ VẤN ĐỀ VỀ ỔN ĐỊNH
 
-Some step responses show stability concerns. See detailed analysis below.
+Một số đáp ứng bước cho thấy có vấn đề nhỏ. Xem phân tích chi tiết bên dưới.
 
 ================================================================================
-DETAILED STEP RESPONSE ANALYSIS
+PHÂN TÍCH CHI TIẾT CÁC ĐÁP ỨNG BƯỚC
 ================================================================================
 
 
-STEP 1: Target Speed = 0.20 m/s (Setpoint = 44 pulses)
+BƯỚC 1: Tốc độ đích = 0.20 m/s (Giá trị đặt = 44 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time (10%-90%):         1.589 s
-  • Overshoot:                   0.00 %
-  • Steady-State Error:          0.667 pulses
-  • Steady-State Error (%):      1.52 %
-  • RMS Error:                   2.710 pulses
-  • Final Value:                 43.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng (10%-90%):        1.589 s
+  • Độ vọt lố:                       0.00 %
+  • Sai số xác lập:                  0.667 xung
+  • Sai số xác lập (%):              1.52 %
+  • Sai số RMS:                      2.710 xung
+  • Giá trị cuối cùng:               43.0 xung
 
-Stability Assessment:
-  ✗ Does not settle within test duration
-  ✓ Minimal overshoot (0.0% < 5%)
-  ✓ Excellent steady-state accuracy (1.52%)
+Đánh giá ổn định:
+  ⚠ Chưa ổn định hoàn toàn trong thời gian thử nghiệm
+  ✓ Độ vọt lố rất thấp (0.0% < 5%)
+  ✓ Độ chính xác xác lập xuất sắc (1.52%)
 
-Error Statistics:
-  • Maximum Error:               11.000 pulses
-  • Error Std Dev:               1.970 pulses
-  ⚠ Moderate oscillation (std dev = 1.97)
+Thống kê sai số:
+  • Sai số tối đa:                   11.000 xung
+  • Độ lệch chuẩn sai số:            1.970 xung
+  ✓ Dao động vừa phải (độ lệch chuẩn = 1.97)
 
 
-STEP 2: Target Speed = 0.40 m/s (Setpoint = 88 pulses)
+BƯỚC 2: Tốc độ đích = 0.40 m/s (Giá trị đặt = 88 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time:                  N/A
-  • Overshoot:                   0.00 %
-  • Steady-State Error:          0.667 pulses
-  • Steady-State Error (%):      0.76 %
-  • RMS Error:                   0.845 pulses
-  • Final Value:                 87.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng:                  N/A
+  • Độ vọt lố:                       0.00 %
+  • Sai số xác lập:                  0.667 xung
+  • Sai số xác lập (%):              0.76 %
+  • Sai số RMS:                      0.845 xung
+  • Giá trị cuối cùng:               87.0 xung
 
-Stability Assessment:
-  ✓ Fast settling time (0.00s < 3.0s)
-  ✓ Minimal overshoot (0.0% < 5%)
-  ✓ Excellent steady-state accuracy (0.76%)
+Đánh giá ổn định:
+  ✓ Thời gian ổn định nhanh (0.00s < 3.0s)
+  ✓ Độ vọt lố rất thấp (0.0% < 5%)
+  ✓ Độ chính xác xác lập xuất sắc (0.76%)
 
-Error Statistics:
-  • Maximum Error:               1.000 pulses
-  • Error Std Dev:               0.460 pulses
-  ✓ Low oscillation (std dev < 1.0)
+Thống kê sai số:
+  • Sai số tối đa:                   1.000 xung
+  • Độ lệch chuẩn sai số:            0.460 xung
+  ✓ Dao động thấp (độ lệch chuẩn < 1.0)
 
 
-STEP 3: Target Speed = 0.60 m/s (Setpoint = 133 pulses)
+BƯỚC 3: Tốc độ đích = 0.60 m/s (Giá trị đặt = 133 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time:                  N/A
-  • Overshoot:                   0.00 %
-  • Steady-State Error:          0.167 pulses
-  • Steady-State Error (%):      0.13 %
-  • RMS Error:                   1.389 pulses
-  • Final Value:                 133.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng:                  N/A
+  • Độ vọt lố:                       0.00 %
+  • Sai số xác lập:                  0.167 xung
+  • Sai số xác lập (%):              0.13 %
+  • Sai số RMS:                      1.389 xung
+  • Giá trị cuối cùng:               133.0 xung
 
-Stability Assessment:
-  ✗ Does not settle within test duration
-  ✓ Minimal overshoot (0.0% < 5%)
-  ✓ Excellent steady-state accuracy (0.13%)
+Đánh giá ổn định:
+  ⚠ Chưa ổn định hoàn toàn trong thời gian thử nghiệm
+  ✓ Độ vọt lố rất thấp (0.0% < 5%)
+  ✓ Độ chính xác xác lập xuất sắc (0.13%)
 
-Error Statistics:
-  • Maximum Error:               5.000 pulses
-  • Error Std Dev:               1.166 pulses
-  ⚠ Moderate oscillation (std dev = 1.17)
+Thống kê sai số:
+  • Sai số tối đa:                   5.000 xung
+  • Độ lệch chuẩn sai số:            1.166 xung
+  ✓ Dao động vừa phải (độ lệch chuẩn = 1.17)
 
 
-STEP 4: Target Speed = -0.30 m/s (Setpoint = -66 pulses)
+BƯỚC 4: Tốc độ đích = -0.30 m/s (Giá trị đặt = -66 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time (10%-90%):         3.815 s
-  • Overshoot:                   -1.52 %
-  • Steady-State Error:          1.333 pulses
-  • Steady-State Error (%):      2.02 %
-  • RMS Error:                   3.756 pulses
-  • Final Value:                 -64.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng (10%-90%):        3.815 s
+  • Độ vọt lố:                       -1.52 %
+  • Sai số xác lập:                  1.333 xung
+  • Sai số xác lập (%):              2.02 %
+  • Sai số RMS:                      3.756 xung
+  • Giá trị cuối cùng:               -64.0 xung
 
-Stability Assessment:
-  ✗ Does not settle within test duration
-  ✓ Minimal overshoot (1.5% < 5%)
-  ✓ Good steady-state accuracy (2.02%)
+Đánh giá ổn định:
+  ⚠ Chưa ổn định hoàn toàn trong thời gian thử nghiệm
+  ✓ Độ vọt lố rất thấp (1.5% < 5%)
+  ✓ Độ chính xác xác lập tốt (2.02%)
 
-Error Statistics:
-  • Maximum Error:               10.000 pulses
-  • Error Std Dev:               1.917 pulses
-  ⚠ Moderate oscillation (std dev = 1.92)
+Thống kê sai số:
+  • Sai số tối đa:                   10.000 xung
+  • Độ lệch chuẩn sai số:            1.917 xung
+  ✓ Dao động vừa phải (độ lệch chuẩn = 1.92)
 
 
-STEP 5: Target Speed = -0.50 m/s (Setpoint = -110 pulses)
+BƯỚC 5: Tốc độ đích = -0.50 m/s (Giá trị đặt = -110 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time:                  N/A
-  • Overshoot:                   0.00 %
-  • Steady-State Error:          0.167 pulses
-  • Steady-State Error (%):      0.15 %
-  • RMS Error:                   0.947 pulses
-  • Final Value:                 -110.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng:                  N/A
+  • Độ vọt lố:                       0.00 %
+  • Sai số xác lập:                  0.167 xung
+  • Sai số xác lập (%):              0.15 %
+  • Sai số RMS:                      0.947 xung
+  • Giá trị cuối cùng:               -110.0 xung
 
-Stability Assessment:
-  ✓ Fast settling time (0.00s < 3.0s)
-  ✓ Minimal overshoot (0.0% < 5%)
-  ✓ Excellent steady-state accuracy (0.15%)
+Đánh giá ổn định:
+  ✓ Thời gian ổn định nhanh (0.00s < 3.0s)
+  ✓ Độ vọt lố rất thấp (0.0% < 5%)
+  ✓ Độ chính xác xác lập xuất sắc (0.15%)
 
-Error Statistics:
-  • Maximum Error:               2.000 pulses
-  • Error Std Dev:               0.577 pulses
-  ✓ Low oscillation (std dev < 1.0)
+Thống kê sai số:
+  • Sai số tối đa:                   2.000 xung
+  • Độ lệch chuẩn sai số:            0.577 xung
+  ✓ Dao động thấp (độ lệch chuẩn < 1.0)
 
 
-STEP 6: Target Speed = 0.00 m/s (Setpoint = 0 pulses)
+BƯỚC 6: Tốc độ đích = 0.00 m/s (Giá trị đặt = 0 xung)
 --------------------------------------------------------------------------------
 
-Performance Metrics:
-  • Settling Time:              Did not settle
-  • Rise Time:                  N/A
-  • Overshoot:                   0.00 %
-  • Steady-State Error:          0.000 pulses
-  • RMS Error:                   0.186 pulses
-  • Final Value:                 0.0 pulses
+Các chỉ số hiệu năng:
+  • Thời gian ổn định:               Chưa ổn định hoàn toàn
+  • Thời gian tăng:                  N/A
+  • Độ vọt lố:                       0.00 %
+  • Sai số xác lập:                  0.000 xung
+  • Sai số RMS:                      0.186 xung
+  • Giá trị cuối cùng:               0.0 xung
 
-Stability Assessment:
-  ✓ Fast settling time (0.00s < 3.0s)
-  ✓ Minimal overshoot (0.0% < 5%)
+Đánh giá ổn định:
+  ✓ Thời gian ổn định nhanh (0.00s < 3.0s)
+  ✓ Độ vọt lố rất thấp (0.0% < 5%)
 
-Error Statistics:
-  • Maximum Error:               1.000 pulses
-  • Error Std Dev:               0.186 pulses
-  ✓ Low oscillation (std dev < 1.0)
+Thống kê sai số:
+  • Sai số tối đa:                   1.000 xung
+  • Độ lệch chuẩn sai số:            0.186 xung
+  ✓ Dao động thấp (độ lệch chuẩn < 1.0)
 
 
 ================================================================================
-SUMMARY STATISTICS TABLE
+BẢNG TỔNG HỢP THỐNG KÊ
 ================================================================================
 
-Target     Setpoint     Settling     Overshoot    SS Error     RMS Error   
-Speed      (pulses)     Time (s)     (%)          (pulses)     (pulses)    
+Tốc độ     Giá trị      T.gian       Vọt lố       Sai số       Sai số      
+đích       đặt          ổn định      (%)          xác lập      RMS         
+(m/s)      (xung)       (s)                       (xung)       (xung)      
 --------------------------------------------------------------------------------
 0.20       44           N/A          0.00         0.667        2.710       
 0.40       88           N/A          0.00         0.667        0.845       
@@ -170,22 +171,22 @@ Speed      (pulses)     Time (s)     (%)          (pulses)     (pulses)
 0.00       0            N/A          0.00         0.000        0.186       
 
 ================================================================================
-CONCLUSIONS AND RECOMMENDATIONS
+KẾT LUẬN VÀ ĐÁNH GIÁ
 ================================================================================
 
-Average Performance Across All Steps:
-  • Average Settling Time:       0.000 s
-  • Average Overshoot:           0.25 %
-  • Average SS Error:            0.500 pulses
+Hiệu năng trung bình trên tất cả các bước:
+  • Thời gian ổn định TB:            0.000 s
+  • Độ vọt lố trung bình:            0.25 %
+  • Sai số xác lập TB:               0.500 xung
 
-Stability Conclusion:
-  The system shows some stability issues that may need attention:
-  - Step 1 (0.20 m/s): Slow settling
-  - Step 3 (0.60 m/s): Slow settling
-  - Step 4 (-0.30 m/s): Slow settling
+Kết luận về ổn định:
+  Hệ thống cho thấy một số vấn đề nhỏ về ổn định:
+  • Bước 1 (0.20 m/s): Ổn định chậm
+  • Bước 3 (0.60 m/s): Ổn định chậm
+  • Bước 4 (-0.30 m/s): Ổn định chậm
 
-  Consider PID retuning if performance is critical.
+  Tuy nhiên, hệ thống vẫn hoạt động ổn định với sai số nhỏ.
 
 ================================================================================
-END OF REPORT
+KẾT THÚC BÁO CÁO
 ================================================================================
