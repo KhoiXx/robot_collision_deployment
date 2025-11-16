@@ -1,0 +1,50 @@
+# AMCL Configuration for Real Robot Navigation
+# Tuned for differential drive robot with LiDAR sensor
+
+# Odometry model parameters (differential drive)
+odom_model_type: diff
+odom_alpha1: 0.2  # Rotation noise from rotation
+odom_alpha2: 0.2  # Rotation noise from translation
+odom_alpha3: 0.2  # Translation noise from translation
+odom_alpha4: 0.2  # Translation noise from rotation
+odom_alpha5: 0.1  # Translation noise
+
+# Laser model parameters
+laser_model_type: likelihood_field
+laser_max_beams: 60           # Reduce from 720 for efficiency
+laser_z_hit: 0.95             # Weight for correct measurements
+laser_z_rand: 0.05            # Weight for random measurements
+laser_sigma_hit: 0.2          # Standard deviation of hit measurements
+laser_likelihood_max_dist: 2.0  # Maximum distance to consider
+
+# Particle filter parameters
+min_particles: 100            # Minimum particles
+max_particles: 500            # Maximum particles
+kld_err: 0.05                 # KLD sampling error
+kld_z: 0.99                   # KLD sampling confidence
+
+# Update thresholds
+update_min_d: 0.2             # Minimum translation for update (meters)
+update_min_a: 0.5             # Minimum rotation for update (radians)
+resample_interval: 1          # Resample every N updates
+
+# Transform tolerance
+transform_tolerance: 0.2      # Seconds to post-date transforms
+
+# Initial pose uncertainty (when setting initial pose in RViz)
+initial_pose_x: 0.0
+initial_pose_y: 0.0
+initial_pose_a: 0.0
+initial_cov_xx: 0.25          # Variance in X (meters^2)
+initial_cov_yy: 0.25          # Variance in Y (meters^2)
+initial_cov_aa: 0.068         # Variance in yaw (~15 degrees)
+
+# Recovery parameters
+recovery_alpha_slow: 0.0      # Exponential decay rate for slow average
+recovery_alpha_fast: 0.0      # Exponential decay rate for fast average
+
+# Tuning notes:
+# - If localization is unstable: increase min_particles, max_particles
+# - If localization is slow: decrease laser_max_beams
+# - If too sensitive to odometry: decrease odom_alpha values
+# - If not sensitive enough to measurements: increase laser_z_hit

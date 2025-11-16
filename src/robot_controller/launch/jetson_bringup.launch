@@ -1,0 +1,75 @@
+<launch>
+    <!-- Jetson Bringup Launch File
+         To be run ON EACH JETSON robot
+
+         Prerequisites:
+         - ROS_MASTER_URI set to Master PC IP
+         - ROS_HOSTNAME set to this Jetson's IP
+
+         Usage:
+         roslaunch robot_controller jetson_bringup.launch robot_id:=0
+    -->
+
+    <arg name="robot_id" default="0"/>
+    <arg name="robot_namespace" default="/robot_$(arg robot_id)"/>
+    <arg name="lidar_port" default="/dev/lidar"/>
+    <arg name="imu_port" default="/dev/imu"/>
+    <arg name="laser_scan_topic_name" default="$(arg robot_namespace)/scan"/>
+
+    <!-- ============================================== -->
+    <!-- SENSOR DRIVERS -->
+    <!-- ============================================== -->
+
+    <!-- LiDAR Driver -->
+    <include file="$(find ldlidar_ros)/launch/ld19.launch">
+        <arg name="port_name" value="$(arg lidar_port)"/>
+        <arg name="laser_scan_topic_name" value="$(arg laser_scan_topic_name)"/>
+    </include>
+
+    <!-- IMU Driver -->
+    <node pkg="wit_ros_imu" type="wit_normal_ros.py" name="imu_node" output="screen">
+        <param name="port" type="str" value="$(arg imu_port)"/>
+        <param name="baud" type="int" value="9600"/>
+        <param name="frame_id" value="dummy_base_link"/>
+        <remap from="/wit/imu" to="$(arg robot_namespace)/imu/data"/>
+        <remap from="/wit/yaw" to="$(arg robot_namespace)/imu/yaw"/>
+    </node>
+
+    <!-- ============================================== -->
+    <!-- MOTOR CONTROL -->
+    <!-- ============================================== -->
+
+    <!-- Motor controller - subscribes to cmd_vel, controls ESP32 via serial -->
+    <node pkg="robot_controller" type="run_robot.py" name="motor_controller"
+          ns="$(arg robot_namespace)" output="screen">
+        <param name="robot_id" value="$(arg robot_id)"/>
+    </node>
+
+    <!-- ============================================== -->
+    <!-- SENSOR FUSION -->
+    <!-- ============================================== -->
+
+    <!-- UKF for sensor fusion (IMU + Encoder odometry) -->
+    <node pkg="robot_localization" type="ukf_localization_node" name="ukf_localization_node" output="screen">
+        <rosparam command="load" file="$(find robot_controller)/config/ukf.yml"/>
+        <param name="robot_namespace" value="$(arg robot_namespace)"/>
+        <remap from="/odometry/filtered" to="$(arg robot_namespace)/odometry/filtered"/>
+    </node>
+
+    <!-- ============================================== -->
+    <!-- SERVICES -->
+    <!-- ============================================== -->
+
+    <!-- Robot counter service (only on robot 0 to avoid conflicts) -->
+    <node pkg="robot_controller" type="robot_counter_service.py" name="robot_counter_service"
+          output="screen" if="$(eval robot_id == 0)"/>
+
+    <!-- ============================================== -->
+    <!-- MONITORING -->
+    <!-- ============================================== -->
+
+    <!-- Optional: TF broadcaster for base_link -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster"
+          args="0 0 0 0 0 0 $(arg robot_namespace)/odom $(arg robot_namespace)/base_link 100"/> -->
+
+</launch>

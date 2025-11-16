@@ -1,0 +1,28 @@
+<launch>
+    <!-- Single Robot AMCL Launch File
+         Helper file to launch AMCL for one robot
+
+         Usage:
+         <include file="$(find robot_controller)/launch/amcl_single.launch">
+             <arg name="robot_namespace" value="/robot_0"/>
+         </include>
+    -->
+
+    <arg name="robot_namespace"/>
+
+    <node pkg="amcl" type="amcl" name="amcl" ns="$(arg robot_namespace)" output="screen">
+        <!-- Load AMCL configuration from yaml file -->
+        <rosparam command="load" file="$(find robot_controller)/config/amcl.yaml"/>
+
+        <!-- Frame IDs -->
+        <param name="odom_frame_id" value="$(arg robot_namespace)/odom"/>
+        <param name="base_frame_id" value="dummy_base_link"/>
+        <param name="global_frame_id" value="map"/>
+
+        <!-- Topic remapping -->
+        <remap from="scan" to="$(arg robot_namespace)/scan"/>
+        <remap from="initialpose" to="$(arg robot_namespace)/initialpose"/>
+        <remap from="amcl_pose" to="$(arg robot_namespace)/amcl_pose"/>
+        <remap from="map" to="/map"/>  <!-- All robots share same map -->
+    </node>
+</launch>
