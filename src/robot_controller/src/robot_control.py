@@ -224,9 +224,13 @@ class RobotControl:
         linear_vel = (self.right_vel + self.left_vel) / 2
         angular_vel = (self.right_vel - self.left_vel) / ROBOT_WHEEL_DISTANCE
 
-        # DEADBAND: Lọc nhiễu encoder khi đứng im
-        VEL_DEADBAND = 0.005  # m/s - dưới ngưỡng này = 0
-        ANGVEL_DEADBAND = 0.01  # rad/s
+        # DEADBAND: Lọc nhiễu encoder khi đứng im - TĂNG MẠNH
+        VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
+        ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
+
+        # Debug: Log raw encoder values
+        if abs(linear_vel) > 0.001 or abs(angular_vel) > 0.001:
+            rospy.loginfo_throttle(2.0, f"Raw encoders - Left: {self.left_vel:.4f}, Right: {self.right_vel:.4f}, Linear: {linear_vel:.4f}, Angular: {angular_vel:.4f}")
 
         if abs(linear_vel) < VEL_DEADBAND:
             linear_vel = 0.0
@@ -237,19 +241,22 @@ class RobotControl:
         current_time = rospy.Time.now()
         self.current_time = current_time
         dt = (current_time - self.last_time).to_sec()
-        delta_x = linear_vel * dt * np.cos(self.current_theta)
-        delta_y = linear_vel * dt * np.sin(self.current_theta)
-        delta_theta = angular_vel * dt
 
-        # Cập nhật vị trí và hướng của robot
-        self.current_x += delta_x
-        self.current_y += delta_y
+        # CHỈ tích phân khi có chuyển động thực sự
+        if abs(linear_vel) > 0.0 or abs(angular_vel) > 0.0:
+            delta_x = linear_vel * dt * np.cos(self.current_theta)
+            delta_y = linear_vel * dt * np.sin(self.current_theta)
+            delta_theta = angular_vel * dt
+
+            # Cập nhật vị trí và hướng của robot
+            self.current_x += delta_x
+            self.current_y += delta_y
+            self.current_theta += delta_theta
+        # else: KHÔNG cập nhật gì cả khi đứng im
 
         # rospy.loginfo(f"Encoder position: x: {self.current_x}, y: {self.current_y};")
         # rospy.loginfo(f"IMU position: x: {self.imu_x}, y: {self.imu_y};")
 
-        # self.current_theta = self.imu_yaw
-        self.current_theta += delta_theta
         self.last_time = current_time
 
         # Publish dữ liệu odometry
