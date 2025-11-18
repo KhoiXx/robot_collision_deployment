@@ -219,10 +219,19 @@ class RobotControl:
         self.read_serial()
         # self.last_time_get_speed = self.current_time
 
-        
+
         # Tính toán vận tốc dài và vận tốc góc của robot
         linear_vel = (self.right_vel + self.left_vel) / 2
         angular_vel = (self.right_vel - self.left_vel) / ROBOT_WHEEL_DISTANCE
+
+        # DEADBAND: Lọc nhiễu encoder khi đứng im
+        VEL_DEADBAND = 0.005  # m/s - dưới ngưỡng này = 0
+        ANGVEL_DEADBAND = 0.01  # rad/s
+
+        if abs(linear_vel) < VEL_DEADBAND:
+            linear_vel = 0.0
+        if abs(angular_vel) < ANGVEL_DEADBAND:
+            angular_vel = 0.0
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
@@ -277,22 +286,29 @@ class RobotControl:
         ]
 
         # Twist covariance (vx, vy, vz, vroll, vpitch, vyaw) - 6x6 = 36 elements
-        # Wheel odometry velocity is reliable
+        # ĐỘNG: Khi velocity = 0, tăng covariance
+        is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
+        vel_cov = 0.05 if is_stationary else 0.001  # Tăng covariance khi đứng im
+        angvel_cov = 0.1 if is_stationary else 0.01
+
         odom.twist.covariance = [
-            0.001, 0,     0,     0,     0,     0,      # vx variance = 0.001 (m/s)^2
-            0,     0.001, 0,     0,     0,     0,      # vy variance = 0.001 (m/s)^2
-            0,     0,     1e6,   0,     0,     0,      # vz variance = large (not measured)
-            0,     0,     0,     1e6,   0,     0,      # vroll variance = large (not measured)
-            0,     0,     0,     0,     1e6,   0,      # vpitch variance = large (not measured)
-            0,     0,     0,     0,     0,     0.01    # vyaw variance = 0.01 (rad/s)^2
+            vel_cov, 0,       0,     0,     0,     0,         # vx variance
+            0,       vel_cov, 0,     0,     0,     0,         # vy variance
+            0,       0,       1e6,   0,     0,     0,         # vz variance = large (not measured)
+            0,       0,       0,     1e6,   0,     0,         # vroll variance = large (not measured)
+            0,       0,       0,     0,     1e6,   0,         # vpitch variance = large (not measured)
+            0,       0,       0,     0,     0,     angvel_cov # vyaw variance
         ]
 
         # Publish odom
         self.odom_pub.publish(odom)
-        self.odom_broadcaster.sendTransform(
-            (self.current_x, self.current_y, 0.0),
-            q,
-            self.current_time,
-            "dummy_base_link",
-            "/robot_0/odom",
-        )
+
+        # NOTE: TF được publish bởi UKF (với sensor fusion IMU+encoder)
+        # KHÔNG publish TF ở đây để tránh conflict
+        # self.odom_broadcaster.sendTransform(
+        #     (self.current_x, self.current_y, 0.0),
+        #     q,
+        #     self.current_time,
+        #     "dummy_base_link",
+        #     "/robot_0/odom",
+        # )
