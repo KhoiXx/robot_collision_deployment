@@ -3,52 +3,53 @@
 # Fusion: Wheel Odometry + IMU
 # ==============================================================================
 
-frequency: 25
-sensor_timeout: 0.1
+frequency: 22  # Tối ưu cho Jetson Nano
+sensor_timeout: 0.3  # Tăng tolerance để tránh timeout với freq thấp hơn
 two_d_mode: true
-print_diagnostics: true
+print_diagnostics: false  # TẮT để giảm CPU load
+publish_acceleration: false  # Không cần publish acceleration
 
 # Frame configuration
 odom_frame: robot_0/odom
 base_link_frame: dummy_base_link
 world_frame: robot_0/odom
-publish_tf: false
+publish_tf: true  # BẬT để publish TF: odom → base_link
 
 # ==============================================================================
 # SENSOR 0: Wheel Odometry
 # ==============================================================================
 odom0: /robot_0/odom
-odom0_config: [true,  true,  false,   # x, y, z position
-               false, false, false,   # roll, pitch, yaw
-               true,  true,  false,   # x_vel, y_vel, z_vel
-               false, false, true,    # roll_vel, pitch_vel, yaw_vel
+odom0_config: [true,  true,  false,   # x, y, z position - TIN TƯỞNG
+               false, false, false,   # roll, pitch, yaw - KHÔNG DÙNG (dùng IMU)
+               true,  true,  false,   # x_vel, y_vel, z_vel - TIN TƯỞNG
+               false, false, false,   # roll_vel, pitch_vel, yaw_vel - KHÔNG DÙNG
                false, false, false]   # x_acc, y_acc, z_acc
-odom0_queue_size: 10
+odom0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 odom0_differential: false
 odom0_relative: false
 
 # Rejection thresholds (Mahalanobis distance)
 odom0_pose_rejection_threshold: 5.0
-odom0_twist_rejection_threshold: 2.0
+odom0_twist_rejection_threshold: 3.0  # Tăng tolerance
 
 # ==============================================================================
 # SENSOR 1: IMU
 # ==============================================================================
 imu0: /robot_0/imu/data
 imu0_config: [false, false, false,   # x, y, z position
-              true,  true,  true,    # roll, pitch, yaw (orientation)
+              false, false, true,    # roll, pitch, yaw - CHỈ DÙNG YAW (quan trọng!)
               false, false, false,   # x_vel, y_vel, z_vel
-              true,  true,  true,    # roll_vel, pitch_vel, yaw_vel (angular velocity)
-              true,  true,  false]   # x_acc, y_acc, z_acc (linear acceleration - only x,y in 2D)
-imu0_queue_size: 10
+              false, false, true,    # roll_vel, pitch_vel, yaw_vel - CHỈ DÙNG YAW VELOCITY
+              true,  true,  false]   # x_acc, y_acc, z_acc - Dùng để estimate velocity
+imu0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 imu0_remove_gravitational_acceleration: true
 imu0_differential: false
 imu0_relative: false
 
-# IMU rejection thresholds
-imu0_pose_rejection_threshold: 0.8
-imu0_twist_rejection_threshold: 0.8
-imu0_linear_acceleration_rejection_threshold: 0.8
+# IMU rejection thresholds - Giảm để tin IMU hơn
+imu0_pose_rejection_threshold: 3.0  # TĂNG - tin yaw từ IMU
+imu0_twist_rejection_threshold: 1.5  # TĂNG
+imu0_linear_acceleration_rejection_threshold: 1.5  # TĂNG
 
 # ==============================================================================
 # PROCESS NOISE COVARIANCE (CRITICAL - prevents NaN)
