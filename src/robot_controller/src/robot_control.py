@@ -39,6 +39,12 @@ class RobotControl:
         self.last_time = rospy.Time.now()
         self.last_time_get_speed = rospy.Time.now()
 
+        # Yaw correction for straight motion drift prevention
+        self.yaw_correction_active = False
+        self.yaw_at_straight_start = 0.0
+        self.last_commanded_v = 0.0
+        self.last_commanded_w = 0.0
+
         self.imu_vx = 0.0
         self.imu_vy = 0.0
         self.imu_x = 0.0
@@ -64,6 +70,49 @@ class RobotControl:
     def cmd_vel_callback(self, cmd: Twist):
         v = cmd.linear.x
         w = cmd.angular.z
+
+        # ==================================================================
+        # LAYER 2: IMU Yaw Correction for Straight Motion Drift
+        # ==================================================================
+
+        abs_w = abs(w)
+        abs_v = abs(v)
+
+        # Detect if we're attempting straight motion
+        if abs_w < 0.05 and abs_v > 0.1:  # Straight motion threshold
+            # Starting straight motion - record initial yaw
+            if not self.yaw_correction_active:
+                self.yaw_correction_active = True
+                self.yaw_at_straight_start = self.imu_yaw
+
+            # Calculate yaw drift
+            yaw_drift = self.imu_yaw - self.yaw_at_straight_start
+
+            # Only correct if drift exceeds threshold (0.1 rad = ~5.7 degrees)
+            if abs(yaw_drift) > 0.1:
+                # Apply conservative correction
+                KP_YAW = 0.4
+                w_correction = -KP_YAW * yaw_drift
+
+                # Limit max correction to avoid instability
+                MAX_CORRECTION = 0.15  # rad/s
+                if w_correction > MAX_CORRECTION:
+                    w_correction = MAX_CORRECTION
+                elif w_correction < -MAX_CORRECTION:
+                    w_correction = -MAX_CORRECTION
+
+                # Apply correction
+                w += w_correction
+
+                # rospy.loginfo_throttle(1.0, f"Yaw correction: drift={yaw_drift:.3f}, w_corr={w_correction:.3f}")
+        else:
+            # Not straight motion - disable correction
+            self.yaw_correction_active = False
+
+        # Store commanded values
+        self.last_commanded_v = v
+        self.last_commanded_w = w
+
         # rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
         self.send_command(
             CMD_VEL,

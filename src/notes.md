@@ -69,14 +69,14 @@ Remote to robot
 ssh khoixx@192.168.3.16
 
 #### On server
-export ROS_MASTER_URI=http://192.168.3.3:11311
-export ROS_HOSTNAME=192.168.3.3
+export ROS_MASTER_URI=http://192.168.3.13:11311
+export ROS_HOSTNAME=192.168.3.13
 source devel/setup.bash
 ros_core
 roslaunch robot_controller robot_navigation.launch
 roslaunch robot_controller teleop.launch
 
 #### On robot
-export ROS_MASTER_URI=http://192.168.3.3:11311
+export ROS_MASTER_URI=http://192.168.3.13:11311
 export ROS_HOSTNAME=192.168.3.
 roslaunch robot_controller robot_bringup.launch

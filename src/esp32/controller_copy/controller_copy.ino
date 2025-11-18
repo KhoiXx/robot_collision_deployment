@@ -36,6 +36,11 @@ const int baudRate = 115200;
 float leftWheelSpeed = 0.0;
 float rightWheelSpeed = 0.0;
 
+// Variables for wheel synchronization
+float setLeftWheelSpeed = 0.0;   // Track commanded speed for sync logic
+float setRightWheelSpeed = 0.0;
+float currentAngularVel = 0.0;    // Angular velocity for mode detection
+
 MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, DIRECT);
 MotorController rightWheel(18, 19, 21, 22, 23, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, REVERSE);
 
@@ -132,7 +137,7 @@ void sendPIDData(bool side) {
 }
 
 void handleCommand(byte commandCode, byte* data, byte length) {
-    float v, w, setLeftWheelSpeed, setRightWheelSpeed;
+    float v, w;
     // Serial.print("S");
     // Serial.print(" Handling command: ");
     // Serial.println(commandCode);
@@ -141,9 +146,14 @@ void handleCommand(byte commandCode, byte* data, byte length) {
         case CMD_VEL:
             v = *((float*) &data[0]);
             w = *((float*) &data[4]);
+
+            // Calculate wheel speeds from v and w
             setLeftWheelSpeed = v - (w * ROBOT_WHEEL_DISTANCE / 2.0);
-            leftWheel.setSpeed(setLeftWheelSpeed, Kpv(setLeftWheelSpeed));
             setRightWheelSpeed = v + (w * ROBOT_WHEEL_DISTANCE / 2.0);
+            currentAngularVel = w;  // Store for sync logic
+
+            // Set speeds to motors
+            leftWheel.setSpeed(setLeftWheelSpeed, Kpv(setLeftWheelSpeed));
             rightWheel.setSpeed(setRightWheelSpeed, Kpv(setRightWheelSpeed));
             break;
         case CMD_VEL_LEFT:
@@ -248,6 +258,43 @@ void loop() {
         // Run the PID control for both wheels
         leftWheel.runPID();
         rightWheel.runPID();
+
+        // ==================================================================
+        // WHEEL SYNCHRONIZATION: Cross-coupling to prevent straight drift
+        // ==================================================================
+
+        float absAngularVel = abs(currentAngularVel);
+
+        // Determine motion mode and sync strength
+        float Ksync = 0.0;
+        const int MAX_SYNC_ADJUSTMENT = 25;  // Limit adjustment to ±25 PWM for stability
+
+        if (absAngularVel < 0.05) {
+            // Pure straight motion (forward/backward) - STRONG sync
+            Ksync = 0.25;
+        } else if (absAngularVel < 0.3) {
+            // Mixed motion (curved path) - WEAK sync
+            Ksync = 0.08;
+        }
+        // else: Pure rotation (w >= 0.3) - NO sync
+
+        // Apply synchronization only if Ksync > 0
+        if (Ksync > 0.0) {
+            float leftSpeed = leftWheel.getCurrentSpeed();
+            float rightSpeed = rightWheel.getCurrentSpeed();
+            float speedError = leftSpeed - rightSpeed;
+
+            // Calculate adjustment with limit
+            int syncAdjustment = (int)(Ksync * speedError * 100.0);  // Scale for PWM range
+
+            // Clamp adjustment to prevent oscillation
+            if (syncAdjustment > MAX_SYNC_ADJUSTMENT) syncAdjustment = MAX_SYNC_ADJUSTMENT;
+            if (syncAdjustment < -MAX_SYNC_ADJUSTMENT) syncAdjustment = -MAX_SYNC_ADJUSTMENT;
+
+            // Apply cross-coupling: left slows down, right speeds up (or vice versa)
+            leftWheel.adjustOutput(-syncAdjustment);
+            rightWheel.adjustOutput(syncAdjustment);
+        }
     }
     parseSerialOneByte();
     // delay(50);

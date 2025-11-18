@@ -27,6 +27,7 @@ class MotorController{
         float getCurrentSpeed();
         long getEncoderPulse();
         int getOutput();
+        void adjustOutput(int adjustment);  // For cross-coupling synchronization
         double kp, ki, kd;
         float currentSpeed;
         int outputPwm;

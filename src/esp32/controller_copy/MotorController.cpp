@@ -128,3 +128,16 @@ void MotorController::runPID() {
     this->controlMotor((int)output);
     outputPwm = (int)output;
 }
+
+void MotorController::adjustOutput(int adjustment) {
+    // Apply adjustment while keeping PWM within safe limits [-255, 255]
+    int adjustedPwm = outputPwm + adjustment;
+
+    // Clamp to valid PWM range
+    if (adjustedPwm > 255) adjustedPwm = 255;
+    if (adjustedPwm < -255) adjustedPwm = -255;
+
+    // Apply adjusted PWM to motor
+    this->controlMotor(adjustedPwm);
+    outputPwm = adjustedPwm;
+}
