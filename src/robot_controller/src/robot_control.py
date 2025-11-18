@@ -44,6 +44,7 @@ class RobotControl:
         self.yaw_at_straight_start = 0.0
         self.last_commanded_v = 0.0
         self.last_commanded_w = 0.0
+        self.last_cmd_vel_time = rospy.Time.now()  # Track when last cmd_vel received
 
         self.imu_vx = 0.0
         self.imu_vy = 0.0
@@ -112,6 +113,7 @@ class RobotControl:
         # Store commanded values
         self.last_commanded_v = v
         self.last_commanded_w = w
+        self.last_cmd_vel_time = rospy.Time.now()  # Update timestamp
 
         # rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
         self.send_command(
@@ -203,7 +205,7 @@ class RobotControl:
                     left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
                     self.left_vel = round(left_vel, 4)
                     self.right_vel = round(right_vel, 4)
-                    rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
+                    # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")  # Comment to reduce spam
 
 
     def update_odometry(self, timer):
@@ -220,22 +222,32 @@ class RobotControl:
         # self.last_time_get_speed = self.current_time
 
 
-        # Tính toán vận tốc dài và vận tốc góc của robot
-        linear_vel = (self.right_vel + self.left_vel) / 2
-        angular_vel = (self.right_vel - self.left_vel) / ROBOT_WHEEL_DISTANCE
+        # Check if cmd_vel stopped - FORCE zero if no command for > 0.3s
+        time_since_cmd = (rospy.Time.now() - self.last_cmd_vel_time).to_sec()
+        CMD_TIMEOUT = 0.3  # seconds
 
-        # DEADBAND: Lọc nhiễu encoder khi đứng im - TĂNG MẠNH
-        VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
-        ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
-
-        # Debug: Log raw encoder values
-        if abs(linear_vel) > 0.001 or abs(angular_vel) > 0.001:
-            rospy.loginfo_throttle(2.0, f"Raw encoders - Left: {self.left_vel:.4f}, Right: {self.right_vel:.4f}, Linear: {linear_vel:.4f}, Angular: {angular_vel:.4f}")
-
-        if abs(linear_vel) < VEL_DEADBAND:
+        if time_since_cmd > CMD_TIMEOUT or (abs(self.last_commanded_v) < 0.01 and abs(self.last_commanded_w) < 0.01):
+            # No command or zero command → FORCE velocities to 0
             linear_vel = 0.0
-        if abs(angular_vel) < ANGVEL_DEADBAND:
             angular_vel = 0.0
+            # rospy.loginfo_throttle(1.0, "Robot stationary - forcing velocity = 0")
+        else:
+            # Normal operation - calculate from encoders
+            linear_vel = (self.right_vel + self.left_vel) / 2
+            angular_vel = (self.right_vel - self.left_vel) / ROBOT_WHEEL_DISTANCE
+
+            # DEADBAND: Lọc nhiễu encoder khi đứng im
+            VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
+            ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
+
+            # Debug: Log raw encoder values (only when moving)
+            if abs(linear_vel) > VEL_DEADBAND or abs(angular_vel) > ANGVEL_DEADBAND:
+                rospy.loginfo_throttle(2.0, f"Moving - Left: {self.left_vel:.4f}, Right: {self.right_vel:.4f}")
+
+            if abs(linear_vel) < VEL_DEADBAND:
+                linear_vel = 0.0
+            if abs(angular_vel) < ANGVEL_DEADBAND:
+                angular_vel = 0.0
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
