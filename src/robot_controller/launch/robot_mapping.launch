@@ -13,8 +13,13 @@
         <param name="publish_frequency" value="50.0"/>
     </node>
 
-    <!-- ĐÃ XÓA Static TF vì UKF sẽ publish động: /robot_0/odom → dummy_base_link -->
-    <!-- UKF từ jetson_bringup.launch sẽ publish TF này dựa trên sensor fusion -->
+    <!-- TF: /robot_0/odom → dummy_base_link -->
+    <!-- OPTION 1: Static TF (simple, no sensor fusion) - ĐANG DÙNG -->
+    <node pkg="tf" type="static_transform_publisher" name="odom_to_dummy_base"
+          args="0 0 0 0 0 0 /robot_0/odom dummy_base_link 50"/>
+
+    <!-- OPTION 2: UKF TF (sensor fusion, nhưng có thể gây jump) - TẮT -->
+    <!-- UKF sẽ publish TF này từ jetson_bringup.launch nếu publish_tf=true -->
 
     <!-- Launch teleop_twist_keyboard for controlling the robot -->
     <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
@@ -32,11 +37,11 @@
         <!-- Remap scan topic -->
         <remap from="scan" to="$(arg laser_scan_topic_name)"/>
 
-        <!-- Motion Model Parameters - Tăng noise để tin scan matching hơn odom -->
-        <param name="srr" value="0.2"/>  <!-- Rotation noise from rotation - TĂNG -->
-        <param name="srt" value="0.3"/>  <!-- Rotation noise from translation - TĂNG -->
-        <param name="str" value="0.2"/>  <!-- Translation noise from rotation - TĂNG -->
-        <param name="stt" value="0.2"/>  <!-- Translation noise from translation - TĂNG -->
+        <!-- Motion Model Parameters - GIẢM để tin odometry hơn khi di chuyển -->
+        <param name="srr" value="0.1"/>  <!-- Rotation noise from rotation -->
+        <param name="srt" value="0.15"/>  <!-- Rotation noise from translation -->
+        <param name="str" value="0.1"/>  <!-- Translation noise from rotation -->
+        <param name="stt" value="0.1"/>  <!-- Translation noise from translation -->
 
         <!-- Update thresholds - Giảm để update thường xuyên hơn -->
         <param name="linearUpdate" value="0.1"/>  <!-- GIẢM từ 0.2 -->
@@ -53,7 +58,7 @@
         <param name="ymax" value="15.0"/>
 
         <!-- Particle filter parameters -->
-        <param name="particles" value="80"/>  <!-- TĂNG từ 50 để tracking tốt hơn -->
+        <param name="particles" value="100"/>  <!-- TĂNG thêm để tracking tốt hơn -->
         <param name="resampleThreshold" value="0.5"/>
 
         <!-- Laser parameters -->
@@ -61,10 +66,10 @@
         <param name="maxRange" value="6.0"/>   <!-- Max sensor range -->
 
         <!-- Scan matching parameters - QUAN TRỌNG cho loop closure -->
-        <param name="minimumScore" value="30"/>  <!-- GIẢM từ 50 để dễ match hơn -->
+        <param name="minimumScore" value="50"/>  <!-- Tăng lại để tránh false positive -->
         <param name="lstep" value="0.05"/>
         <param name="astep" value="0.05"/>
-        <param name="iterations" value="10"/>  <!-- TĂNG từ 5 để scan match tốt hơn -->
+        <param name="iterations" value="5"/>  <!-- Giảm xuống để faster -->
         <param name="lsigma" value="0.075"/>
         <param name="ogain" value="3.0"/>
         <param name="lskip" value="0"/>

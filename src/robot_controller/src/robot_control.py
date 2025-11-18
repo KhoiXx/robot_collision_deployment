@@ -322,8 +322,8 @@ class RobotControl:
         # Publish odom
         self.odom_pub.publish(odom)
 
-        # NOTE: TF được publish bởi UKF (với sensor fusion IMU+encoder)
-        # KHÔNG publish TF ở đây để tránh conflict
+        # BỎQUA: Dùng static TF từ robot_mapping.launch thay vì publish động
+        # Lý do: Tránh jump khi robot di chuyển
         # self.odom_broadcaster.sendTransform(
         #     (self.current_x, self.current_y, 0.0),
         #     q,
