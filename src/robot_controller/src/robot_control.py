@@ -55,7 +55,7 @@ class RobotControl:
         self.left_vel = 0.0
         self.right_vel = 0.0
         # rospy.loginfo("Robot")
-        # rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
+        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 20Hz odometry update
         self.odom_broadcaster = tf.TransformBroadcaster()
         
         Thread(target=self.serial_worker, daemon=True).start()

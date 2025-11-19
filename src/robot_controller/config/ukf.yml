@@ -13,7 +13,7 @@ publish_acceleration: false  # Không cần publish acceleration
 odom_frame: robot_0/odom
 base_link_frame: dummy_base_link
 world_frame: robot_0/odom
-publish_tf: false  # TẮT - dùng static TF từ robot_mapping.launch thay thế
+publish_tf: true  # BẬT - UKF publish TF với IMU fusion cho yaw chính xác
 
 # ==============================================================================
 # SENSOR 0: Wheel Odometry
