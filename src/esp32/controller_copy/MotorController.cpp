@@ -42,6 +42,15 @@ MotorController::MotorController(
     outputPwm = 0;
     currentSpeedPulse = 0;
     direction = dir;
+
+    // OPTIMIZATION: Cache direction multiplier (calculated once instead of every loop)
+    directionMultiplier = (dir == DIRECT) ? 1 : -1;
+
+    // ACCURACY: Initialize moving average filter for encoder readings
+    speedFilterIndex = 0;
+    for (int i = 0; i < SPEED_FILTER_SIZE; i++) {
+        speedFilter[i] = 0.0;
+    }
 }
 
 void MotorController::setTunings(double Kp, double Ki, double Kd) {
@@ -70,25 +79,38 @@ float MotorController::mapData(float x, float in_min, float in_max, float out_mi
 
 float MotorController::calculateSpeed() {
     unsigned long currentTime = millis();
-    // Direction: DIRECT = 0, REVERSE = 1 => make it DIRECT = 1, REVERSE=-1
-    long currentPosition = (1-2*int(direction)) * encoder.getCount() / 2;
+
+    // OPTIMIZATION: Use cached directionMultiplier instead of calculating (1-2*int(direction))
+    long currentPosition = directionMultiplier * encoder.getCount() / 2;
 
     // Tính thay đổi vị trí và thời gian
     long positionChange = currentPosition - prevPosition;
     unsigned long timeChange = currentTime - prevTime;
 
-    float speed = 0.0;
+    float rawSpeed = 0.0;
     if (timeChange > 0) {
-        float pulsesPerSecond = (float)positionChange / ((float)timeChange / 1000.0);
-        speed = (pulsesPerSecond / pulsesPerRevolution) * wheelCircumference;
+        // OPTIMIZATION: Use multiplication instead of division (0.001 = 1/1000)
+        float pulsesPerSecond = (float)positionChange * 1000.0 / (float)timeChange;
+        rawSpeed = (pulsesPerSecond / pulsesPerRevolution) * wheelCircumference;
     }
+
+    // ACCURACY: Apply moving average filter to reduce encoder noise
+    speedFilter[speedFilterIndex] = rawSpeed;
+    speedFilterIndex = (speedFilterIndex + 1) % SPEED_FILTER_SIZE;
+
+    // Calculate filtered average
+    float filteredSpeed = 0.0;
+    for (int i = 0; i < SPEED_FILTER_SIZE; i++) {
+        filteredSpeed += speedFilter[i];
+    }
+    filteredSpeed /= SPEED_FILTER_SIZE;
 
     // Cập nhật giá trị cũ
     prevPosition = currentPosition;
     prevTime = currentTime;
 
-    this->currentSpeed = speed;
-    return speed;
+    this->currentSpeed = filteredSpeed;
+    return filteredSpeed;
 }
 
 void MotorController::controlMotor(int pwmValue) {
