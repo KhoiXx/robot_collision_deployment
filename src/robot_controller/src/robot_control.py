@@ -17,8 +17,9 @@ from threading import Thread, Lock
 
 class RobotControl:
     def __init__(self, index, port=ROBOT_PORT, baudrate=BAUDRATE) -> None:
-        # OPTIMIZATION: Replace PriorityQueue with simple deque (faster for our use case)
-        self.cmd_queue = deque(maxlen=3)
+        # PRIORITY: Separate queues - CMD_VEL sent immediately, GET_SPEED can wait
+        self.cmd_vel_queue = deque(maxlen=2)  # High priority - speed commands
+        self.other_queue = deque(maxlen=3)    # Low priority - telemetry requests
         self.queue_lock = Lock()
 
         self.port = serial.Serial(port, baudrate, timeout=0.01)  # Non-blocking timeout
@@ -60,8 +61,8 @@ class RobotControl:
         self.left_vel = 0.0
         self.right_vel = 0.0
 
-        # OPTIMIZATION: Pre-allocate serial send buffer (max 11 bytes for CMD_VEL)
-        self.send_buffer = bytearray(11)
+        # OPTIMIZATION: Pre-allocate serial send buffer (max 32 bytes to be safe)
+        self.send_buffer = bytearray(32)
 
         # ACCURACY: Cache odometry covariance matrices to avoid recreation
         self._init_covariance_matrices()
@@ -105,15 +106,24 @@ class RobotControl:
         ]
 
     def serial_worker(self):
-        """OPTIMIZATION: Non-blocking queue processing with sleep to avoid busy-wait"""
+        """PRIORITY: Process CMD_VEL first (immediate), GET_SPEED second (can wait)"""
         while not rospy.is_shutdown():
+            command_to_send = None
+
             with self.queue_lock:
-                if len(self.cmd_queue) > 0:
-                    command_type, format_str, values = self.cmd_queue.popleft()
-                    self._send_command(command_type, format_str, *values)
-                else:
-                    # OPTIMIZATION: Sleep when queue empty to reduce CPU usage
-                    rospy.sleep(0.001)  # 1ms sleep instead of busy loop
+                # PRIORITY 1: CMD_VEL - send immediately!
+                if len(self.cmd_vel_queue) > 0:
+                    command_to_send = self.cmd_vel_queue.popleft()
+                # PRIORITY 2: GET_SPEED and others - only when no CMD_VEL pending
+                elif len(self.other_queue) > 0:
+                    command_to_send = self.other_queue.popleft()
+
+            if command_to_send:
+                command_type, format_str, values = command_to_send
+                self._send_command(command_type, format_str, *values)
+            else:
+                # Sleep when both queues empty
+                rospy.sleep(0.001)
 
     def cmd_vel_callback(self, cmd: Twist):
         v = cmd.linear.x
@@ -167,8 +177,7 @@ class RobotControl:
             CMD_VEL,
             "<ff",
             v,
-            w,
-            priority=1
+            w
         )
 
     def imu_yaw_callback(self, msg: Float32):
@@ -200,73 +209,116 @@ class RobotControl:
 
     def send_command(self, command_type, format_str, *values):
         """
-        OPTIMIZATION: Add command to deque (thread-safe)
+        PRIORITY: CMD_VEL goes to high-priority queue, others to low-priority
         """
         with self.queue_lock:
-            self.cmd_queue.append((command_type, format_str, values))
+            if command_type == CMD_VEL:
+                # HIGH PRIORITY - send immediately, no waiting
+                self.cmd_vel_queue.append((command_type, format_str, values))
+            else:
+                # LOW PRIORITY - GET_SPEED, etc. can wait
+                self.other_queue.append((command_type, format_str, values))
 
     def _send_command(self, command_type, format_str, *values):
         """
-        OPTIMIZATION: Send command using pre-allocated buffer
-        Removed redundant buffer clears, cancel_write, and flush
+        Send command to the ESP using pre-allocated buffer
         """
-        frame_length = len(values) * 4 + 1
+        # Calculate frame length
+        if format_str and len(values) > 0:
+            frame_length = len(values) * 4 + 1  # data + CRC
+        else:
+            frame_length = 1  # only CRC
 
-        # Build frame in pre-allocated buffer
-        self.send_buffer[0] = START_BYTE
-        self.send_buffer[1] = command_type
-        self.send_buffer[2] = frame_length
+        # Build header
+        header = struct.pack('BBB', START_BYTE, command_type, frame_length)
+        send_data = bytearray(header)
 
-        offset = 3
+        # Add data if present
         if frame_length > 1 and format_str:
-            # Pack data directly into buffer
             data = struct.pack(format_str, *values)
-            self.send_buffer[offset:offset+len(data)] = data
-            offset += len(data)
+            send_data += data
 
-        # Calculate CRC on the frame
-        crc = self.calculate_crc(self.send_buffer[:offset])
-        self.send_buffer[offset] = crc
-        offset += 1
+        # Add CRC
+        crc = self.calculate_crc(send_data)
+        send_data.append(crc)
 
-        # OPTIMIZATION: Single write, no flush needed for small packets
-        self.port.write(self.send_buffer[:offset])
-
-    def request_speed(self):
-        """OPTIMIZATION: Removed input buffer clear - not needed with proper packet parsing"""
-        self.send_command(GET_SPEED, None)
+        # Send
+        self.port.write(send_data)
 
     def read_serial(self):
-        """ACCURACY: Thread-safe serial read with proper locking"""
+        """
+        ROBUST PACKET PARSING: Handle all packet types correctly
+        - 'S' prefix: String debug messages
+        - 'B' prefix: Binary packets (SPEED, PID_DATA)
+        """
         num_bytes = self.port.in_waiting
-        if num_bytes >= 1:
-            datatype = self.port.read(1)
-            if datatype == b'S':
-                received_string = self.port.readline().decode().strip()
-                return received_string
-                # rospy.loginfo(f"Received string from serial: {received_string}")
-            elif datatype == b'B':
-                received_data = self.port.read(num_bytes - 1)
-                if len(received_data) > 0 and received_data[0] == GET_SPEED:
-                    if len(received_data) >= 10:
-                        received_data = received_data[:10]
-                        crc = received_data[-1]
-                        left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
+        if num_bytes < 1:
+            return
 
-                        # ACCURACY: Thread-safe update with lock
-                        with self.vel_lock:
-                            self.left_vel = round(left_vel, 4)
-                            self.right_vel = round(right_vel, 4)
-                        # rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")  # Comment to reduce spam
+        # Read packet type prefix
+        datatype = self.port.read(1)
+
+        if datatype == b'S':
+            # String debug message - read until newline
+            received_string = self.port.readline().decode().strip()
+            return received_string
+
+        elif datatype == b'B':
+            # Binary packet - need to read command type to route correctly
+            if num_bytes < 2:
+                return  # Not enough data yet
+
+            cmd_type_byte = self.port.read(1)
+            if not cmd_type_byte:
+                return
+
+            cmd_type = cmd_type_byte[0]
+
+            # Route to appropriate parser
+            if cmd_type == GET_SPEED:
+                self._parse_speed_packet()
+            elif cmd_type == GET_PID_DATA:
+                self._parse_pid_packet()
+            else:
+                # Unknown packet type - clear buffer to resync
+                rospy.logwarn(f"Unknown packet type: 0x{cmd_type:02x}")
+                self.port.reset_input_buffer()
+
+    def _parse_speed_packet(self):
+        """
+        Parse SPEED packet: left_vel(4) + right_vel(4) + CRC(1) = 9 bytes
+        Total packet: 'B' + GET_SPEED + 9 bytes = 11 bytes
+        """
+        if self.port.in_waiting < 9:
+            return  # Not enough data
+
+        data = self.port.read(9)
+        if len(data) < 9:
+            return
+
+        # Extract velocities (skip CRC validation for performance)
+        left_vel, right_vel = struct.unpack('<ff', data[0:8])
+
+        # Thread-safe update
+        with self.vel_lock:
+            self.left_vel = round(left_vel, 4)
+            self.right_vel = round(right_vel, 4)
+
+    def _parse_pid_packet(self):
+        """
+        Parse PID_DATA packet: timestamp(4) + setpoint(4) + current(4) + error(4) + output(4) + CRC(1) = 21 bytes
+        For now, just discard (only used for debugging)
+        """
+        if self.port.in_waiting >= 21:
+            self.port.read(21)  # Discard PID data
 
 
     def update_odometry(self, timer):
         """
-        OPTIMIZATION: Removed blocking sleep - use non-blocking serial read
-        Request speed and immediately try to read (non-blocking)
+        OPTIMIZATION: Arduino auto-pushes speed at 25Hz - just read passively
+        No more request-response - lower latency, fresher data
         """
-        self.request_speed()
-        self.read_serial()  # Non-blocking with 0.01s timeout
+        self.read_serial()  # Passive read - Arduino pushes automatically
 
         # Check if cmd_vel stopped - FORCE zero if no command for > 0.3s
         current_time = rospy.Time.now()

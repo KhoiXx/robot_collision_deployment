@@ -32,9 +32,11 @@ byte expectedCRC;
 unsigned long lastPIDUpdate = 0;
 const unsigned long pidSampleTime = 20;
 
-const int baudRate = 115200;
+// AUTO-PUSH: Send speed data automatically (25Hz = 40ms interval)
+unsigned long lastAutoSpeedSend = 0;
+const unsigned long AUTO_SPEED_INTERVAL = 40;  // 25Hz 
 
-// OPTIMIZATION: Cache speeds instead of recalculating
+const int baudRate = 115200;
 float leftWheelSpeed = 0.0;
 float rightWheelSpeed = 0.0;
 
@@ -42,9 +44,6 @@ float rightWheelSpeed = 0.0;
 float setLeftWheelSpeed = 0.0;   // Track commanded speed for sync logic
 float setRightWheelSpeed = 0.0;
 float currentAngularVel = 0.0;    // Angular velocity for mode detection
-
-// ACCURACY IMPROVEMENT: Pre-allocated buffer for serial communication
-uint8_t sendBuffer[23];  // Max packet size (GET_PID_DATA = 23 bytes)
 
 MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, DIRECT);
 MotorController rightWheel(18, 19, 21, 22, 23, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, REVERSE);
@@ -94,18 +93,22 @@ void tunePID(String side, byte* data) {
 }
 
 void sendSpeed() {
-    // OPTIMIZATION: Use pre-allocated buffer instead of creating new one
-    // Speeds are already cached in leftWheelSpeed/rightWheelSpeed from loop()
+    leftWheelSpeed = leftWheel.getCurrentSpeed();
+    rightWheelSpeed = rightWheel.getCurrentSpeed();
+    // Serial.print("S");
+    // Serial.print(" Current speed: ");
+    // Serial.println(leftWheelSpeed);
+    uint8_t buffer[11];
+    buffer[0] = 'B';
 
-    sendBuffer[0] = 'B';
-    sendBuffer[1] = GET_SPEED;
-    memcpy(&sendBuffer[2], &leftWheelSpeed, sizeof(float));
-    memcpy(&sendBuffer[6], &rightWheelSpeed, sizeof(float));
-    uint8_t crc = calculateCRC(sendBuffer, 10);
-    sendBuffer[10] = crc;
+    buffer[1] = GET_SPEED; // length = len(data) + 1 (crc)
+    memcpy(&buffer[2], &leftWheelSpeed, sizeof(float));
+    memcpy(&buffer[6], &rightWheelSpeed, sizeof(float));
+    uint8_t crc = calculateCRC(buffer, 10);
+    buffer[10] = crc;
 
-    // OPTIMIZATION: Removed Serial.flush() - not needed with fixed packet size
-    Serial.write(sendBuffer, 11);
+    Serial.write(buffer, sizeof(buffer));
+    // OPTIMIZATION: Removed flush - TX buffer auto-sends, no blocking needed
 }
 
 void sendPIDData(bool side) {
@@ -117,22 +120,24 @@ void sendPIDData(bool side) {
     float error = setpoint - current;
     float output = wheel->getOutput();
 
-    // OPTIMIZATION: Use pre-allocated buffer
+    // NO DEBUG LOG - binary data only!
+
     // Packet structure: 'B' | CMD | timestamp(4) | setpoint(4) | current(4) | error(4) | output(4) | CRC
-    sendBuffer[0] = 'B';
-    sendBuffer[1] = GET_PID_DATA;
+    uint8_t buffer[23];
+    buffer[0] = 'B';
+    buffer[1] = GET_PID_DATA;
 
-    memcpy(&sendBuffer[2], &timestamp, sizeof(unsigned long));
-    memcpy(&sendBuffer[6], &setpoint, sizeof(float));
-    memcpy(&sendBuffer[10], &current, sizeof(float));
-    memcpy(&sendBuffer[14], &error, sizeof(float));
-    memcpy(&sendBuffer[18], &output, sizeof(float));
+    memcpy(&buffer[2], &timestamp, sizeof(unsigned long));
+    memcpy(&buffer[6], &setpoint, sizeof(float));
+    memcpy(&buffer[10], &current, sizeof(float));
+    memcpy(&buffer[14], &error, sizeof(float));
+    memcpy(&buffer[18], &output, sizeof(float));
 
-    uint8_t crc = calculateCRC(sendBuffer, 22);
-    sendBuffer[22] = crc;
+    uint8_t crc = calculateCRC(buffer, 22);
+    buffer[22] = crc;
 
-    // OPTIMIZATION: Removed Serial.flush()
-    Serial.write(sendBuffer, 23);
+    Serial.write(buffer, sizeof(buffer));
+    // OPTIMIZATION: Removed flush - TX buffer auto-sends, no blocking needed
 }
 
 void handleCommand(byte commandCode, byte* data, byte length) {
@@ -251,16 +256,16 @@ unsigned long start = millis();
 bool first_time = true;
 void loop() {
     unsigned long currentMillis = millis();
+
+    // ==================================================================
+    // PID CONTROL: Run at 50Hz (20ms interval)
+    // ==================================================================
     if (currentMillis - lastPIDUpdate >= pidSampleTime) {
         lastPIDUpdate = currentMillis;
 
         // Run the PID control for both wheels
         leftWheel.runPID();
         rightWheel.runPID();
-
-        // OPTIMIZATION: Cache speeds after PID update (already calculated in runPID)
-        leftWheelSpeed = leftWheel.currentSpeed;
-        rightWheelSpeed = rightWheel.currentSpeed;
 
         // ==================================================================
         // WHEEL SYNCHRONIZATION: Cross-coupling to prevent straight drift
@@ -281,9 +286,11 @@ void loop() {
         }
         // else: Pure rotation (w >= 0.3) - NO sync
 
-        // OPTIMIZATION: Use cached speeds instead of calling getCurrentSpeed() again
+        // Apply synchronization only if Ksync > 0
         if (Ksync > 0.0) {
-            float speedError = leftWheelSpeed - rightWheelSpeed;
+            float leftSpeed = leftWheel.getCurrentSpeed();
+            float rightSpeed = rightWheel.getCurrentSpeed();
+            float speedError = leftSpeed - rightSpeed;
 
             // Calculate adjustment with limit
             int syncAdjustment = (int)(Ksync * speedError * 100.0);  // Scale for PWM range
@@ -297,6 +304,19 @@ void loop() {
             rightWheel.adjustOutput(syncAdjustment);
         }
     }
+
+    // ==================================================================
+    // AUTO-PUSH SPEED: Send speed data automatically at 25Hz (40ms)
+    // Python no longer needs to request - just reads passively
+    // ==================================================================
+    if (currentMillis - lastAutoSpeedSend >= AUTO_SPEED_INTERVAL) {
+        sendSpeed();
+        lastAutoSpeedSend = currentMillis;
+    }
+
+    // ==================================================================
+    // PARSE SERIAL: Handle incoming commands (CMD_VEL, GET_SPEED, etc.)
+    // ==================================================================
     parseSerialOneByte();
     // delay(50);
     // if (Serial.available()) {

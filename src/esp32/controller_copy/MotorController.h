@@ -5,9 +5,6 @@
 #include <ESP32Encoder.h>
 #include <PID_v2.h>
 
-// ACCURACY: Moving average filter size for speed smoothing
-#define SPEED_FILTER_SIZE 3  // 3-sample average at 50Hz = 60ms smoothing
-
 class MotorController{
     public:
         MotorController(
@@ -56,12 +53,8 @@ class MotorController{
         int reverse;
         int reverseAtStart;
 
-        // OPTIMIZATION: Cached direction multiplier
+        // OPTIMIZATION 1: Cached direction multiplier (calculated once in constructor)
         int directionMultiplier;
-
-        // ACCURACY: Moving average filter for speed
-        float speedFilter[SPEED_FILTER_SIZE];
-        int speedFilterIndex;
 };
 
 #endif
