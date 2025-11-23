@@ -192,7 +192,8 @@ class RunModelSafe:
             # Model inference
             state_tensor = self._prepare_state_tensor(state)
             with torch.no_grad():
-                v, action, logprob, mean = self.policy(
+                # Return order: action, v, logprob, mean (matches training)
+                _, _, _, mean = self.policy(
                     state_tensor['obs'],
                     state_tensor['goal'],
                     state_tensor['speed']

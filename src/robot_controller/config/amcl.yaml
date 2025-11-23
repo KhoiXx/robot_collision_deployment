@@ -1,50 +1,73 @@
 # AMCL Configuration for Real Robot Navigation
 # Tuned for differential drive robot with LiDAR sensor
+# Cross-checked with gmapping parameters from robot_mapping.launch
+# Updated: 2025-11-23
 
-# Odometry model parameters (differential drive)
+# ==============================================================================
+# ODOMETRY MODEL (differential drive)
+# Match với gmapping: srr=0.1, srt=0.15, str=0.1, stt=0.1
+# ==============================================================================
 odom_model_type: diff
-odom_alpha1: 0.2  # Rotation noise from rotation
-odom_alpha2: 0.2  # Rotation noise from translation
-odom_alpha3: 0.2  # Translation noise from translation
-odom_alpha4: 0.2  # Translation noise from rotation
-odom_alpha5: 0.1  # Translation noise
+odom_alpha1: 0.1   # Rotation noise from rotation (match gmapping srr)
+odom_alpha2: 0.15  # Rotation noise from translation (match gmapping srt)
+odom_alpha3: 0.1   # Translation noise from translation (match gmapping stt)
+odom_alpha4: 0.1   # Translation noise from rotation (match gmapping str)
+odom_alpha5: 0.1   # Translation noise (diff-corrected model)
 
-# Laser model parameters
+# ==============================================================================
+# LASER MODEL
+# Match với gmapping: maxRange=6.0, maxUrange=5.5
+# ==============================================================================
 laser_model_type: likelihood_field
-laser_max_beams: 60           # Reduce from 720 for efficiency
-laser_z_hit: 0.95             # Weight for correct measurements
-laser_z_rand: 0.05            # Weight for random measurements
-laser_sigma_hit: 0.2          # Standard deviation of hit measurements
-laser_likelihood_max_dist: 2.0  # Maximum distance to consider
+laser_max_beams: 60           # Số tia LiDAR (LD19 có 720 điểm, 60 đủ dùng)
+laser_z_hit: 0.95             # Trọng số đo đạc đúng
+laser_z_rand: 0.05            # Trọng số đo đạc ngẫu nhiên
+laser_sigma_hit: 0.075        # Match gmapping lsigma
+laser_likelihood_max_dist: 5.0  # TĂNG từ 2.0 để match gmapping maxUrange
 
-# Particle filter parameters
+# ==============================================================================
+# PARTICLE FILTER
+# Match với gmapping: particles=80
+# ==============================================================================
 min_particles: 100            # Minimum particles
-max_particles: 500            # Maximum particles
+max_particles: 500            # Maximum particles (có thể tăng nếu cần)
 kld_err: 0.05                 # KLD sampling error
 kld_z: 0.99                   # KLD sampling confidence
 
-# Update thresholds
-update_min_d: 0.2             # Minimum translation for update (meters)
-update_min_a: 0.5             # Minimum rotation for update (radians)
-resample_interval: 1          # Resample every N updates
+# ==============================================================================
+# UPDATE THRESHOLDS
+# Match với gmapping: linearUpdate=0.1, angularUpdate=0.1
+# ==============================================================================
+update_min_d: 0.1             # GIẢM từ 0.2 (match gmapping linearUpdate)
+update_min_a: 0.1             # GIẢM từ 0.5 (match gmapping angularUpdate)
+resample_interval: 1          # Resample mỗi lần update
 
-# Transform tolerance
-transform_tolerance: 0.2      # Seconds to post-date transforms
+# ==============================================================================
+# TRANSFORM
+# ==============================================================================
+transform_tolerance: 0.2      # Độ trễ TF cho phép (seconds)
 
-# Initial pose uncertainty (when setting initial pose in RViz)
+# ==============================================================================
+# INITIAL POSE (khi set trong RViz)
+# ==============================================================================
 initial_pose_x: 0.0
 initial_pose_y: 0.0
 initial_pose_a: 0.0
-initial_cov_xx: 0.25          # Variance in X (meters^2)
-initial_cov_yy: 0.25          # Variance in Y (meters^2)
-initial_cov_aa: 0.068         # Variance in yaw (~15 degrees)
+initial_cov_xx: 0.25          # Variance X (0.5m std dev)
+initial_cov_yy: 0.25          # Variance Y (0.5m std dev)
+initial_cov_aa: 0.068         # Variance yaw (~15 degrees)
 
-# Recovery parameters
-recovery_alpha_slow: 0.0      # Exponential decay rate for slow average
-recovery_alpha_fast: 0.0      # Exponential decay rate for fast average
+# ==============================================================================
+# RECOVERY (tắt để tránh random particles khi mất localization)
+# ==============================================================================
+recovery_alpha_slow: 0.0
+recovery_alpha_fast: 0.0
 
-# Tuning notes:
-# - If localization is unstable: increase min_particles, max_particles
-# - If localization is slow: decrease laser_max_beams
-# - If too sensitive to odometry: decrease odom_alpha values
-# - If not sensitive enough to measurements: increase laser_z_hit
+# ==============================================================================
+# TUNING NOTES
+# ==============================================================================
+# - Localization không ổn định → tăng min/max_particles
+# - CPU cao → giảm laser_max_beams, max_particles
+# - Localization chậm → giảm update_min_d, update_min_a
+# - Không tin odom → tăng odom_alpha values
+# - Map mismatch → kiểm tra laser_sigma_hit
