@@ -48,6 +48,24 @@
     <!-- Add more AMCL instances as needed for more robots -->
 
     <!-- ============================================== -->
+    <!-- TRAJECTORY LOGGING -->
+    <!-- ============================================== -->
+
+    <!-- Robot 0 Trajectory Logger -->
+    <node pkg="robot_controller" type="trajectory_logger.py" name="trajectory_logger_0"
+          output="screen">
+        <param name="robot_index" value="0"/>
+        <param name="sample_interval" value="0.1"/>
+    </node>
+
+    <!-- Robot 1 Trajectory Logger (if num_robots >= 2) -->
+    <node pkg="robot_controller" type="trajectory_logger.py" name="trajectory_logger_1"
+          output="screen" if="$(eval num_robots >= 2)">
+        <param name="robot_index" value="1"/>
+        <param name="sample_interval" value="0.1"/>
+    </node>
+
+    <!-- ============================================== -->
     <!-- VISUALIZATION -->
     <!-- ============================================== -->
 

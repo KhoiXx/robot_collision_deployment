@@ -27,19 +27,19 @@ laser_likelihood_max_dist: 5.0  # TĂNG từ 2.0 để match gmapping maxUrange
 
 # ==============================================================================
 # PARTICLE FILTER
-# Match với gmapping: particles=80
+# Reduced for faster computation on slow robot (0.4 m/s)
 # ==============================================================================
-min_particles: 100            # Minimum particles
-max_particles: 500            # Maximum particles (có thể tăng nếu cần)
+min_particles: 50             # GIẢM từ 100 - nhanh hơn
+max_particles: 200            # GIẢM từ 500 - nhanh hơn, đủ cho indoor
 kld_err: 0.05                 # KLD sampling error
 kld_z: 0.99                   # KLD sampling confidence
 
 # ==============================================================================
 # UPDATE THRESHOLDS
-# Match với gmapping: linearUpdate=0.1, angularUpdate=0.1
+# Reduced for more frequent updates
 # ==============================================================================
-update_min_d: 0.1             # GIẢM từ 0.2 (match gmapping linearUpdate)
-update_min_a: 0.1             # GIẢM từ 0.5 (match gmapping angularUpdate)
+update_min_d: 0.05            # GIẢM từ 0.1 - update thường xuyên hơn
+update_min_a: 0.05            # GIẢM từ 0.1 - update thường xuyên hơn
 resample_interval: 1          # Resample mỗi lần update
 
 # ==============================================================================

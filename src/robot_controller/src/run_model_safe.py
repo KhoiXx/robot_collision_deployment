@@ -36,10 +36,10 @@ class RunModelSafe:
 
         # Safety parameters
         self.MIN_OBSTACLE_DISTANCE = 0.25  # meters
-        self.MAX_LINEAR_VEL = 0.7  # m/s (MATCH TRAINING - crucial for model performance!)
+        self.MAX_LINEAR_VEL = 0.4  # m/s - DEPLOYMENT LIMIT (training was 0.7, reduced for safety)
         self.MAX_ANGULAR_VEL = 1.0  # rad/s (MATCH TRAINING)
         self.CONTROL_RATE = 10  # Hz (match training frequency)
-        self.MAX_STEPS_PER_GOAL = 500  # Timeout after 50 seconds at 10Hz
+        self.MAX_STEPS_PER_GOAL = 800  # Timeout - increased because robot is slower (80s at 10Hz)
 
     def __init_topic(self):
         index = self.robot.index
