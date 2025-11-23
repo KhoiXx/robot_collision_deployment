@@ -16,19 +16,14 @@
               type: laser_filters/LaserScanRangeFilter
               params:
                 use_message_range_limits: false
-                lower_threshold: 0.15  <!-- Bỏ readings < 15cm -->
-                upper_threshold: 5.5   <!-- Bỏ readings > 5.5m -->
+                lower_threshold: 0.10  <!-- Bỏ readings < 15cm -->
+                upper_threshold: 5.0   <!-- Bỏ readings > 5.5m -->
             - name: intensity
               type: laser_filters/LaserScanIntensityFilter
               params:
-                lower_threshold: 100   <!-- Lọc weak returns -->
+                lower_threshold: 60   <!-- Lọc weak returns -->
                 upper_threshold: 100000
                 disp_histogram: 0
-            - name: median
-              type: laser_filters/LaserScanAngularBoundsFilterInPlace
-              params:
-                lower_angle: -3.14159  <!-- Full 360° -->
-                upper_angle: 3.14159
         </rosparam>
         <remap from="scan" to="$(arg laser_scan_topic_name)"/>
         <remap from="scan_filtered" to="/scan_filtered"/>
@@ -70,9 +65,9 @@
         <param name="stt" value="0.1"/>  <!-- Translation noise from translation -->
 
         <!-- Update thresholds - GIẢM để update nhanh, giảm drift tích lũy -->
-        <param name="linearUpdate" value="0.05"/>  <!-- 5cm - update thường xuyên -->
+        <param name="linearUpdate" value="0.1"/>  <!-- 5cm - update thường xuyên -->
         <param name="angularUpdate" value="0.1"/>  <!-- ~3° -->
-        <param name="temporalUpdate" value="1.2"/>  <!-- 0.5s - update ngay cả khi không di chuyển -->
+        <param name="temporalUpdate" value="1.0"/>  <!-- 0.5s - update ngay cả khi không di chuyển -->
 
         <!-- Map resolution -->
         <param name="delta" value="0.05"/>
@@ -84,7 +79,7 @@
         <param name="ymax" value="15.0"/>
 
         <!-- Particle filter parameters -->
-        <param name="particles" value="60"/>  <!-- TĂNG thêm để tracking tốt hơn -->
+        <param name="particles" value="80"/>  <!-- TĂNG thêm để tracking tốt hơn -->
         <param name="resampleThreshold" value="0.5"/>
 
         <!-- Laser parameters -->
@@ -95,7 +90,7 @@
         <param name="minimumScore" value="80"/>  <!-- TĂNG cao để chỉ accept match tốt -->
         <param name="lstep" value="0.05"/>
         <param name="astep" value="0.05"/>
-        <param name="iterations" value="10"/>  <!-- TĂNG để tìm match tốt hơn -->
+        <param name="iterations" value="8"/>  <!-- TĂNG để tìm match tốt hơn -->
         <param name="lsigma" value="0.075"/>
         <param name="ogain" value="3.0"/>
         <param name="lskip" value="0"/>

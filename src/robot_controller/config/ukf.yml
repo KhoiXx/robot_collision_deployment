@@ -3,8 +3,8 @@
 # Fusion: Wheel Odometry + IMU
 # ==============================================================================
 
-frequency: 22  # Tối ưu cho Jetson Nano
-sensor_timeout: 0.3  # Tăng tolerance để tránh timeout với freq thấp hơn
+frequency: 60  # Match với 50Hz input từ odom + IMU
+sensor_timeout: 0.1  # Giảm timeout vì freq cao hơn
 two_d_mode: true
 print_diagnostics: false  # TẮT để giảm CPU load
 publish_acceleration: false  # Không cần publish acceleration

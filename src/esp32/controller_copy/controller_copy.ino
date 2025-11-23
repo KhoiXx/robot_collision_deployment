@@ -32,9 +32,9 @@ byte expectedCRC;
 unsigned long lastPIDUpdate = 0;
 const unsigned long pidSampleTime = 20;
 
-// AUTO-PUSH: Send speed data automatically (25Hz = 40ms interval)
+// AUTO-PUSH: Send speed data automatically (50Hz = 20ms interval)
 unsigned long lastAutoSpeedSend = 0;
-const unsigned long AUTO_SPEED_INTERVAL = 40;  // 25Hz 
+const unsigned long AUTO_SPEED_INTERVAL = 20;  // 50Hz - match PID loop rate
 
 const int baudRate = 115200;
 float leftWheelSpeed = 0.0;
@@ -306,7 +306,7 @@ void loop() {
     }
 
     // ==================================================================
-    // AUTO-PUSH SPEED: Send speed data automatically at 25Hz (40ms)
+    // AUTO-PUSH SPEED: Send speed data automatically at 50Hz (20ms)
     // Python no longer needs to request - just reads passively
     // ==================================================================
     if (currentMillis - lastAutoSpeedSend >= AUTO_SPEED_INTERVAL) {

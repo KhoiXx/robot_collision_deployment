@@ -68,7 +68,7 @@ class RobotControl:
         self._init_covariance_matrices()
 
         # rospy.loginfo("Robot")
-        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 20Hz odometry update
+        rospy.Timer(rospy.Duration(0.02), callback=self.update_odometry)  # 50Hz odometry update
         self.odom_broadcaster = tf.TransformBroadcaster()
 
         Thread(target=self.serial_worker, daemon=True).start()
@@ -315,7 +315,7 @@ class RobotControl:
 
     def update_odometry(self, timer):
         """
-        OPTIMIZATION: Arduino auto-pushes speed at 25Hz - just read passively
+        OPTIMIZATION: Arduino auto-pushes speed at 50Hz - just read passively
         No more request-response - lower latency, fresher data
         """
         self.read_serial()  # Passive read - Arduino pushes automatically
