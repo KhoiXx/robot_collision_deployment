@@ -6,10 +6,14 @@ Adds critical safety checks and proper timing
 Author: Fixed for safety by Claude
 Date: 2025-11-16
 """
+from numpy._typing._generic_alias import NDArray
+from numpy._typing._generic_alias import NDArray
+from numpy import floating
 import sys
 import time
 from collections import deque
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import rospy
@@ -36,10 +40,22 @@ class RunModelSafe:
 
         # Safety parameters
         self.MIN_OBSTACLE_DISTANCE = 0.25  # meters
-        self.MAX_LINEAR_VEL = 0.4  # m/s - DEPLOYMENT LIMIT (training was 0.7, reduced for safety)
+        self.MAX_LINEAR_VEL = 0.3  # m/s - DEPLOYMENT LIMIT (training was 0.7, reduced for safety)
         self.MAX_ANGULAR_VEL = 1.0  # rad/s (MATCH TRAINING)
         self.CONTROL_RATE = 10  # Hz (match training frequency)
         self.MAX_STEPS_PER_GOAL = 800  # Timeout - increased because robot is slower (80s at 10Hz)
+
+        # Stuck detection and recovery
+        self.STUCK_TIME_THRESHOLD = 3.0  # seconds - if no progress for this long, consider stuck
+        self.STUCK_DISTANCE_THRESHOLD = 0.05  # meters - minimum distance to consider as progress
+        self.REVERSE_SPEED = -0.15  # m/s - reverse speed for recovery
+        self.REVERSE_DURATION = 1.5  # seconds - how long to reverse
+        self.MAX_STUCK_RETRIES = 3  # Maximum stuck recovery attempts before giving up
+
+        # Stuck detection state
+        self.stuck_start_time = None
+        self.stuck_position = None
+        self.stuck_count = 0
 
     def __init_topic(self):
         index = self.robot.index
@@ -58,7 +74,7 @@ class RunModelSafe:
             rospy.logerr("No policy found")
             exit()
 
-        file = POLICY_PATH / Path("cnn_modern_best_71pct.pth")
+        file = POLICY_PATH / Path("cnn_modern_latest.pth")
         if os.path.exists(file):
             rospy.loginfo("="*50)
             rospy.loginfo("Loading Trained Model (SAFE MODE)")
@@ -86,11 +102,11 @@ class RunModelSafe:
             if (self.robot.state_GT is not None and
                 self.robot.speed_GT is not None and
                 len(self.robot.scan) > 0):
-                rospy.loginfo("✅ All sensors ready!")
+                rospy.loginfo("All sensors ready!")
                 return True
             rospy.sleep(0.1)
 
-        rospy.logerr("❌ Sensor timeout! Check:")
+        rospy.logerr("Sensor timeout! Check:")
         rospy.logerr(f"  - AMCL pose: {self.robot.state_GT is not None}")
         rospy.logerr(f"  - Speed: {self.robot.speed_GT is not None}")
         rospy.logerr(f"  - LiDAR: {len(self.robot.scan) > 0}")
@@ -120,31 +136,140 @@ class RunModelSafe:
         return np.array([v, w])
 
     def _safety_check(self, action):
-        """Check if action is safe to execute
+        """Check if action is safe to execute - FRONT 120° ONLY
 
-        Returns: (is_safe, modified_action)
+        Returns: (is_safe, modified_action, should_reverse)
         """
         laser_scan = self.robot.get_laser_observation()
 
         # Convert normalized scan back to real distances
         scan_real = (laser_scan + 0.5) * 6.0
-        min_dist = np.min(scan_real[np.isfinite(scan_real)])
+
+        # Check ONLY front 120° (±60° from center)
+        # Laser has 454 beams covering 360°, so front 120° ≈ 151 beams
+        n = len(scan_real)
+        front_120_start = n // 2 - n // 6  # -60° (1/6 of 360° = 60°)
+        front_120_end = n // 2 + n // 6    # +60°
+        front_scan = scan_real[front_120_start:front_120_end]
+
+        # Get minimum distance in front 120° only
+        front_scan_valid = front_scan[np.isfinite(front_scan)]
+        if len(front_scan_valid) == 0:
+            return True, action, False  # No valid readings, assume safe
+
+        min_front_dist = np.min(front_scan_valid)
 
         v, w = action
 
-        # CRITICAL: Stop if obstacle too close
-        if min_dist < self.MIN_OBSTACLE_DISTANCE:
-            rospy.logwarn(f"⚠️  OBSTACLE TOO CLOSE: {min_dist:.2f}m - STOPPING!")
-            return False, np.array([0.0, 0.0])
+        # CRITICAL: If obstacle too close IN FRONT (only when moving forward)
+        if v > 0 and min_front_dist < self.MIN_OBSTACLE_DISTANCE:
+            rospy.logwarn(f"FRONT OBSTACLE TOO CLOSE: {min_front_dist:.2f}m - SHOULD REVERSE!")
+            return False, np.array([0.0, 0.0]), True  # Signal to reverse
 
-        # Slow down if obstacle nearby
-        if min_dist < 0.5 and v > 0.2:
-            v_safe = 0.2 * (min_dist - self.MIN_OBSTACLE_DISTANCE) / (0.5 - self.MIN_OBSTACLE_DISTANCE)
-            v_safe = max(0.0, v_safe)
-            rospy.logwarn(f"⚠️  SLOWING DOWN: obstacle at {min_dist:.2f}m, reducing v: {v:.2f} → {v_safe:.2f}")
-            return True, np.array([v_safe, w])
+        # No slow down - let model handle it
+        return True, action, False
 
-        return True, action
+    def _check_stuck(self, commanded_velocity):
+        """Detect if robot is stuck (not making progress)
+
+        Args:
+            commanded_velocity: The velocity command sent to robot [v, w]
+
+        Returns: True if stuck, False otherwise
+        """
+        if self.robot.state_GT is None:
+            return False
+
+        # Only check stuck if robot is commanded to move forward
+        v_cmd = commanded_velocity[0]
+        if v_cmd <= 0.05:  # Robot commanded to stop or move very slowly
+            # Reset stuck detection - robot is intentionally not moving
+            self.stuck_position = None
+            self.stuck_start_time = None
+            return False
+
+        current_position = np.array(self.robot.state_GT[:2])  # [x, y]
+        current_time = rospy.Time.now().to_sec()
+
+        # Initialize stuck detection on first call
+        if self.stuck_position is None:
+            self.stuck_position = current_position
+            self.stuck_start_time = current_time
+            return False
+
+        # Calculate distance moved since stuck detection started
+        distance_moved = np.linalg.norm(current_position - self.stuck_position)
+        time_elapsed = current_time - self.stuck_start_time
+
+        # Check if robot made progress
+        if distance_moved > self.STUCK_DISTANCE_THRESHOLD:
+            # Robot is making progress - reset stuck detection
+            self.stuck_position = current_position
+            self.stuck_start_time = current_time
+            return False
+
+        # Check if stuck for too long
+        if time_elapsed > self.STUCK_TIME_THRESHOLD:
+            rospy.logwarn(f"STUCK DETECTED: Moved only {distance_moved:.3f}m in {time_elapsed:.1f}s with v_cmd={v_cmd:.2f}")
+            return True
+
+        return False
+
+    def _reverse_safely(self):
+        """Reverse robot safely to recover from stuck situation
+
+        Returns: True if recovery successful, False otherwise
+        """
+        rospy.logwarn(f"RECOVERY ATTEMPT {self.stuck_count + 1}/{self.MAX_STUCK_RETRIES}: Reversing...")
+
+        # Check if there's space behind
+        laser_scan = self.robot.get_laser_observation()
+        scan_real = (laser_scan + 0.5) * 6.0
+
+        # Check back 120° (±60° from rear)
+        n = len(scan_real)
+        back_120_start = n // 6  # Start at +60° (since 0° is rear in this setup)
+        back_120_end = n - n // 6  # End at -60°
+
+        # Actually, laser 0° is front, so back is around n/2
+        # Back 120° would be around indices [n/2-n/6 : n/2+n/6] from the opposite side
+        # Let's take the rear third of the scan
+        back_distances = np.concatenate([scan_real[:n//6], scan_real[-n//6:]])
+        back_distances_valid = back_distances[np.isfinite(back_distances)]
+
+        if len(back_distances_valid) > 0:
+            min_back_dist = np.min(back_distances_valid)
+            if min_back_dist < self.MIN_OBSTACLE_DISTANCE:
+                rospy.logerr("Cannot reverse - obstacle behind!")
+                return False
+
+        # Reverse for specified duration
+        reverse_action = np.array([self.REVERSE_SPEED, 0.0])
+        reverse_steps = int(self.REVERSE_DURATION * self.CONTROL_RATE)
+
+        rospy.loginfo(f"Reversing at {self.REVERSE_SPEED:.2f} m/s for {self.REVERSE_DURATION}s...")
+        rate = rospy.Rate(self.CONTROL_RATE)
+
+        for i in range(reverse_steps):
+            self.robot.control_vel(reverse_action)
+            rate.sleep()
+
+            # Safety check while reversing
+            if self.safety_stop or rospy.is_shutdown():
+                self.robot.stop()
+                return False
+
+        # Stop after reversing
+        self.robot.stop()
+        rospy.sleep(0.5)  # Brief pause
+
+        # Reset stuck detection
+        if self.robot.state_GT is not None:
+            self.stuck_position = np.array(self.robot.state_GT[:2])
+            self.stuck_start_time = rospy.Time.now().to_sec()
+
+        rospy.loginfo("Recovery complete - resuming navigation")
+        return True
 
     def run(self):
         """Main control loop with safety checks"""
@@ -157,12 +282,22 @@ class RunModelSafe:
         self.terminal = False
         self.safety_stop = False
 
+        # Reset stuck detection for new goal
+        self.stuck_position = None
+        self.stuck_start_time = None
+        self.stuck_count = 0
+
         ep_reward = 0
         step = 0
 
         # Initialize state
         obs = self.robot.get_laser_observation()
-        obs_stack = deque([obs, obs, obs])
+        obs_stack = deque[NDArray[floating[Any]]]([obs, obs, obs])
+        if obs_stack is None:
+            obs_stack = deque[NDArray[floating[Any]]]([obs] * LASER_HIST)
+        else:
+            _ = obs_stack.popleft()
+            obs_stack.append(obs)
         goal = np.asarray(self.robot.get_local_goal())
 
         # SAFETY: Use speed_GT (from AMCL) instead of speed (from odom)
@@ -185,7 +320,7 @@ class RunModelSafe:
 
             # SAFETY: Check step limit
             if step >= self.MAX_STEPS_PER_GOAL:
-                rospy.logwarn("⏱️  TIMEOUT: Exceeded max steps")
+                rospy.logwarn("TIMEOUT: Exceeded max steps")
                 self.robot.stop()
                 break
 
@@ -203,23 +338,51 @@ class RunModelSafe:
             real_action = self._scale_action(mean[0].cpu().numpy())
 
             # SAFETY CHECK
-            is_safe, safe_action = self._safety_check(real_action)
+            is_safe, safe_action, should_reverse = self._safety_check(real_action)
 
-            # Execute action
+            # Execute action or reverse if needed
             if is_safe:
                 self.robot.control_vel(safe_action)
                 if step % 10 == 0:  # Log every 1 second
                     rospy.loginfo(f"Step {step}: v={safe_action[0]:.3f} m/s, w={safe_action[1]:.3f} rad/s, dist={self.robot.distance:.2f}m")
+            elif should_reverse:
+                # Obstacle too close - try to reverse
+                rospy.logwarn("Obstacle too close - attempting safe reverse")
+                if self._reverse_safely():
+                    rospy.loginfo("Reverse successful - resuming")
+                else:
+                    rospy.logerr("Cannot reverse safely - stopping")
+                    self.robot.stop()
             else:
                 self.robot.stop()
                 rospy.logwarn("Action blocked by safety check")
+
+            # STUCK DETECTION (only check if robot is commanded to move)
+            if self._check_stuck(safe_action):
+                if self.stuck_count >= self.MAX_STUCK_RETRIES:
+                    rospy.logerr(f"STUCK: Exceeded max recovery attempts ({self.MAX_STUCK_RETRIES})")
+                    self.robot.stop()
+                    self.terminal = True
+                    result = 'Stuck - Recovery Failed'
+                    break
+
+                # Attempt recovery
+                if self._reverse_safely():
+                    self.stuck_count += 1
+                    # Continue with current goal after recovery
+                else:
+                    rospy.logerr("Recovery failed - terminating")
+                    self.robot.stop()
+                    self.terminal = True
+                    result = 'Stuck - Cannot Recover'
+                    break
 
             # Get reward and check termination
             r, self.terminal, result = self.robot.get_reward_and_terminate(step)
             ep_reward += r
 
             if self.terminal:
-                rospy.loginfo(f"🏁 TERMINATED: {result}")
+                rospy.loginfo(f"TERMINATED: {result}")
                 break
 
             # Update state for next iteration
@@ -237,7 +400,7 @@ class RunModelSafe:
 
             loop_time = time.time() - loop_start
             if loop_time > 0.15:  # Warn if loop too slow
-                rospy.logwarn(f"⚠️  Slow loop: {loop_time*1000:.1f}ms (target: {1000/self.CONTROL_RATE:.1f}ms)")
+                rospy.logwarn(f"Slow loop: {loop_time*1000:.1f}ms (target: {1000/self.CONTROL_RATE:.1f}ms)")
 
         # Stop robot
         self.robot.stop()
@@ -252,35 +415,38 @@ class RunModelSafe:
         rospy.loginfo("="*60)
 
     def goal_callback(self, goal_pose: PoseStamped):
-        """Handle new goal"""
+        """Handle new goal - NON-BLOCKING version"""
+        x = goal_pose.pose.position.x
+        y = goal_pose.pose.position.y
+
         rospy.loginfo("="*60)
-        rospy.loginfo("NEW GOAL RECEIVED")
+        rospy.loginfo(f"NEW GOAL RECEIVED: ({x:.2f}, {y:.2f})")
         rospy.loginfo("="*60)
 
-        # Stop current navigation
+        # Stop current navigation immediately
         self.terminal = True
-        rospy.sleep(0.5)  # Wait for current run to finish
 
-        # Check if robot is ready
-        retries = 0
-        while retries < 10:
-            if self.robot_status != RobotStatus.IDLE:
-                rospy.sleep(0.5)
-                retries += 1
-                continue
+        # Set new goal (will be used when run() is called again)
+        self.robot.set_new_goal([x, y])
 
-            # Set new goal
-            x = goal_pose.pose.position.x
-            y = goal_pose.pose.position.y
-            self.robot.set_new_goal([x, y])
-            rospy.loginfo(f"Goal set: ({x:.2f}, {y:.2f})")
+        # Start new navigation in separate thread to avoid blocking
+        import threading
+        def start_navigation():
+            # Wait for current navigation to stop
+            timeout = 0
+            while self.robot_status != RobotStatus.IDLE and timeout < 10:
+                rospy.sleep(0.1)
+                timeout += 1
 
-            # Start navigation
-            rospy.sleep(0.1)
-            self.run()
-            return
+            if self.robot_status == RobotStatus.IDLE:
+                rospy.loginfo(f"Starting navigation to ({x:.2f}, {y:.2f})")
+                self.run()
+            else:
+                rospy.logerr("Timeout waiting for robot to be ready")
 
-        rospy.logerr("Robot is not ready, please wait and try again")
+        nav_thread = threading.Thread(target=start_navigation)
+        nav_thread.daemon = True
+        nav_thread.start()
 
 
 def get_index():

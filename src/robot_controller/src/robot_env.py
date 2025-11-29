@@ -108,13 +108,12 @@ class RobotEnv:
         quat = odometry.pose.pose.orientation
         euler = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         yaw = normalize_angle(euler[2])
-        self.state = [round(pos.x, 4), round(pos.y, 4), yaw]
-
-        self.state = [odometry.pose.pose.position.x, odometry.pose.pose.position.y, euler[2]]
+        # Use UKF-filtered odometry (combines encoder + IMU)
+        self.state = [pos.x, pos.y, yaw]
 
         vx = odometry.twist.twist.linear.x
         wz = odometry.twist.twist.angular.z
-        self.speed = [round(vx, 4), round(wz, 4)]
+        self.speed = [vx, wz]
     
     def amcl_callback(self, amcl_pose: PoseWithCovarianceStamped):
         pos = amcl_pose.pose.pose.position
@@ -131,7 +130,8 @@ class RobotEnv:
         if self.amcl_prev_time is not None:
             delta_t = current_time - self.amcl_prev_time
             if delta_t > 0:
-                delta_position = self.amcl_prev_position - current_position
+                # FIXED: Correct direction (current - previous)
+                delta_position = current_position - self.amcl_prev_position
                 linear_vel = np.linalg.norm(delta_position) / delta_t
                 delta_yaw = current_yaw - self.amcl_prev_yaw
                 angular_vel = normalize_angle(delta_yaw) / delta_t
@@ -150,51 +150,77 @@ class RobotEnv:
         return [local_x, local_y]
 
     def get_reward_and_terminate(self, t):
+        """
+        Reward function - SYNCED with training stage_world2.py
+        Same structure as training for consistent deployment behavior
+        """
         terminate = False
-        laser_scan = self.get_laser_observation()
+        # Get current robot state
+        laser_scan_raw = self.get_laser_observation()  # Normalized [-0.5, 0.5]
+        laser_scan = (laser_scan_raw + 0.5) * 6.0  # Denormalize to [0, 6] meters
         [x, y, theta] = self.state_GT
-        [v, w] = self.speed_GT
+        [v, w] = self.speed
+
         self.pre_distance = copy.deepcopy(self.distance)
         self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
-        reward_g = (self.pre_distance - self.distance) * 2.5
-        reward_c = 0
-        reward_w = 0
-        result = 0
-        reward_p = 0
-        reward_theta = 0
-        is_crash = self.is_crash
 
-        # Phần thưởng căn chỉnh hướng
-        if self.distance < 0.7:
-            angle_to_goal = np.arctan2(self.goal_point[1] - y, self.goal_point[0] - x)
-            angle_diff = normalize_angle(angle_to_goal - theta)
-            reward_theta = -0.3 * np.abs(angle_diff)
-        else:
-            if np.abs(w) > 1.45:
-                reward_w = -0.1 * np.abs(w)
+        # Get front obstacle distance - SAME as training
+        n = len(laser_scan)
+        front_distances = laser_scan[n//3:2*n//3]  # Front 1/3 of scan
+        front_distances = front_distances[front_distances < 6.0]  # Filter valid readings
+        min_obstacle_dist = np.mean(np.sort(front_distances)[:5]) if len(front_distances) > 0 else 6.0
 
-        min_distance_to_obstacle = np.min(laser_scan)
-        if min_distance_to_obstacle < 0:
-            reward_p = -0.25
-        elif min_distance_to_obstacle < 0.25:
-            reward_p = (min_distance_to_obstacle - 0.25) / 2
-
+        # ========================================
+        # TERMINAL REWARDS - SAME as training
+        # ========================================
         if self.distance < self.goal_size:
-            terminate = True
-            reward_g = 40
-            result = "Reach Goal"
+            return 30.0, True, 'Reach Goal'
+        if self.is_crash:
+            return -25.0, True, 'Crash'
+        if t >= 700:  # Match training timeout
+            return -10.0, True, 'Timeout'
 
-        if is_crash == 1:
-            # TODO: add a recover mode
-            terminate = True
-            reward_c = -15.0
-            result = "Crashed"
+        # ========================================
+        # STEP REWARDS - SYNCED with training
+        # ========================================
+        reward = 0.0
+        progress = self.pre_distance - self.distance
 
-        if t > 10000:
-            terminate = True
-            result = "Time out"
-        reward = reward_g + reward_c + reward_w + reward_p + reward_theta
-        return reward, terminate, result
+        # 1. Progress reward - training proven value
+        reward += 2.0 * progress
+
+        # 2. Safety reward - training 2-zone system
+        if min_obstacle_dist < 0.35:
+            # Very close - strong speed penalty
+            safe_speed = 0.2
+            if v > safe_speed:
+                reward -= 0.3 * (v - safe_speed)
+        elif min_obstacle_dist < 0.6:
+            # Close - moderate speed limit
+            safe_speed = 0.4
+            if v > safe_speed:
+                reward -= 0.1 * (v - safe_speed)
+
+        # 3. Rotation penalty - training proven value
+        if np.abs(w) > 0.8:
+            reward -= 0.06 * np.abs(w)
+
+        # 4. Heading bonus - ALWAYS ACTIVE (training proven)
+        local_goal = self.get_local_goal()
+        if min_obstacle_dist > 0.6:
+            goal_angle = np.arctan2(local_goal[1], local_goal[0])
+            heading_error = np.abs(goal_angle) / np.pi
+            if heading_error < 0.3:  # Only reward when reasonably aligned
+                reward += 0.1 * (1.0 - heading_error)
+
+        # 5. Velocity smoothing - ALWAYS ACTIVE (training proven)
+        if hasattr(self, 'prev_linear_vel'):
+            vel_change = abs(v - self.prev_linear_vel)
+            if vel_change > 0.1:  # Threshold for sudden change
+                reward -= 0.05 * vel_change
+        self.prev_linear_vel = v
+
+        return reward, False, None
 
     def control_vel(self, action):
         move_cmd = Twist()
