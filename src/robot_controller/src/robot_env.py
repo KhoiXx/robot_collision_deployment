@@ -56,6 +56,10 @@ class RobotEnv:
         self.amcl_prev_position = None
         self.amcl_prev_yaw = None
 
+        # Track AMCL update rate
+        self.amcl_update_times = deque(maxlen=100)
+        self.amcl_update_count = 0
+
     def set_new_goal(self, goal: list):
         self.goal_point = goal
         [x, y] = self.get_local_goal()
@@ -122,8 +126,20 @@ class RobotEnv:
         yaw = normalize_angle(euler[2])
         self.state_GT = [pos.x, pos.y, yaw]
 
-        # Calculate speed
+        # Track AMCL update rate
         current_time = rospy.Time.now().to_sec()
+        self.amcl_update_times.append(current_time)
+        self.amcl_update_count += 1
+
+        # Log AMCL rate every 100 updates
+        if self.amcl_update_count % 100 == 0 and len(self.amcl_update_times) > 10:
+            intervals = [self.amcl_update_times[i] - self.amcl_update_times[i-1]
+                        for i in range(1, len(self.amcl_update_times))]
+            avg_interval = np.mean(intervals)
+            amcl_rate = 1.0 / avg_interval if avg_interval > 0 else 0
+            rospy.loginfo(f"[AMCL] Rate: {amcl_rate:.1f} Hz | Interval: {avg_interval*1000:.1f}ms")
+
+        # Calculate speed
         current_position = np.array([pos.x, pos.y])
 
         current_yaw = euler[2]
@@ -143,7 +159,13 @@ class RobotEnv:
         self.amcl_prev_yaw = current_yaw
 
     def get_local_goal(self):
-        [x, y, theta] = self.state_GT
+        # Use AMCL if available, fallback to UKF odom if AMCL stale
+        if self.state_GT is not None:
+            [x, y, theta] = self.state_GT
+        else:
+            # Fallback to UKF odometry if AMCL not available
+            [x, y, theta] = self.state if self.state is not None else [0, 0, 0]
+
         [goal_x, goal_y] = self.goal_point
         local_x = (goal_x - x) * np.cos(theta) + (goal_y - y) * np.sin(theta)
         local_y = -(goal_x - x) * np.sin(theta) + (goal_y - y) * np.cos(theta)

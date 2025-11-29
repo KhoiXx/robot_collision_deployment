@@ -315,6 +315,10 @@ class RunModelSafe:
 
         rate = rospy.Rate(self.CONTROL_RATE)
 
+        # Track actual control rate
+        rate_tracker = deque(maxlen=100)
+        last_step_time = time.time()
+
         while not self.terminal and not rospy.is_shutdown() and not self.safety_stop:
             loop_start = time.time()
 
@@ -398,7 +402,20 @@ class RunModelSafe:
             # Maintain control rate
             rate.sleep()
 
+            # Track actual loop timing
             loop_time = time.time() - loop_start
+            step_interval = loop_time
+            rate_tracker.append(step_interval)
+
+            # Log timing every 50 steps (~5s at 10Hz)
+            if step % 50 == 0 and len(rate_tracker) > 10:
+                avg_interval = np.mean(rate_tracker)
+                actual_rate = 1.0 / avg_interval if avg_interval > 0 else 0
+                min_interval = np.min(rate_tracker)
+                max_interval = np.max(rate_tracker)
+                rospy.loginfo(f"[RATE] Actual: {actual_rate:.1f} Hz (target: {self.CONTROL_RATE} Hz) | "
+                             f"Interval: {avg_interval*1000:.1f}ms (min: {min_interval*1000:.0f}ms, max: {max_interval*1000:.0f}ms)")
+
             if loop_time > 0.15:  # Warn if loop too slow
                 rospy.logwarn(f"Slow loop: {loop_time*1000:.1f}ms (target: {1000/self.CONTROL_RATE:.1f}ms)")
 
