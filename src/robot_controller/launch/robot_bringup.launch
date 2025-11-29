@@ -54,4 +54,17 @@
     
     <!-- Reserve for Rviz -->
 
+    <!-- ============================================== -->
+    <!-- ROBOT DESCRIPTION & TF -->
+    <!-- ============================================== -->
+
+    <!-- Load robot URDF -->
+    <param name="robot_description" command="cat $(find robot_description)/urdf/robot_description.urdf" />
+
+    <!-- Robot State Publisher - publishes TF from URDF -->
+    <!-- TF chain: dummy_base_link -> base_link -> lidar -->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
+        <param name="publish_frequency" value="50.0"/>
+    </node>
+
 </launch>
