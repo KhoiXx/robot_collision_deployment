@@ -16,6 +16,7 @@
     <include file="$(find ldlidar_ros)/launch/ld19.launch">
         <arg name="port_name" value="$(arg lidar_port)"/>
         <arg name="laser_scan_topic_name" value="$(arg laser_scan_topic_name)"/>
+        <arg name="frame_id" value="lidar"/>
         <!-- <remap from="/scan" to="$(arg robot_namespace)/scan"/> -->
     </include>
     <!-- Start IMU node -->
