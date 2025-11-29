@@ -65,6 +65,7 @@
     <!-- TF chain: dummy_base_link -> base_link -> lidar -->
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen">
         <param name="publish_frequency" value="50.0"/>
+        <param name="tf_prefix" value="$(arg robot_namespace)"/>
     </node>
 
 </launch>
