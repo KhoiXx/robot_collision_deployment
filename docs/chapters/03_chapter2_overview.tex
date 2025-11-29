@@ -1,41 +1,1143 @@
 % chapters/03_chapter2_overview.tex
 % Chapter 2: Literature Review (Tổng Quan)
 % Author: Nguyễn Tấn Khôi
-% Date: 2025-11-12
+% Date: 2025-11-25
 
 \chapter{TỔNG QUAN}
 \label{chap:overview}
 
 % Chapter introduction
-Chương này trình bày tổng quan về các nghiên cứu liên quan đến học tăng cường, thuật toán PPO, và ứng dụng trong bài toán đa robot tránh va chạm.
+Chương này trình bày tổng quan về các nghiên cứu liên quan đến hệ đa robot, các phương pháp tránh va chạm từ truyền thống đến hiện đại, các phương pháp dựa trên học sâu, phương pháp của Long et al. 2018, cơ sở lý thuyết về học tăng cường và thuật toán PPO, và các cơ sở lý thuyết cần thiết cho triển khai robot thực tế bao gồm điều khiển PID, UKF sensor fusion, và GMapping SLAM.
 
-\section{Phương pháp của Long et al.}
+\section{Giới thiệu về hệ đa robot}
+\label{sec:multi_robot_intro}
+
+Hệ đa robot (Multi-Robot Systems - MRS) là hệ thống bao gồm nhiều robot hoạt động đồng thời trong cùng một môi trường để thực hiện một hoặc nhiều nhiệm vụ chung. Hệ đa robot có thể được phân loại dựa trên mức độ phối hợp giữa các robot: từ hoàn toàn độc lập (independent) đến phối hợp chặt chẽ (tightly coordinated), và dựa trên kiến trúc điều khiển: tập trung (centralized) hoặc phân tán (decentralized).
+
+Trong những năm gần đây, hệ đa robot đã được ứng dụng rộng rãi trong nhiều lĩnh vực thực tế. Tại các kho hàng tự động như Amazon Fulfillment Centers, hàng trăm robot di chuyển đồng thời để vận chuyển hàng hóa, giúp tăng hiệu suất và giảm chi phí nhân công. Trong sản xuất công nghiệp, các robot di động (Automated Guided Vehicles - AGV) phối hợp vận chuyển nguyên liệu và sản phẩm giữa các trạm làm việc. Hệ đa robot cũng được ứng dụng trong logistics, nông nghiệp thông minh, cứu hộ thảm họa, và thăm dò không gian.
+
+Một trong những thách thức chính trong điều khiển hệ đa robot là vấn đề tránh va chạm (collision avoidance). Khi số lượng robot tăng lên, không gian hoạt động trở nên chật hẹp và xác suất va chạm giữa các robot hoặc với chướng ngại vật tăng cao. Điều này đòi hỏi mỗi robot phải có khả năng cảm nhận môi trường xung quanh, dự đoán chuyển động của các robot khác, và điều chỉnh quỹ đạo của mình để tránh va chạm trong khi vẫn đạt được mục tiêu đề ra. Vấn đề trở nên phức tạp hơn khi môi trường có chướng ngại vật động, không gian hạn chế, hoặc yêu cầu thời gian phản ứng nhanh.
+
+\section{Các phương pháp tránh va chạm truyền thống}
+\label{sec:traditional_methods}
+
+Các phương pháp tránh va chạm truyền thống thường dựa trên mô hình toán học và quy tắc xác định (rule-based) để đảm bảo an toàn cho robot. Các phương pháp này có ưu điểm về tính minh bạch và khả năng chứng minh an toàn, nhưng thường gặp khó khăn khi áp dụng cho hệ đa robot với số lượng lớn.
+
+\textbf{Artificial Potential Field (APF)} \cite{khatib1986real} là một trong những phương pháp sớm nhất và đơn giản nhất. Phương pháp này mô hình hóa môi trường như một trường thế năng, trong đó mục tiêu tạo ra lực hút (attractive force) và các chướng ngại vật tạo ra lực đẩy (repulsive force). Robot di chuyển theo hướng của gradient âm của trường thế năng. Tuy nhiên, APF thường gặp vấn đề local minima, trong đó robot có thể bị mắc kẹt tại điểm cân bằng không phải là mục tiêu.
+
+\textbf{Rapidly-exploring Random Tree (RRT)} \cite{lavalle1998rrt} và biến thể tối ưu RRT* \cite{karaman2011rrtstar} là các thuật toán lấy mẫu ngẫu nhiên (sampling-based) để tìm đường đi trong không gian cấu hình. RRT xây dựng một cây tìm kiếm bằng cách mở rộng ngẫu nhiên từ điểm khởi đầu đến mục tiêu. RRT* cải thiện RRT bằng cách tối ưu hóa chi phí đường đi. Các phương pháp này hiệu quả cho bài toán tìm đường trong không gian phức tạp, nhưng không phù hợp cho điều khiển thời gian thực với nhiều robot do chi phí tính toán cao.
+
+\textbf{Optimal Reciprocal Collision Avoidance (ORCA)} \cite{vandenberg2011orca} là phương pháp phổ biến cho tránh va chạm đa tác tử. ORCA tính toán vận tốc an toàn cho mỗi robot bằng cách xác định một tập hợp các vận tốc không gây va chạm trong một khoảng thời gian nhất định. Mỗi robot chọn vận tốc gần nhất với vận tốc mong muốn trong tập hợp này. ORCA đảm bảo không va chạm nếu tất cả robot tuân theo quy tắc, nhưng phương pháp này yêu cầu robot có mô hình động học holonomic (có thể di chuyển theo mọi hướng), trong khi nhiều robot thực tế là nonholonomic (ví dụ: differential drive robot).
+
+Bảng \ref{tab:traditional_methods} tổng hợp so sánh các phương pháp truyền thống. Có thể thấy, các phương pháp này có ưu điểm về tính toán nhanh và khả năng chứng minh an toàn, nhưng hạn chế chính là khó khăn khi mở rộng cho hệ đa robot với số lượng lớn (>50 robots) và môi trường động phức tạp. Điều này tạo động lực cho việc nghiên cứu các phương pháp dựa trên học máy có khả năng học từ dữ liệu và thích nghi với môi trường.
+
+\begin{table}[ht]
+\centering
+\caption{So sánh các phương pháp tránh va chạm truyền thống}
+\label{tab:traditional_methods}
+\begin{tabular}{|p{3cm}|p{3.5cm}|p{3.5cm}|p{3cm}|}
+\hline
+\textbf{Phương pháp} & \textbf{Ưu điểm} & \textbf{Nhược điểm} & \textbf{Khả năng mở rộng} \\
+\hline
+Artificial Potential Field \cite{khatib1986real} &
+Đơn giản, tính toán nhanh, dễ triển khai &
+Local minima, khó điều chỉnh tham số, không đảm bảo tối ưu &
+Khó với >20 robots \\
+\hline
+RRT/RRT* \cite{lavalle1998rrt,karaman2011rrtstar} &
+Tìm đường trong không gian phức tạp, RRT* đảm bảo tối ưu tiệm cận &
+Chi phí tính toán cao, không phù hợp real-time, cần re-plan thường xuyên &
+Không phù hợp cho đa robot \\
+\hline
+ORCA \cite{vandenberg2011orca} &
+Đảm bảo không va chạm, phân tán, phù hợp real-time &
+Yêu cầu holonomic robot, không tối ưu đường đi, cần communication &
+Tốt đến 50 robots \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Các phương pháp dựa trên học sâu}
+\label{sec:deep_learning_methods}
+
+Trong những năm gần đây, học sâu (Deep Learning - DL) \cite{lecun2015deep} đã đạt được thành công vượt bậc trong nhiều lĩnh vực như thị giác máy tính, xử lý ngôn ngữ tự nhiên, và điều khiển robot. Kết hợp học sâu với học tăng cường (Reinforcement Learning - RL) tạo ra phương pháp học tăng cường sâu (Deep Reinforcement Learning - DRL) có khả năng học các chính sách điều khiển phức tạp trực tiếp từ dữ liệu cảm biến.
+
+\textbf{Deep Q-Network (DQN)} \cite{mnih2015dqn} là một trong những bước đột phá đầu tiên của DRL, cho phép agent học chơi các trò chơi Atari ở mức độ con người chỉ từ pixels. DQN sử dụng mạng nơ-ron sâu để xấp xỉ hàm giá trị Q và kết hợp experience replay để ổn định quá trình học. Tuy nhiên, DQN được thiết kế cho không gian hành động rời rạc, không phù hợp cho điều khiển robot với hành động liên tục.
+
+Để giải quyết vấn đề hành động liên tục, các thuật toán policy gradient như \textbf{Asynchronous Advantage Actor-Critic (A3C)} \cite{mnih2016asynchronous} được phát triển. A3C sử dụng nhiều agent song song để thu thập dữ liệu và cập nhật policy, giúp tăng tốc độ học và ổn định training. Kiến trúc Actor-Critic bao gồm hai mạng: Actor đưa ra hành động và Critic đánh giá hành động đó. Tuy nhiên, A3C vẫn gặp vấn đề về độ ổn định khi learning rate quá lớn.
+
+Ứng dụng DRL cho điều khiển robot di động đã được nghiên cứu rộng rãi. \textbf{Tai et al.} \cite{tai2017collision} đề xuất phương pháp học navigation không cần bản đồ (mapless navigation) cho robot di động sử dụng DRL với đầu vào là dữ liệu LiDAR. Phương pháp này cho phép robot học tránh chướng ngại vật và di chuyển đến mục tiêu trong môi trường chưa biết trước. Điểm mạnh là không cần xây dựng bản đồ chi tiết, nhưng hạn chế là chỉ xét robot đơn lẻ.
+
+Đối với bài toán đa robot, có hai cách tiếp cận chính: tập trung (centralized) và phân tán (decentralized). Cách tiếp cận tập trung sử dụng một agent trung tâm điều khiển tất cả robots, có ưu điểm là dễ tối ưu hóa toàn cục nhưng gặp khó khăn về khả năng mở rộng và đòi hỏi communication đáng tin cậy. Ngược lại, cách tiếp cận phân tán \cite{chen2017decentralized} cho phép mỗi robot có policy riêng và ra quyết định độc lập dựa trên quan sát cục bộ. Cách tiếp cận này mở rộng tốt hơn cho số lượng robot lớn và không yêu cầu communication, phù hợp cho ứng dụng thực tế.
+
+\section{Phương pháp PPO với hệ robot phi tập trung}
 \label{sec:long_method}
 
-Bài báo gốc của Long et al. \cite{long2018towards} đề xuất phương pháp điều khiển phân tán sử dụng Deep Reinforcement Learning với thuật toán PPO. Mô hình sử dụng kiến trúc CNN với 2 lớp Conv1D và huấn luyện theo 2 giai đoạn, đạt kết quả 96.5-100\% success rate với 4-20 robots.
+Bài báo của Long et al. \cite{long2018towards} đề xuất phương pháp điều khiển phân tán cho hệ đa robot tránh va chạm sử dụng deep reinforcement learning. Đây là công trình nền tảng cho luận văn này.
 
-% Placeholder - nội dung chi tiết sẽ được bổ sung sau
+\subsection{Mô hình bài toán}
+\label{subsec:long_formulation}
 
-\section{So sánh các phương pháp tránh va chạm}
-\label{sec:comparison}
+Bài toán được công thức hóa như một Partially Observable Markov Decision Process (POMDP) cho mỗi robot. Điểm khác biệt quan trọng so với các phương pháp trước (ORCA, GA3C-CADRL) là không giả định "perfect sensing" - mỗi robot chỉ quan sát được môi trường xung quanh từ sensor của chính nó, không biết chính xác vị trí và ý định của robots khác.
 
-% Placeholder - nội dung sẽ được bổ sung
+\textbf{Observation space:} Mỗi robot quan sát $\mathbf{o}^t = [\mathbf{o}_z^t, \mathbf{o}_g^t, \mathbf{o}_v^t]$ gồm: (1) Laser scan 180° với 512 readings từ 3 frames liên tiếp, (2) Vị trí tương đối của goal (khoảng cách và góc), (3) Vận tốc hiện tại (linear và angular).
+
+\textbf{Action space:} Hành động là vận tốc $\mathbf{a}^t = [v^t, w^t]$ với $v^t \in (0, 1.0)$ m/s (không cho phép lùi) và $w^t \in (-1.0, 1.0)$ rad/s, được sample từ stochastic policy $\pi_\theta$ chia sẻ bởi tất cả robots.
+
+\textbf{Objective:} Minimize thời gian đến đích trung bình của tất cả robots trong khi đảm bảo không va chạm với nhau ($\|\mathbf{p}_t^i - \mathbf{p}_t^j\| > 2R$) và với vật cản.
+
+\subsection{Hàm reward}
+\label{subsec:long_reward}
+
+Reward function gồm ba thành phần: $r_t^i = (^g r)_t^i + (^c r)_t^i + (^w r)_t^i$
+
+\begin{itemize}
+\item \textbf{Goal reward}: $r_{\text{arrival}} = +15$ khi đến đích ($\|\mathbf{p}_t^i - \mathbf{g}_i\| < 0.1$); trong khi di chuyển, reward $\omega_g (\|\mathbf{p}_{t-1}^i - \mathbf{g}_i\| - \|\mathbf{p}_t^i - \mathbf{g}_i\|)$ với $\omega_g = 2.5$ tỷ lệ với khoảng cách tiến gần goal. Dense reward này giúp học nhanh hơn sparse reward.
+
+\item \textbf{Collision penalty}: $r_{\text{collision}} = -15$ khi va chạm với robot khác ($\|\mathbf{p}_t^i - \mathbf{p}_t^j\| < 2R$) hoặc vật cản. Giá trị tuyệt đối bằng arrival reward để cân bằng giữa đến đích nhanh và tránh va chạm.
+
+\item \textbf{Smoothness penalty}: Phạt nhẹ $\omega_w |w_t^i| = -0.1 |w_t^i|$ khi vận tốc góc lớn ($|w| > 0.7$) để khuyến khích chuyển động mượt mà.
+\end{itemize}
+
+\subsection{Kiến trúc mạng nơ-ron}
+\label{subsec:long_architecture}
+
+Policy network $\pi_\theta$ ánh xạ trực tiếp từ raw sensor observation sang steering command, gồm 4 hidden layers:
+
+\textbf{Layers 1-2 (Conv1D):} Xử lý laser scan với 2 lớp tích chập 1D:
+\begin{itemize}
+\item Conv1D(32 filters, kernel=5, stride=2) + ReLU
+\item Conv1D(32 filters, kernel=3, stride=2) + ReLU
+\end{itemize}
+Hai lớp này trích xuất đặc trưng không gian từ 1536 laser readings $(3 \times 512)$ thành 4032 features. Việc dùng 3 frames liên tiếp giúp mạng học thông tin về chuyển động tương đối.
+
+\textbf{Layer 3 (FC):} 256 units, flatten output từ Conv1D và tổng hợp đặc trưng không gian.
+
+\textbf{Layer 4 (FC):} 128 units. Lớp này concatenate với goal position (2D) và current velocity (2D) để tích hợp thông tin từ LiDAR, nhiệm vụ, và trạng thái động học.
+
+\textbf{Output layer:} 2 units với Sigmoid (cho $v \in (0,1)$) và Tanh (cho $w \in (-1,1)$). Output là mean của Gaussian distribution $\mathcal{N}(\mathbf{v}_{\text{mean}}, \mathbf{v}_{\text{logstd}})$ để sample action. Stochastic policy cho phép exploration trong training.
+
+\textbf{Value network:} Cùng kiến trúc nhưng output 1 unit (linear activation) để ước lượng expected return. Không share parameters với policy network.
+
+\subsection{Thuật toán huấn luyện}
+\label{subsec:long_ppo}
+
+\textbf{Centralized learning, decentralized execution:} Một policy duy nhất $\pi_\theta$ được huấn luyện từ experiences của tất cả $N$ robots đồng thời (sample efficiency cao, diverse experiences). Khi thực thi, mỗi robot sample action từ policy:
+\begin{equation}
+\mathbf{a}^t \sim \pi_\theta(\mathbf{a}^t | \mathbf{o}^t)
+\end{equation}
+chỉ dựa vào observation riêng, không cần communication (inference ~1.3ms GPU, ~3ms CPU).
+
+\textbf{PPO objective:} Thuật toán PPO sử dụng objective với adaptive KL penalty:
+\begin{equation}
+L^{PPO}(\theta) = \mathbb{E}_t \left[ \frac{\pi_\theta(\mathbf{a}_t | \mathbf{o}_t)}{\pi_{\text{old}}(\mathbf{a}_t | \mathbf{o}_t)} \hat{A}_t \right] - \beta \text{KL}[\pi_{\text{old}} \| \pi_\theta]
+\end{equation}
+trong đó $\hat{A}_t$ là advantage estimate, $\beta$ được điều chỉnh tự động để cân bằng learning speed và stability.
+
+\textbf{Advantage estimation:} Sử dụng GAE với $\lambda = 0.95$, $\gamma = 0.99$:
+\begin{equation}
+\hat{A}_t = \sum_{l=0}^{T} (\gamma \lambda)^l \delta_t, \quad \delta_t = r_t + \gamma V_\phi(\mathbf{s}_{t+1}) - V_\phi(\mathbf{s}_t)
+\end{equation}
+
+\textbf{Hyperparameters:} Policy update 20 epochs, learning rate $5 \times 10^{-5}$ (Stage 1) hoặc $2 \times 10^{-5}$ (Stage 2). Value update 10 epochs, learning rate $1 \times 10^{-3}$. Adam optimizer.
+
+\subsection{Môi trường và kịch bản huấn luyện}
+\label{subsec:long_environment}
+
+\textbf{Môi trường simulation:} Sử dụng Stage mobile robot simulator với 7 scenarios đa dạng: (1-3, 5-6) Môi trường có walls/corridors với start/goal areas cố định, (4) Circle scenario với robots đổi chỗ qua tâm, (7) Random scenario với vị trí robots và obstacles ngẫu nhiên. Tất cả robots di chuyển đồng thời (parallel) để tạo realistic interactions.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{figures/04_Fig8_training_scenarios.jpg}
+    \caption{7 tình huống huấn luyện đa dạng với độ phức tạp tăng dần (Long et al. 2018)}
+    \label{fig:training_scenarios}
+\end{figure}
+
+\textbf{Cấu hình sensor:} Laser scanner 180° mount ở phía trước robot, range 4m, 512 readings/scan. Observations được normalize (mean=0, std=1) trên toàn bộ training data để cải thiện stability và convergence.
+
+\subsection{Chiến lược huấn luyện hai giai đoạn}
+\label{subsec:long_curriculum}
+
+Áp dụng curriculum learning \cite{bengio2009curriculum} với 2 stages để tránh stuck ở local optima:
+
+\textbf{Stage 1 - Foundation learning:} Huấn luyện 20 robots trên random scenario không có obstacles (~6 hours, 300 iterations). Mục tiêu: học basic collision avoidance và goal-reaching. Kết thúc khi success rate $> 0.9$.
+
+\textbf{Stage 2 - Transfer learning:} Tiếp tục huấn luyện 58 robots trên tất cả 7 scenarios phức tạp (~6 hours, 300 iterations) với learning rate thấp hơn ($2 \times 10^{-5}$). Khởi tạo từ Stage 1 weights. Mục tiêu: generalize cho large-scale, obstacles, diverse environments.
+
+\textbf{Kết quả:} Pre-training ở Stage 1 giúp đạt higher rewards ở Stage 2 so với training from scratch. Total ~12 hours, ~4.8M timesteps. Algorithm scale tốt do parallel data collection.
 
 \section{Cơ sở lý thuyết}
 \label{sec:theory}
 
+\subsection{Các thuật toán tối ưu}
+\label{subsec:optimization_algorithms}
+
+Các thuật toán tối ưu đóng vai trò then chốt trong việc huấn luyện mạng nơ-ron sâu. Mục tiêu của các thuật toán này là tìm tập tham số $\theta^*$ minimize hàm loss $J(\theta)$. Trong phần này, chúng ta sẽ phân tích chi tiết các thuật toán từ cơ bản đến hiện đại được sử dụng rộng rãi trong deep learning.
+
+\subsubsection{Gradient Descent}
+
+Gradient Descent (GD) là thuật toán tối ưu cơ bản nhất, trong đó tham số được cập nhật theo hướng ngược với gradient của hàm loss:
+
+\begin{equation}
+\theta_{t+1} = \theta_t - \alpha \nabla_\theta J(\theta_t)
+\end{equation}
+
+trong đó $\alpha > 0$ là learning rate (tốc độ học), và $\nabla_\theta J(\theta_t)$ là gradient của loss function tại $\theta_t$.
+
+\textbf{Batch Gradient Descent:} Tính gradient trên toàn bộ dataset $\mathcal{D} = \{(x^{(i)}, y^{(i)})\}_{i=1}^N$:
+
+\begin{equation}
+\nabla_\theta J(\theta) = \frac{1}{N} \sum_{i=1}^N \nabla_\theta \ell(f_\theta(x^{(i)}), y^{(i)})
+\end{equation}
+
+trong đó $\ell$ là loss function cho một sample (ví dụ: Mean Squared Error, Cross Entropy).
+
+\textbf{Ưu điểm:}
+\begin{itemize}
+\item Cập nhật theo hướng chính xác nhất (true gradient)
+\item Hội tụ đến minimum cho hàm convex
+\item Đơn giản, dễ implement
+\end{itemize}
+
+\textbf{Nhược điểm:}
+\begin{itemize}
+\item Tính toán gradient trên toàn bộ dataset rất chậm với dữ liệu lớn
+\item Không thể update online khi có data mới
+\item Có thể bị mắc kẹt tại local minima hoặc saddle points
+\item Tốc độ hội tụ phụ thuộc nhiều vào learning rate $\alpha$
+\end{itemize}
+
+\textbf{Chọn learning rate:} Nếu $\alpha$ quá nhỏ $\rightarrow$ hội tụ chậm. Nếu $\alpha$ quá lớn $\rightarrow$ oscillation hoặc divergence. Phương pháp thử nghiệm: bắt đầu với $\alpha = 0.01$, tăng/giảm theo log scale (0.001, 0.01, 0.1, 1.0) và chọn giá trị cho loss giảm nhanh nhất mà không bị oscillation.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.65\textwidth]{figures/02_Fig4_gradient_descent.jpg}
+    \caption{Minh họa Gradient Descent: Tham số di chuyển theo hướng ngược gradient để giảm loss}
+    \label{fig:gradient_descent}
+\end{figure}
+
+\subsubsection{Stochastic Gradient Descent (SGD)}
+
+Để giải quyết vấn đề tính toán chậm của Batch GD, Stochastic Gradient Descent chỉ sử dụng một sample ngẫu nhiên hoặc một mini-batch để ước lượng gradient:
+
+\begin{equation}
+\nabla_\theta J(\theta) \approx \nabla_\theta \ell(f_\theta(x^{(i)}), y^{(i)})
+\end{equation}
+
+hoặc với mini-batch size $B$:
+
+\begin{equation}
+\nabla_\theta J(\theta) \approx \frac{1}{B} \sum_{i \in \mathcal{B}} \nabla_\theta \ell(f_\theta(x^{(i)}), y^{(i)})
+\end{equation}
+
+\textbf{Thuật toán SGD với mini-batch:}
+
+\begin{enumerate}
+\item Khởi tạo tham số $\theta_0$ (thường từ phân phối chuẩn hoặc Xavier/He initialization)
+\item Đặt learning rate $\alpha$, batch size $B$
+\item Lặp cho đến khi hội tụ:
+\begin{itemize}
+\item Shuffle dataset $\mathcal{D}$
+\item Chia dataset thành mini-batches: $\{\mathcal{B}_1, \mathcal{B}_2, \ldots, \mathcal{B}_M\}$
+\item Với mỗi mini-batch $\mathcal{B}_j$:
+\begin{itemize}
+\item Tính loss: $J_j(\theta) = \frac{1}{B} \sum_{(x,y) \in \mathcal{B}_j} \ell(f_\theta(x), y)$
+\item Tính gradient: $g_j = \nabla_\theta J_j(\theta)$
+\item Cập nhật: $\theta \leftarrow \theta - \alpha g_j$
+\end{itemize}
+\end{itemize}
+\end{enumerate}
+
+\textbf{Ưu điểm:}
+\begin{itemize}
+\item Nhanh hơn nhiều so với Batch GD, có thể handle big data
+\item Update online, có thể học từ streaming data
+\item Noise trong gradient giúp thoát local minima
+\item Hỗ trợ GPU tốt hơn với mini-batch
+\end{itemize}
+
+\textbf{Nhược điểm:}
+\begin{itemize}
+\item Gradient noisy, cập nhật không ổn định
+\item Learning rate cố định không tối ưu cho mọi tham số
+\item Vẫn có thể oscillate xung quanh minimum
+\item Cần tuning cẩn thận batch size và learning rate
+\end{itemize}
+
+\textbf{Chọn batch size:} Batch size nhỏ (32-64) $\rightarrow$ update nhanh, gradient noisy, generalization tốt. Batch size lớn (256-512) $\rightarrow$ gradient stable, tận dụng GPU, có thể overfitting. Với RL và PPO, thường dùng batch size lớn (1024-4096 timesteps) để ổn định policy update.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{figures/02_Fig5_sgd_vs_gd.jpg}
+    \caption{So sánh Stochastic Gradient Descent và Gradient Descent: SGD có noise nhưng hội tụ nhanh hơn}
+    \label{fig:sgd_vs_gd}
+\end{figure}
+
+\subsubsection{Momentum-based Gradient Descent}
+
+Momentum giải quyết vấn đề oscillation của SGD bằng cách tích lũy hướng di chuyển từ các bước trước:
+
+\begin{equation}
+\begin{aligned}
+v_{t+1} &= \beta v_t + (1 - \beta) g_t \\
+\theta_{t+1} &= \theta_t - \alpha v_{t+1}
+\end{aligned}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $v_t$ là velocity (trung bình trượt của gradient)
+\item $g_t = \nabla_\theta J(\theta_t)$ là gradient tại bước $t$
+\item $\beta \in [0, 1]$ là momentum coefficient (thường $\beta = 0.9$)
+\item $\alpha$ là learning rate
+\end{itemize}
+
+\textbf{Giải thích trực quan:} Hãy tưởng tượng một quả bóng lăn xuống dốc. Momentum cho phép quả bóng tích lũy vận tốc khi đi xuống và có thể vượt qua các local minima nhỏ nhờ quán tính. Thuật toán này giúp:
+\begin{itemize}
+\item Tăng tốc trong các hướng có gradient nhất quán
+\item Giảm oscillation trong các hướng có gradient thay đổi
+\item Vượt qua saddle points và local minima phẳng
+\end{itemize}
+
+\textbf{Nesterov Accelerated Gradient (NAG):} Cải tiến momentum bằng cách "nhìn trước" vị trí tiếp theo:
+
+\begin{equation}
+\begin{aligned}
+v_{t+1} &= \beta v_t + (1 - \beta) \nabla_\theta J(\theta_t - \alpha \beta v_t) \\
+\theta_{t+1} &= \theta_t - \alpha v_{t+1}
+\end{aligned}
+\end{equation}
+
+NAG tính gradient tại vị trí "lookahead" $\theta_t - \alpha \beta v_t$ thay vì $\theta_t$, giúp điều chỉnh momentum kịp thời trước khi overshoot.
+
+\textbf{Ưu điểm so với SGD:}
+\begin{itemize}
+\item Hội tụ nhanh hơn, ít oscillation hơn
+\item Ổn định hơn với learning rate lớn
+\item Hiệu quả với ravines (gradient lớn theo một hướng, nhỏ theo hướng khác)
+\end{itemize}
+
+\textbf{Nhược điểm:}
+\begin{itemize}
+\item Thêm một hyperparameter ($\beta$) cần tuning
+\item Vẫn sử dụng learning rate global cho tất cả parameters
+\item Không thích nghi với sparse gradients
+\end{itemize}
+
+\subsubsection{RMSProp (Root Mean Square Propagation)}
+
+RMSProp giải quyết vấn đề learning rate toàn cục bằng cách điều chỉnh learning rate riêng cho từng tham số dựa trên magnitude của gradients gần đây:
+
+\begin{equation}
+\begin{aligned}
+E[g^2]_{t+1} &= \beta E[g^2]_t + (1 - \beta) g_t^2 \\
+\theta_{t+1} &= \theta_t - \frac{\alpha}{\sqrt{E[g^2]_{t+1} + \epsilon}} g_t
+\end{aligned}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $E[g^2]_t$ là trung bình trượt của bình phương gradient (second moment)
+\item $g_t = \nabla_\theta J(\theta_t)$ là gradient
+\item $\beta$ là decay rate (thường 0.9 hoặc 0.99)
+\item $\epsilon$ là hằng số nhỏ (thường $10^{-8}$) để tránh chia cho 0
+\item Phép chia và căn bậc hai được thực hiện element-wise
+\end{itemize}
+
+\textbf{Ý tưởng chính:} Nếu gradient của một tham số thường lớn $\rightarrow$ $E[g^2]$ lớn $\rightarrow$ learning rate giảm. Nếu gradient nhỏ $\rightarrow$ learning rate tăng. Điều này giúp cân bằng tốc độ học giữa các chiều (dimensions) khác nhau.
+
+\textbf{Lợi ích của adaptive learning rate:}
+\begin{itemize}
+\item Tham số với gradient lớn, frequent updates $\rightarrow$ LR giảm, tránh oscillation
+\item Tham số với gradient nhỏ, sparse updates $\rightarrow$ LR tăng, hội tụ nhanh hơn
+\item Phù hợp với non-stationary objectives (objective thay đổi theo thời gian)
+\item Hiệu quả với sparse data (NLP, recommendation systems)
+\end{itemize}
+
+\textbf{Ưu điểm:}
+\begin{itemize}
+\item Adaptive learning rate cho từng tham số
+\item Hiệu quả với non-convex optimization
+\item Ít nhạy cảm với global learning rate $\alpha$
+\item Phù hợp với recurrent neural networks
+\end{itemize}
+
+\textbf{Nhược điểm:}
+\begin{itemize}
+\item $E[g^2]$ có thể tích lũy và trở nên rất lớn, làm learning rate quá nhỏ
+\item Không có momentum để tăng tốc trong hướng consistent
+\item Vẫn cần tuning learning rate $\alpha$ và decay rate $\beta$
+\end{itemize}
+
+\subsubsection{Adam (Adaptive Moment Estimation)}
+
+Adam \cite{kingma2014adam} kết hợp momentum (first moment) và RMSProp (second moment) để tạo ra thuật toán tối ưu hiện đại nhất, được sử dụng rộng rãi nhất trong deep learning:
+
+\begin{equation}
+\begin{aligned}
+m_{t+1} &= \beta_1 m_t + (1 - \beta_1) g_t \\
+v_{t+1} &= \beta_2 v_t + (1 - \beta_2) g_t^2 \\
+\hat{m}_{t+1} &= \frac{m_{t+1}}{1 - \beta_1^{t+1}} \\
+\hat{v}_{t+1} &= \frac{v_{t+1}}{1 - \beta_2^{t+1}} \\
+\theta_{t+1} &= \theta_t - \alpha \frac{\hat{m}_{t+1}}{\sqrt{\hat{v}_{t+1}} + \epsilon}
+\end{aligned}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $m_t$ là first moment estimate (trung bình gradient - momentum)
+\item $v_t$ là second moment estimate (trung bình bình phương gradient - variance)
+\item $\beta_1, \beta_2 \in [0, 1)$ là decay rates (default: $\beta_1=0.9$, $\beta_2=0.999$)
+\item $\hat{m}_t, \hat{v}_t$ là bias-corrected moments
+\item $\epsilon$ là hằng số nhỏ (default: $10^{-8}$)
+\item $t$ là iteration number
+\end{itemize}
+
+\textbf{Bias correction:} Ở các bước đầu tiên ($t$ nhỏ), $m_t$ và $v_t$ bị bias về 0 do khởi tạo $m_0 = v_0 = 0$. Chia cho $(1 - \beta_1^{t+1})$ và $(1 - \beta_2^{t+1})$ giúp khử bias này. Khi $t \to \infty$, $(1 - \beta_1^{t+1}) \to 1$ và bias correction không còn ảnh hưởng.
+
+\textbf{Giải thích các thành phần:}
+
+1. \textbf{First moment $m_t$ (momentum):}
+\begin{itemize}
+\item Tích lũy hướng di chuyển từ các bước trước
+\item Giúp tăng tốc trong hướng nhất quán
+\item Giảm oscillation khi gradient thay đổi dấu
+\end{itemize}
+
+2. \textbf{Second moment $v_t$ (adaptive learning rate):}
+\begin{itemize}
+\item Theo dõi magnitude của gradients
+\item Điều chỉnh learning rate riêng cho từng tham số
+\item Tham số với gradient lớn $\rightarrow$ LR nhỏ, tham số với gradient nhỏ $\rightarrow$ LR lớn
+\end{itemize}
+
+3. \textbf{Update rule:}
+\begin{equation}
+\Delta \theta = - \alpha \cdot \frac{\text{momentum}}{\text{scale}} = - \alpha \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
+\end{equation}
+
+\textbf{Default hyperparameters:} Adam hoạt động tốt với default settings:
+\begin{itemize}
+\item Learning rate: $\alpha = 0.001$ (hoặc 0.0003 cho RL)
+\item First moment decay: $\beta_1 = 0.9$
+\item Second moment decay: $\beta_2 = 0.999$
+\item Epsilon: $\epsilon = 10^{-8}$
+\end{itemize}
+
+\textbf{Ưu điểm của Adam:}
+\begin{itemize}
+\item Kết hợp momentum và adaptive LR $\rightarrow$ hiệu quả cao
+\item Hoạt động tốt với default hyperparameters $\rightarrow$ ít cần tuning
+\item Hiệu quả với sparse gradients và noisy data
+\item Thích hợp cho non-convex optimization và high-dimensional parameter spaces
+\item Computational efficient, memory efficient (chỉ cần lưu $m_t, v_t$)
+\end{itemize}
+
+\textbf{Nhược điểm và biến thể:}
+\begin{itemize}
+\item Có thể không hội tụ cho một số bài toán (do second moment không decay đủ nhanh)
+\item \textbf{AdamW}: Sửa weight decay (regularization) bằng cách tách weight decay khỏi gradient update
+\item \textbf{AMSGrad}: Giữ max của $v_t$ để đảm bảo learning rate không tăng
+\end{itemize}
+
+\textbf{Khi nào dùng Adam:}
+\begin{itemize}
+\item Default choice cho hầu hết các bài toán deep learning
+\item Đặc biệt hiệu quả với RNN, GAN, VAE
+\item Phù hợp khi không muốn spend nhiều thời gian tuning optimizer
+\item Trong RL và PPO, Adam thường được dùng riêng cho Actor và Critic với learning rates khác nhau
+\end{itemize}
+
+\textbf{So sánh các thuật toán tối ưu:}
+
+\begin{table}[ht]
+\centering
+\caption{So sánh các thuật toán tối ưu}
+\label{tab:optimizer_comparison}
+\begin{tabular}{|p{2.5cm}|p{3cm}|p{3cm}|p{3cm}|p{2cm}|}
+\hline
+\textbf{Thuật toán} & \textbf{Ưu điểm chính} & \textbf{Nhược điểm chính} & \textbf{Ứng dụng phù hợp} & \textbf{Tuning} \\
+\hline
+Batch GD & Hội tụ ổn định, chính xác & Rất chậm, không scale & Bài toán nhỏ, convex & Dễ \\
+\hline
+SGD & Nhanh, scale tốt & Oscillation, cần tuning LR & Classification, không dùng nhiều nữa & Khó \\
+\hline
+Momentum & Tăng tốc, ít oscillation & Thêm hyperparameter $\beta$ & Computer vision (với SGD) & Trung bình \\
+\hline
+RMSProp & Adaptive LR, phù hợp RNN & Không có momentum & Recurrent networks & Trung bình \\
+\hline
+Adam & Kết hợp momentum + adaptive LR, ít cần tuning & Có thể không hội tụ một số bài toán & Default choice, RL, NLP, GANs & Dễ \\
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Reinforcement Learning}
-% Placeholder
+\label{subsec:rl_basics}
+
+Học tăng cường (Reinforcement Learning - RL) là phương pháp học máy trong đó một agent học cách hành động trong môi trường để tối đa hóa tổng reward tích lũy. RL được mô hình hóa bằng Markov Decision Process (MDP), định nghĩa bởi bộ $(\mathcal{S}, \mathcal{A}, \mathcal{P}, \mathcal{R}, \gamma)$ trong đó:
+
+\begin{itemize}
+\item $\mathcal{S}$ là tập hợp các trạng thái (states)
+\item $\mathcal{A}$ là tập hợp các hành động (actions)
+\item $\mathcal{P}(s'|s,a)$ là xác suất chuyển trạng thái
+\item $\mathcal{R}(s,a)$ là hàm reward
+\item $\gamma \in [0,1]$ là discount factor
+\end{itemize}
+
+Policy $\pi(a|s)$ là phân phối xác suất của hành động cho trước trạng thái. Mục tiêu của RL là tìm policy tối ưu $\pi^*$ maximizing expected return $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}$.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.6\textwidth]{figures/02_Fig2_agent_environment_rl.jpg}
+    \caption{Tương tác giữa Agent và Environment trong Reinforcement Learning}
+    \label{fig:agent_environment_rl}
+\end{figure}
+
+\textbf{Value function} $V^\pi(s)$ ước lượng expected return khi bắt đầu từ trạng thái $s$ và theo policy $\pi$:
+\begin{equation}
+V^\pi(s) = \mathbb{E}_\pi \left[ G_t \mid s_t = s \right]
+\end{equation}
+
+\textbf{Q-function} $Q^\pi(s,a)$ ước lượng expected return khi thực hiện hành động $a$ tại trạng thái $s$ rồi theo policy $\pi$:
+\begin{equation}
+Q^\pi(s,a) = \mathbb{E}_\pi \left[ G_t \mid s_t = s, a_t = a \right]
+\end{equation}
+
+\textbf{Advantage function} $A^\pi(s,a)$ đo lường lợi thế của việc chọn hành động $a$ so với policy hiện tại:
+\begin{equation}
+A^\pi(s,a) = Q^\pi(s,a) - V^\pi(s)
+\end{equation}
+
+Advantage function giúp giảm variance trong policy gradient. \textbf{Generalized Advantage Estimation (GAE)} \cite{schulman2015gae} là phương pháp ước lượng advantage function hiệu quả bằng cách kết hợp nhiều n-step advantage estimates với tham số $\lambda \in [0,1]$:
+
+\begin{equation}
+\hat{A}^{GAE(\gamma,\lambda)}_t = \sum_{l=0}^{\infty} (\gamma\lambda)^l \delta_{t+l}
+\end{equation}
+
+trong đó $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$ là temporal difference error.
+
+Kiến trúc \textbf{Actor-Critic} kết hợp policy-based và value-based methods. Actor (policy network) $\pi_\theta(a|s)$ chọn hành động, Critic (value network) $V_\phi(s)$ đánh giá trạng thái. Critic giúp giảm variance cho policy gradient của Actor.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{figures/02_Fig3_actor_critic_architecture.jpg}
+    \caption{Kiến trúc Actor-Critic: Actor quyết định hành động, Critic đánh giá giá trị trạng thái}
+    \label{fig:actor_critic}
+\end{figure}
 
 \subsection{Proximal Policy Optimization (PPO)}
-Thuật toán PPO \cite{schulman2017proximal} là một trong những thuật toán policy gradient hiệu quả nhất hiện nay.
+\label{subsec:ppo}
 
-% Placeholder - nội dung chi tiết sẽ được bổ sung
+Thuật toán PPO \cite{schulman2017proximal} là một trong những thuật toán policy gradient hiệu quả và ổn định nhất hiện nay. PPO giải quyết vấn đề của các thuật toán policy gradient truyền thống là độ nhạy cảm với learning rate và khả năng policy thay đổi quá nhanh gây mất ổn định. Trong phần này, chúng ta sẽ phân tích chi tiết từ policy gradient cơ bản đến PPO.
 
-\section{Đánh giá tình hình nghiên cứu}
-\label{sec:research_gap}
+\subsubsection{Policy Gradient cơ bản}
 
-% Placeholder - nội dung sẽ được bổ sung
+Policy gradient methods tối ưu trực tiếp policy $\pi_\theta(a|s)$ bằng cách maximize expected return $J(\theta)$:
+
+\begin{equation}
+J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_{t=0}^T \gamma^t r_t \right]
+\end{equation}
+
+trong đó $\tau = (s_0, a_0, r_0, s_1, \ldots)$ là trajectory được thu thập bằng policy $\pi_\theta$.
+
+\textbf{Policy Gradient Theorem:} Gradient của objective function là:
+
+\begin{equation}
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot G_t \right]
+\end{equation}
+
+trong đó $G_t = \sum_{k=t}^T \gamma^{k-t} r_k$ là return từ timestep $t$.
+
+\textbf{Giảm variance với baseline:} Sử dụng value function $V^\pi(s_t)$ làm baseline:
+
+\begin{equation}
+\nabla_\theta J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_{t=0}^T \nabla_\theta \log \pi_\theta(a_t|s_t) \cdot (G_t - V^\pi(s_t)) \right]
+\end{equation}
+
+Advantage function $A^\pi(s_t, a_t) = G_t - V^\pi(s_t)$ giúp giảm variance mà không làm tăng bias.
+
+\textbf{Vấn đề của vanilla policy gradient:}
+\begin{itemize}
+\item Update step size khó kiểm soát - policy có thể thay đổi quá nhanh và mất performance
+\item Sample inefficient - cần nhiều dữ liệu mới hội tụ
+\item Không ổn định - performance có thể sụt giảm đột ngột
+\item Khó tuning learning rate - quá nhỏ $\rightarrow$ chậm, quá lớn $\rightarrow$ collapse
+\end{itemize}
+
+\subsubsection{Trust Region Policy Optimization (TRPO)}
+
+\textbf{Ý tưởng chính:} Thay vì cố định learning rate, TRPO đảm bảo mỗi update giữ policy mới "gần" policy cũ bằng constraint KL divergence:
+
+\begin{equation}
+\begin{aligned}
+\text{maximize}_\theta \quad & \mathbb{E}_t \left[ \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} \hat{A}_t \right] \\
+\text{subject to} \quad & \mathbb{E}_t \left[ \text{KL}[\pi_{\theta_{old}}(\cdot|s_t) \| \pi_\theta(\cdot|s_t)] \right] \leq \delta
+\end{aligned}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item Objective: Expected advantage khi sử dụng actions từ $\pi_{\theta_{old}}$ nhưng đánh giá theo $\pi_\theta$
+\item Constraint: KL divergence giữa policy mới và cũ không vượt quá $\delta$ (thường 0.01-0.05)
+\end{itemize}
+
+\textbf{KL divergence:} Đo sự khác biệt giữa hai phân phối xác suất:
+\begin{equation}
+\text{KL}[p \| q] = \mathbb{E}_{x \sim p} \left[ \log \frac{p(x)}{q(x)} \right] = \sum_x p(x) \log \frac{p(x)}{q(x)}
+\end{equation}
+
+$\text{KL} = 0$ khi $p = q$ (identical), và $\text{KL} > 0$ ngược lại. KL không đối xứng: $\text{KL}[p \| q] \neq \text{KL}[q \| p]$.
+
+\textbf{Giải bài toán TRPO:} Sử dụng conjugate gradient để giải bài toán tối ưu có constraint:
+\begin{enumerate}
+\item Linearize objective: $L(\theta) \approx g^T (\theta - \theta_{old})$ với $g = \nabla_\theta L|_{\theta_{old}}$
+\item Quadratic approximation của KL constraint: $\text{KL} \approx \frac{1}{2} (\theta - \theta_{old})^T H (\theta - \theta_{old}) \leq \delta$
+\item Giải hệ tuyến tính: $H x = g$ bằng conjugate gradient
+\item Line search để đảm bảo constraint satisfied
+\end{enumerate}
+
+\textbf{Ưu điểm của TRPO:}
+\begin{itemize}
+\item Đảm bảo monotonic improvement (performance không giảm)
+\item Robust với nhiều loại bài toán
+\item Không cần tuning learning rate
+\end{itemize}
+
+\textbf{Nhược điểm của TRPO:}
+\begin{itemize}
+\item Phức tạp implementation (conjugate gradient, line search)
+\item Tốn kém tính toán (Hessian-vector product, multiple forward passes)
+\item Không scale tốt cho large models
+\item Khó kết hợp với các techniques khác (shared parameters giữa policy và value)
+\end{itemize}
+
+\subsubsection{PPO-Clip: First-order Approximation}
+
+PPO đơn giản hóa TRPO bằng cách thay constraint bằng clipped objective function. Thay vì giải bài toán tối ưu có constraint, PPO sử dụng first-order optimization (SGD hoặc Adam) với clipping:
+
+\begin{equation}
+L^{CLIP}(\theta) = \mathbb{E}_t \left[ \min \left( r_t(\theta) \hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \hat{A}_t \right) \right]
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)}$ là probability ratio
+\item $\text{clip}(r, 1-\epsilon, 1+\epsilon)$ giới hạn $r$ trong $[1-\epsilon, 1+\epsilon]$
+\item $\epsilon$ là clip ratio (typically 0.1-0.2)
+\end{itemize}
+
+\textbf{Phân tích clipping mechanism:}
+
+\textbf{Trường hợp 1: Advantage dương ($\hat{A}_t > 0$)}
+
+Hành động $a_t$ tốt hơn trung bình $\rightarrow$ muốn tăng $\pi_\theta(a_t|s_t)$.
+\begin{itemize}
+\item Nếu $r_t < 1 + \epsilon$: Objective = $r_t \hat{A}_t$ (không clip) $\rightarrow$ gradient khuyến khích tăng $r_t$
+\item Nếu $r_t \geq 1 + \epsilon$: Objective = $(1+\epsilon) \hat{A}_t$ (clipped) $\rightarrow$ gradient = 0, không tăng thêm
+\end{itemize}
+
+\textbf{Trường hợp 2: Advantage âm ($\hat{A}_t < 0$)}
+
+Hành động $a_t$ tệ hơn trung bình $\rightarrow$ muốn giảm $\pi_\theta(a_t|s_t)$.
+\begin{itemize}
+\item Nếu $r_t > 1 - \epsilon$: Objective = $r_t \hat{A}_t$ (không clip) $\rightarrow$ gradient khuyến khích giảm $r_t$
+\item Nếu $r_t \leq 1 - \epsilon$: Objective = $(1-\epsilon) \hat{A}_t$ (clipped) $\rightarrow$ gradient = 0, không giảm thêm
+\end{itemize}
+
+\textbf{Ý nghĩa:} Clipping ngăn không cho policy thay đổi quá nhiều trong một update:
+\begin{itemize}
+\item Nếu action tốt ($A > 0$), cho phép tăng xác suất nhưng không quá $1+\epsilon$ lần
+\item Nếu action xấu ($A < 0$), cho phép giảm xác suất nhưng không dưới $1-\epsilon$ lần
+\end{itemize}
+
+\textbf{Visualization:} Objective function có dạng "flat plateau" sau khi ra khỏi trust region $[1-\epsilon, 1+\epsilon]$, tạo ra "natural constraint" mà không cần giải bài toán tối ưu có constraint.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{figures/02_Fig6_ppo_clipping.jpg}
+    \caption{PPO Clipping: Objective bị chặn ngoài khoảng $[1-\epsilon, 1+\epsilon]$ để ngăn policy thay đổi quá nhanh}
+    \label{fig:ppo_clipping}
+\end{figure}
+
+\subsubsection{Value Function Clipping}
+
+Ngoài clipping cho policy, PPO còn có thể clip value function loss để tránh value estimates thay đổi quá nhanh:
+
+\begin{equation}
+L^{VF}(\theta) = \mathbb{E}_t \left[ \max \left( (V_\theta(s_t) - V^{targ}_t)^2, (\text{clip}(V_\theta(s_t), V_{old} - \epsilon_V, V_{old} + \epsilon_V) - V^{targ}_t)^2 \right) \right]
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $V^{targ}_t$ là target value (ví dụ: GAE estimate)
+\item $V_{old}$ là value estimate từ policy cũ
+\item $\epsilon_V$ là clip range cho value function (thường 0.1-0.2)
+\end{itemize}
+
+Value clipping giúp ổn định training, đặc biệt khi:
+\begin{itemize}
+\item Value function được khởi tạo kém
+\item Reward scale thay đổi nhiều giữa các episodes
+\item Shared parameters giữa policy và value networks
+\end{itemize}
+
+\subsubsection{Complete PPO Objective}
+
+Objective function đầy đủ của PPO kết hợp policy loss, value loss, và entropy bonus:
+
+\begin{equation}
+L^{TOTAL}(\theta) = \mathbb{E}_t \left[ L^{CLIP}_t(\theta) - c_1 L^{VF}_t(\theta) + c_2 S[\pi_\theta](s_t) \right]
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $L^{CLIP}_t$: Clipped policy loss (maximize)
+\item $L^{VF}_t$: Value function loss (minimize)
+\item $S[\pi_\theta]$: Entropy của policy (maximize để khuyến khích exploration)
+\item $c_1, c_2$: Coefficients (thường $c_1 = 0.5-1.0$, $c_2 = 0.01$)
+\end{itemize}
+
+\textbf{Entropy bonus:} Entropy đo độ "random" của policy:
+\begin{equation}
+S[\pi_\theta](s) = -\mathbb{E}_{a \sim \pi_\theta(\cdot|s)} [ \log \pi_\theta(a|s) ]
+\end{equation}
+
+\begin{itemize}
+\item Entropy cao $\rightarrow$ policy uniform (exploration nhiều)
+\item Entropy thấp $\rightarrow$ policy deterministic (exploitation)
+\item Entropy bonus khuyến khích exploration ở giai đoạn đầu
+\item Thường decay entropy coefficient theo thời gian
+\end{itemize}
+
+\subsubsection{PPO-Penalty: Alternative Formulation}
+
+Thay vì clipping, PPO-Penalty thêm KL penalty trực tiếp vào objective:
+
+\begin{equation}
+L^{PENALTY}(\theta) = \mathbb{E}_t \left[ \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} \hat{A}_t - \beta \cdot \text{KL}[\pi_{\theta_{old}}(\cdot|s_t) \| \pi_\theta(\cdot|s_t)] \right]
+\end{equation}
+
+\textbf{Adaptive $\beta$:} PPO-Penalty điều chỉnh penalty coefficient $\beta$ theo KL divergence thực tế:
+\begin{itemize}
+\item Nếu $\text{KL} < \text{KL}_{target} / 1.5$: giảm $\beta$ (cho phép update lớn hơn)
+\item Nếu $\text{KL} > \text{KL}_{target} \times 1.5$: tăng $\beta$ (hạn chế update)
+\item Thường khởi tạo $\beta = 1.0$, $\text{KL}_{target} = 0.01$
+\end{itemize}
+
+\textbf{So sánh PPO-Clip vs PPO-Penalty:}
+
+\begin{table}[ht]
+\centering
+\caption{So sánh PPO-Clip và PPO-Penalty}
+\label{tab:ppo_comparison}
+\begin{tabular}{|p{3cm}|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{PPO-Clip} & \textbf{PPO-Penalty} \\
+\hline
+Mechanism & Hard constraint bằng clipping & Soft constraint bằng penalty \\
+\hline
+Hyperparameters & $\epsilon$ cố định (0.1-0.2) & $\beta$ adaptive, $\text{KL}_{target}$ \\
+\hline
+Implementation & Đơn giản hơn & Cần tính KL divergence \\
+\hline
+Performance & Tốt hơn trong hầu hết trường hợp & Tương đương nhưng ít phổ biến \\
+\hline
+Robustness & Robust với nhiều loại môi trường & Cần tuning $\text{KL}_{target}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Kết luận:} PPO-Clip được ưa chuộng hơn do đơn giản, robust, và performance tốt với default hyperparameters.
+
+\subsubsection{PPO Hyperparameters}
+
+Các hyperparameters quan trọng của PPO:
+
+\begin{itemize}
+\item \textbf{Clip ratio ($\epsilon$)}: Giới hạn mức độ thay đổi policy (thường 0.1-0.2)
+\item \textbf{Number of epochs (K)}: Số lần update policy trên mỗi batch data (3-10)
+\item \textbf{Batch size}: Số timesteps thu thập trước update (2048-4096)
+\item \textbf{GAE lambda ($\lambda$)}: Cân bằng bias-variance (0.90-0.99)
+\item \textbf{Discount factor ($\gamma$)}: Trọng số future rewards (0.99 cho long-horizon tasks)
+\item \textbf{Learning rates}: Thường khác nhau cho Actor và Critic. Trong luận văn này: Critic LR = $6 \times 10^{-3}$, Actor LR = $4 \times 10^{-4}$ (Stage 1)
+\item \textbf{Entropy coefficient ($c_2$)}: Khuyến khích exploration (0.01, trong luận văn này: $8 \times 10^{-3}$ decay đến $2 \times 10^{-3}$)
+\item \textbf{Target KL}: Early stopping threshold (thường 0.015, trong luận văn này: 0.035 cho aggressive updates)
+\end{itemize}
+
+\subsection{Kiến trúc mạng nơ-ron}
+\label{subsec:neural_networks}
+
+Mạng nơ-ron nhân tạo (Artificial Neural Networks - ANN) là mô hình tính toán lấy cảm hứng từ hệ thần kinh sinh học. Trong phần này, chúng ta sẽ phân tích chi tiết về kiến trúc, quá trình huấn luyện, và các kỹ thuật tối ưu hóa mạng nơ-ron.
+
+\subsubsection{Fully Connected Neural Networks}
+
+\textbf{Kiến trúc cơ bản:} Mạng nơ-ron fully connected (dense) bao gồm nhiều lớp (layers), mỗi lớp có nhiều neurons (nodes). Mỗi neuron trong lớp $l$ kết nối với tất cả neurons trong lớp $l+1$.
+
+\textbf{Forward propagation:} Tính toán output từ input qua các lớp:
+
+Lớp $l$:
+\begin{equation}
+\begin{aligned}
+\mathbf{z}^{[l]} &= \mathbf{W}^{[l]} \mathbf{a}^{[l-1]} + \mathbf{b}^{[l]} \\
+\mathbf{a}^{[l]} &= g^{[l]}(\mathbf{z}^{[l]})
+\end{aligned}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $\mathbf{a}^{[l-1]}$: Activations từ lớp trước (input nếu $l=1$)
+\item $\mathbf{W}^{[l]}$: Weight matrix kích thước $(n^{[l]}, n^{[l-1]})$
+\item $\mathbf{b}^{[l]}$: Bias vector kích thước $(n^{[l]}, 1)$
+\item $\mathbf{z}^{[l]}$: Pre-activation (linear combination)
+\item $g^{[l]}$: Activation function
+\item $\mathbf{a}^{[l]}$: Activations (output của lớp $l$)
+\end{itemize}
+
+\textbf{Activation Functions:} Thêm tính phi tuyến vào mạng
+
+\begin{itemize}
+\item \textbf{ReLU (Rectified Linear Unit):} $\text{ReLU}(x) = \max(0, x)$, derivative:
+\[
+\text{ReLU}'(x) = \begin{cases}
+1 & \text{if } x > 0 \\
+0 & \text{if } x \leq 0
+\end{cases}
+\]
+Phổ biến nhất do tính toán nhanh và không bị vanishing gradient. Nhược điểm: "Dying ReLU" khi neurons có $z < 0$ không được update.
+
+\item \textbf{Sigmoid và Tanh:} $\sigma(x) = \frac{1}{1 + e^{-x}}$ và $\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$. Sigmoid output trong $(0, 1)$, dùng cho binary classification và normalize velocity trong RL. Tanh output trong $(-1, 1)$, zero-centered, phù hợp cho symmetric control (ví dụ: angular velocity). Trong luận văn này: Sigmoid cho linear velocity, Tanh cho angular velocity.
+\end{itemize}
+
+\subsubsection{Convolutional Neural Networks (CNN)}
+
+\textbf{Convolutional Neural Networks} \cite{lecun2015deep} được thiết kế để xử lý dữ liệu có cấu trúc lưới (grid-like structure) như hình ảnh (2D) hoặc time series/LiDAR (1D).
+
+\textbf{Convolution operation:} Áp dụng filter (kernel) trên input:
+
+1D convolution (cho LiDAR):
+\begin{equation}
+(f * g)(n) = \sum_{m=-\infty}^{\infty} f(m) \cdot g(n - m)
+\end{equation}
+
+Trong neural network, discrete convolution:
+\begin{equation}
+y[n] = \sum_{k=0}^{K-1} w[k] \cdot x[n + k] + b
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $x$: Input sequence (ví dụ: LiDAR 360 points)
+\item $w$: Filter weights (learnable parameters)
+\item $K$: Kernel size (ví dụ: 5)
+\item $b$: Bias (learnable)
+\item $y$: Output feature map
+\end{itemize}
+
+\textbf{Conv1D parameters:}
+
+\begin{itemize}
+\item \textbf{Number of filters}: Số lượng patterns muốn học (16-128)
+\item \textbf{Kernel size}: Kích thước filter, quyết định receptive field (3-7)
+\item \textbf{Stride}: Khoảng cách giữa các vị trí áp dụng filter. Stride=2 downsample output length
+\item \textbf{Padding}: Valid (không padding) hoặc Same (giữ output length = input length)
+\end{itemize}
+
+Output length được tính:
+\begin{equation}
+\text{Output length} = \frac{\text{Input length} - \text{Kernel size} + 2 \times \text{Padding}}{\text{Stride}} + 1
+\end{equation}
+
+\textbf{Example: LiDAR processing trong luận văn này}
+
+Input: LiDAR 360 points (sau downsample)
+\begin{equation}
+\text{Conv1D}(32, k=5, s=2) \rightarrow \text{ReLU} \rightarrow \text{Conv1D}(32, k=3, s=2) \rightarrow \text{ReLU}
+\end{equation}
+
+Output feature map được flatten và concatenate với goal position và velocity.
+
+\textbf{Ưu điểm của CNN:}
+\begin{itemize}
+\item Parameter sharing: Cùng filter áp dụng khắp input $\rightarrow$ ít parameters
+\item Translation invariance: Detect pattern ở mọi vị trí
+\item Hierarchical features: Lớp sâu học abstract patterns từ low-level features
+\item Hiệu quả với spatial/temporal data
+\end{itemize}
+
+\subsubsection{Loss Functions}
+
+Loss function (hay cost function) đóng vai trò đo lường sự khác biệt giữa dự đoán của mạng và giá trị thực tế. Mục tiêu của quá trình training là tìm tập parameters làm minimize loss này.
+
+\textbf{Mean Squared Error (MSE):} Thường dùng cho bài toán regression:
+\begin{equation}
+L_{MSE} = \frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2
+\end{equation}
+trong đó $y_i$ là giá trị thực, $\hat{y}_i$ là giá trị dự đoán. MSE penalize lỗi lớn mạnh hơn do bình phương. Trong RL, MSE train value function:
+\begin{equation}
+L_V(\phi) = \mathbb{E}[(V_\phi(s) - V_{target})^2]
+\end{equation}
+
+\textbf{Cross-Entropy Loss:} Dùng cho classification. Binary Cross-Entropy:
+\begin{equation}
+L_{BCE} = -\frac{1}{N} \sum_{i=1}^N [y_i \log(\hat{y}_i) + (1-y_i) \log(1-\hat{y}_i)]
+\end{equation}
+Categorical Cross-Entropy cho multi-class:
+\begin{equation}
+L_{CCE} = -\frac{1}{N} \sum_{i=1}^N \sum_{c=1}^C y_{i,c} \log(\hat{y}_{i,c})
+\end{equation}
+Cross-entropy đo "khoảng cách" giữa true distribution và predicted distribution.
+
+\subsubsection{Backpropagation}
+
+Backpropagation là thuật toán cốt lõi để training neural networks. Nhiệm vụ của nó là tính gradient của loss function đối với tất cả parameters (weights và biases) trong mạng, để sau đó có thể update parameters theo hướng giảm loss. Thuật toán sử dụng chain rule của calculus và hoạt động theo hai pha:
+
+\textbf{Forward pass:} Dữ liệu đi từ input layer qua các hidden layers đến output layer. Tại mỗi layer $l$, ta tính:
+\begin{equation}
+\mathbf{z}^{[l]} = \mathbf{W}^{[l]} \mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}, \quad \mathbf{a}^{[l]} = g^{[l]}(\mathbf{z}^{[l]}) \quad \text{for } l=1,...,L
+\end{equation}
+trong đó $\mathbf{z}^{[l]}$ là pre-activation (weighted sum), $\mathbf{a}^{[l]}$ là activation (output sau activation function $g^{[l]}$). Cuối cùng tính loss $L$ bằng cách so sánh output $\mathbf{a}^{[L]}$ với true labels. Pha này cho ta biết mạng đang dự đoán như thế nào và loss hiện tại là bao nhiêu.
+
+\textbf{Backward pass:} Đây là phần quan trọng - ta tính gradient của loss theo từng parameter bằng cách "lan truyền ngược" (backpropagate) từ output về input. Định nghĩa $\delta^{[l]} = \frac{\partial L}{\partial \mathbf{z}^{[l]}}$ là gradient của loss theo pre-activation tại layer $l$.
+
+Tại output layer $L$, gradient được tính trực tiếp:
+\begin{equation}
+\delta^{[L]} = \nabla_{\mathbf{a}^{[L]}} L \odot g'^{[L]}(\mathbf{z}^{[L]})
+\end{equation}
+trong đó $\odot$ là element-wise multiplication, $g'^{[L]}$ là derivative của activation function.
+
+Lan truyền ngược qua các layers $l = L-1, L-2, ..., 1$:
+\begin{equation}
+\delta^{[l]} = (\mathbf{W}^{[l+1]})^T \delta^{[l+1]} \odot g'^{[l]}(\mathbf{z}^{[l]})
+\end{equation}
+Công thức này thể hiện chain rule: gradient tại layer $l$ phụ thuộc vào (1) gradient từ layer sau $\delta^{[l+1]}$ truyền về qua weights $\mathbf{W}^{[l+1]}$, và (2) derivative của activation function tại layer đó $g'^{[l]}$.
+
+Sau khi có $\delta^{[l]}$ cho tất cả layers, ta tính gradient của loss theo weights và biases:
+\begin{equation}
+\frac{\partial L}{\partial \mathbf{W}^{[l]}} = \delta^{[l]} (\mathbf{a}^{[l-1]})^T, \quad \frac{\partial L}{\partial \mathbf{b}^{[l]}} = \delta^{[l]}
+\end{equation}
+Gradient của weights phụ thuộc vào activations từ layer trước $\mathbf{a}^{[l-1]}$ - đây là lý do tại sao backpropagation cần lưu lại activations từ forward pass.
+
+\textbf{Vấn đề vanishing và exploding gradients:} Khi mạng có nhiều layers, gradient có thể trở nên cực nhỏ (vanishing) hoặc cực lớn (exploding) khi nhân qua nhiều layers. Vanishing gradient xảy ra với sigmoid/tanh vì derivatives của chúng nhỏ hơn 1 ($\sigma'(x) \leq 0.25$, $\tanh'(x) \leq 1$), nhân nhiều lần sẽ tiến về 0 - khiến các layer đầu không học được. Exploding gradient xảy ra khi weights quá lớn hoặc learning rate không phù hợp. Các giải pháp phổ biến: dùng ReLU activation (không bị vanishing vì $\text{ReLU}'(x) = 1$ khi $x > 0$), gradient clipping (chặn gradient lớn), batch normalization (ổn định activations), và weight initialization phù hợp.
+
+\subsubsection{Regularization Techniques}
+
+Regularization là các kỹ thuật giúp mạng nơ-ron tránh overfitting (học quá khớp với training data) và generalize tốt hơn cho data chưa thấy.
+
+\textbf{L2 Regularization (Weight Decay):} Thêm một penalty term vào loss function, tỷ lệ với tổng bình phương của tất cả weights:
+\begin{equation}
+L_{total} = L_{data} + \lambda \sum_{l} \|\mathbf{W}^{[l]}\|_2^2
+\end{equation}
+trong đó $\lambda$ là regularization strength. Penalty này làm cho mạng "không thích" weights lớn - khuyến khích weights nhỏ hơn, smoother. Khi update weights:
+\begin{equation}
+\mathbf{W} \leftarrow \mathbf{W} - \alpha \left(\frac{\partial L_{data}}{\partial \mathbf{W}} + 2\lambda \mathbf{W}\right) = (1 - 2\alpha\lambda)\mathbf{W} - \alpha \frac{\partial L_{data}}{\partial \mathbf{W}}
+\end{equation}
+mỗi weight sẽ bị "decay" một chút về phía 0 (nhân với số nhỏ hơn 1). Models với weights nhỏ thường đơn giản hơn, ít overfitting hơn.
+
+\textbf{Dropout:} Trong training, randomly "tắt" (set output = 0) một số neurons với probability $p$ (thường 0.5):
+\begin{equation}
+\mathbf{a}^{[l]} = \mathbf{m}^{[l]} \odot g^{[l]}(\mathbf{z}^{[l]}), \quad m_i^{[l]} \sim \text{Bernoulli}(1-p)
+\end{equation}
+Mỗi training iteration, mạng dùng một "subnetwork" khác nhau. Điều này ngăn neurons phụ thuộc lẫn nhau quá mức (co-adaptation) - buộc mỗi neuron học features hữu ích độc lập. Khi testing, dùng tất cả neurons nhưng scale outputs xuống để match với expectation trong training.
+
+\textbf{Batch Normalization:} Normalize activations của mỗi layer về mean = 0 và variance = 1, tính trên từng mini-batch:
+\begin{equation}
+\hat{\mathbf{z}} = \frac{\mathbf{z} - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}}, \quad \mathbf{z}_{BN} = \gamma \hat{\mathbf{z}} + \beta
+\end{equation}
+trong đó $\mu_{\mathcal{B}}, \sigma_{\mathcal{B}}^2$ là mean/variance của batch, $\gamma, \beta$ là learnable parameters để mạng có thể "undo" normalization nếu cần. Lợi ích chính là ổn định quá trình training - cho phép dùng learning rate lớn hơn, giảm nhạy cảm với weight initialization. Batch normalization cũng có tác dụng regularization nhẹ vì việc normalize trên mini-batch tạo một chút noise.
+
+\subsection{Điều khiển PID}
+\label{subsec:pid_control}
+
+Bộ điều khiển PID (Proportional-Integral-Derivative) \cite{astrom2006feedback} là phương pháp điều khiển cổ điển được sử dụng rộng rãi trong robot thực tế. Đối với differential drive robot, PID được áp dụng để điều khiển vận tốc tuyến tính và vận tốc góc.
+
+Công thức PID cơ bản:
+\begin{equation}
+u(t) = K_p e(t) + K_i \int_0^t e(\tau) d\tau + K_d \frac{de(t)}{dt}
+\end{equation}
+
+trong đó:
+\begin{itemize}
+\item $e(t) = r(t) - y(t)$ là sai số giữa setpoint $r(t)$ và output $y(t)$
+\item $K_p$ là hệ số P (Proportional): phản ứng tỷ lệ với sai số hiện tại
+\item $K_i$ là hệ số I (Integral): khử sai số tích lũy theo thời gian (steady-state error)
+\item $K_d$ là hệ số D (Derivative): dự đoán xu hướng thay đổi, giảm overshoot
+\end{itemize}
+
+\textbf{Ứng dụng cho differential drive robot} \cite{siegwart2011mobile}:
+
+\textbf{PID cho linear velocity:} Điều khiển vận tốc bánh xe để đạt linear velocity mong muốn $v_{des}$:
+\begin{equation}
+v_{cmd} = K_{p,v} e_v + K_{i,v} \int e_v dt + K_{d,v} \frac{de_v}{dt}
+\end{equation}
+với $e_v = v_{des} - v_{current}$.
+
+\textbf{PID cho angular velocity:} Điều khiển sự chênh lệch vận tốc giữa hai bánh để đạt angular velocity $\omega_{des}$:
+\begin{equation}
+\omega_{cmd} = K_{p,\omega} e_\omega + K_{i,\omega} \int e_\omega dt + K_{d,\omega} \frac{de_\omega}{dt}
+\end{equation}
+với $e_\omega = \omega_{des} - \omega_{current}$.
+
+\textbf{Tuning PID parameters:} Có nhiều phương pháp tuning như Ziegler-Nichols, Cohen-Coon, hoặc trial-and-error. Nguyên tắc chung:
+\begin{itemize}
+\item Tăng $K_p$: Phản ứng nhanh hơn nhưng có thể overshoot và oscillation
+\item Tăng $K_i$: Khử steady-state error nhưng có thể gây chậm và overshoot
+\item Tăng $K_d$: Giảm overshoot và oscillation nhưng nhạy cảm với noise
+\end{itemize}
+
+\textbf{Ưu điểm:} Đơn giản, không cần mô hình chính xác, dễ triển khai, ổn định với hệ tuyến tính.
+
+\textbf{Hạn chế:} Khó tuning cho hệ phi tuyến, không tối ưu cho hệ đa biến (MIMO), nhạy cảm với noise (thành phần D), không thích nghi với thay đổi môi trường.
+
+\subsection{UKF Sensor Fusion}
+\label{subsec:ukf_sensor_fusion}
+
+Unscented Kalman Filter (UKF) \cite{julier2004ukf} là phương pháp ước lượng trạng thái cho hệ thống phi tuyến. UKF cải tiến Extended Kalman Filter (EKF) bằng cách sử dụng unscented transform thay vì linearization, cho kết quả chính xác hơn và không cần tính Jacobian.
+
+\textbf{Bài toán sensor fusion:} Robot sử dụng nhiều cảm biến để ước lượng pose $(x, y, \theta)$:
+\begin{itemize}
+\item \textbf{Wheel odometry:} Đo vận tốc bánh xe, tích phân ra vị trí. Ưu điểm: update rate cao (50-100 Hz). Nhược điểm: drift tích lũy, trượt bánh xe gây sai số.
+\item \textbf{IMU (Inertial Measurement Unit):} Đo gia tốc (accelerometer) và vận tốc góc (gyroscope). Ưu điểm: không bị trượt bánh. Nhược điểm: drift theo thời gian, cần calibration.
+\end{itemize}
+
+\textbf{State space model:}
+\begin{equation}
+\mathbf{x} = [x, y, \theta, v_x, v_y, \omega]^T
+\end{equation}
+
+\textbf{Process model} (motion model):
+\begin{equation}
+\mathbf{x}_{k+1} = f(\mathbf{x}_k, \mathbf{u}_k) + \mathbf{w}_k
+\end{equation}
+với $\mathbf{u}_k$ là control input (wheel velocities) và $\mathbf{w}_k \sim \mathcal{N}(0, \mathbf{Q})$ là process noise.
+
+\textbf{Measurement models:}
+
+Wheel odometry:
+\begin{equation}
+\mathbf{z}_{odom} = \begin{bmatrix} v_x \\ v_y \\ \omega \end{bmatrix} + \mathbf{v}_{odom}
+\end{equation}
+
+IMU:
+\begin{equation}
+\mathbf{z}_{imu} = \begin{bmatrix} a_x \\ a_y \\ \omega \end{bmatrix} + \mathbf{v}_{imu}
+\end{equation}
+
+với $\mathbf{v} \sim \mathcal{N}(0, \mathbf{R})$ là measurement noise.
+
+\textbf{Thuật toán UKF:}
+
+1. \textbf{Unscented Transform:} Chọn $2n+1$ sigma points $\mathcal{X}^{(i)}$ xung quanh mean $\mathbf{x}$ với weights $W^{(i)}$:
+\begin{equation}
+\begin{aligned}
+\mathcal{X}^{(0)} &= \mathbf{x} \\
+\mathcal{X}^{(i)} &= \mathbf{x} + \left(\sqrt{(n+\lambda)\mathbf{P}}\right)_i, \quad i=1,\ldots,n \\
+\mathcal{X}^{(i)} &= \mathbf{x} - \left(\sqrt{(n+\lambda)\mathbf{P}}\right)_{i-n}, \quad i=n+1,\ldots,2n
+\end{aligned}
+\end{equation}
+
+2. \textbf{Prediction:} Truyền sigma points qua process model:
+\begin{equation}
+\mathcal{X}_{k+1|k}^{(i)} = f(\mathcal{X}_k^{(i)}, \mathbf{u}_k)
+\end{equation}
+
+Tính predicted mean và covariance:
+\begin{equation}
+\begin{aligned}
+\mathbf{x}_{k+1|k} &= \sum_{i=0}^{2n} W^{(i)} \mathcal{X}_{k+1|k}^{(i)} \\
+\mathbf{P}_{k+1|k} &= \sum_{i=0}^{2n} W^{(i)} (\mathcal{X}_{k+1|k}^{(i)} - \mathbf{x}_{k+1|k})(\mathcal{X}_{k+1|k}^{(i)} - \mathbf{x}_{k+1|k})^T + \mathbf{Q}
+\end{aligned}
+\end{equation}
+
+3. \textbf{Update:} Khi có measurement $\mathbf{z}_k$, tính Kalman gain và update:
+\begin{equation}
+\begin{aligned}
+\mathcal{Y}_k^{(i)} &= h(\mathcal{X}_{k|k-1}^{(i)}) \\
+\mathbf{y}_k &= \sum_{i=0}^{2n} W^{(i)} \mathcal{Y}_k^{(i)} \\
+\mathbf{K}_k &= \mathbf{P}_{xy} \mathbf{S}_k^{-1} \\
+\mathbf{x}_k &= \mathbf{x}_{k|k-1} + \mathbf{K}_k (\mathbf{z}_k - \mathbf{y}_k) \\
+\mathbf{P}_k &= \mathbf{P}_{k|k-1} - \mathbf{K}_k \mathbf{S}_k \mathbf{K}_k^T
+\end{aligned}
+\end{equation}
+
+\textbf{Tuning noise covariances:}
+\begin{itemize}
+\item $\mathbf{Q}$ (process noise): Phản ánh độ tin cậy của model. Lớn hơn $\rightarrow$ tin measurement hơn.
+\item $\mathbf{R}$ (measurement noise): Phản ánh độ chính xác sensor. Nhỏ hơn $\rightarrow$ tin measurement hơn.
+\end{itemize}
+
+\textbf{So sánh UKF vs EKF:}
+
+\begin{table}[ht]
+\centering
+\caption{So sánh UKF và EKF}
+\label{tab:ukf_vs_ekf}
+\begin{tabular}{|p{3cm}|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{EKF} & \textbf{UKF} \\
+\hline
+Linearization & Cần tính Jacobian, chỉ chính xác bậc 1 & Unscented transform, chính xác bậc 2-3 \\
+\hline
+Độ chính xác & Kém với hệ phi tuyến mạnh & Tốt hơn EKF \\
+\hline
+Tính toán & Nhanh hơn (ít sigma points) & Chậm hơn (nhiều sigma points) \\
+\hline
+Implementation & Cần tính Jacobian (phức tạp) & Không cần Jacobian (đơn giản hơn) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{GMapping và SLAM}
+\label{subsec:gmapping_slam}
+
+Simultaneous Localization and Mapping (SLAM) \cite{thrun2005probabilistic} là bài toán robot tự xây dựng bản đồ môi trường đồng thời ước lượng vị trí của mình trên bản đồ đó. Đây là bài toán phụ thuộc lẫn nhau (interdependent problem): localization đòi hỏi bản đồ chính xác, trong khi mapping lại cần biết vị trí chính xác của robot.
+
+\textbf{GMapping} \cite{grisetti2007gmapping} là thuật toán SLAM 2D phổ biến sử dụng Rao-Blackwellized Particle Filter (RBPF). Ý tưởng chính:
+\begin{itemize}
+\item Mỗi particle đại diện cho một giả thuyết về quỹ đạo robot $x_{1:t}$
+\item Mỗi particle có bản đồ riêng $m^{[i]}$ được xây dựng từ quỹ đạo đó
+\item Particles được weighted dựa trên khả năng (likelihood) của measurements
+\item Resampling loại bỏ particles có weight thấp
+\end{itemize}
+
+\textbf{Occupancy grid map:} Bản đồ được biểu diễn dưới dạng lưới (grid), mỗi ô có giá trị xác suất occupied $p(m_{x,y})$:
+\begin{itemize}
+\item $p = 0$: Free space (màu trắng)
+\item $p = 0.5$: Unknown (màu xám)
+\item $p = 1$: Occupied (màu đen)
+\end{itemize}
+
+Từ dữ liệu LiDAR, GMapping sử dụng \textbf{log-odds representation} để update map hiệu quả:
+\begin{equation}
+l(m_{x,y}) = \log \frac{p(m_{x,y})}{1 - p(m_{x,y})}
+\end{equation}
+
+Khi có measurement mới $z_t$:
+\begin{equation}
+l(m_{x,y} | z_{1:t}) = l(m_{x,y} | z_{1:t-1}) + l(m_{x,y} | z_t)
+\end{equation}
+
+\textbf{Scan matching:} GMapping sử dụng scan matching để cải thiện ước lượng pose trước khi update map. Scan matching tìm sự dịch chuyển và rotation tốt nhất để align LiDAR scan hiện tại với map đã có.
+
+\textbf{Parameters chính của GMapping:}
+\begin{itemize}
+\item Number of particles: 30-100 (nhiều hơn $\rightarrow$ chính xác hơn nhưng chậm hơn)
+\item Map resolution: 0.01-0.05 m/pixel (resolution cao $\rightarrow$ chi tiết hơn nhưng tốn memory)
+\item Minimum score: Threshold để accept scan matching
+\item Angular/linear update thresholds: Robot phải di chuyển đủ xa mới update map
+\end{itemize}
+
+\textbf{Ứng dụng trong navigation:}
+\begin{itemize}
+\item \textbf{Localization:} Sau khi có map từ GMapping, sử dụng AMCL (Adaptive Monte Carlo Localization) để localize robot trên map đã biết
+\item \textbf{Path planning:} Sử dụng global planner (Dijkstra, A*) trên map để tìm đường từ vị trí hiện tại đến mục tiêu
+\item \textbf{Obstacle avoidance:} Sử dụng local planner (DWA, TEB) để tránh chướng ngại vật động
+\end{itemize}
+
+\textbf{Integration với ROS:} GMapping được tích hợp sẵn trong ROS navigation stack:
+\begin{itemize}
+\item \texttt{gmapping} node: Nhận LiDAR data (\texttt{/scan}) và odometry (\texttt{/odom}), publish map (\texttt{/map})
+\item \texttt{map\_server}: Lưu và load map dạng .pgm và .yaml
+\item \texttt{move\_base}: Node điều phối global planner, local planner, và costmap
+\end{itemize}
 
 \vspace{1cm}
-Chương này đã tổng quan các nghiên cứu liên quan và xác định khoảng trống nghiên cứu cần giải quyết.

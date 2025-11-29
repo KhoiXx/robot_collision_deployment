@@ -6,9 +6,6 @@
 \chapter{MỞ ĐẦU}
 \label{chap:introduction}
 
-% Chapter introduction (required by FR-013)
-Chương này giới thiệu bối cảnh, động lực, mục tiêu, phạm vi và ý nghĩa của đề tài nghiên cứu về ứng dụng học tăng cường trong điều khiển phân tán hệ đa robot tránh va chạm.
-
 %% ============================================================================
 %% Section 1.1: Lý do chọn đề tài
 %% ============================================================================
@@ -20,7 +17,7 @@ Trong những năm gần đây, hệ thống đa robot đã và đang được �
 
 Các phương pháp điều khiển tập trung truyền thống gặp khó khăn về khả năng mở rộng (scalability) khi số lượng robot lớn, do yêu cầu về tính toán và truyền thông tăng theo cấp số nhân. Ngược lại, phương pháp điều khiển phân tán, trong đó mỗi robot tự quyết định dựa trên quan sát cục bộ, cho phép hệ thống mở rộng tốt hơn.
 
-Học tăng cường sâu (Deep Reinforcement Learning - DRL) đã chứng minh khả năng giải quyết các bài toán điều khiển phức tạp. Đặc biệt, thuật toán Proximal Policy Optimization (PPO) được đánh giá cao về độ ổn định và hiệu quả trong việc huấn luyện các chính sách điều khiển. Tuy nhiên, việc áp dụng DRL vào bài toán đa robot với số lượng lớn (trên 40 robots) vẫn còn nhiều thách thức cần nghiên cứu.
+Học tăng cường sâu (Deep Reinforcement Learning - DRL) đã chứng minh khả năng giải quyết các bài toán điều khiển phức tạp. Đặc biệt, thuật toán Proximal Policy Optimization (PPO) được đánh giá cao về độ ổn định và hiệu quả trong việc huấn luyện các policy đặc biệt trong việc Supervised Fine-Tuning các mô hình ngôn ngữ lớn. Tuy nhiên, việc áp dụng DRL vào bài toán đa robot với số lượng lớn vẫn còn nhiều thách thức cần nghiên cứu.
 
 %% ============================================================================
 %% Section 1.2: Mục tiêu nghiên cứu
@@ -34,13 +31,15 @@ Mục tiêu chính của luận văn là nghiên cứu và phát triển thuật
 \begin{enumerate}
     \item Nghiên cứu thuật toán PPO và các phương pháp học tăng cường cho bài toán đa robot.
 
-    \item Huấn luyện mô hình neural network có khả năng điều khiển 44-58 robots tránh va chạm trong môi trường mô phỏng.
+    \item Huấn luyện mô hình neural network có khả năng điều khiển robots tránh va chạm trong môi trường mô phỏng.
 
-    \item Đạt tỷ lệ thành công tối thiểu 71\% trong huấn luyện và 88\% trong kiểm thử.
+    \item Đạt tỷ lệ thành công tối thiểu 75%.
 
-    \item Đề xuất các cải tiến về learning rate scheduling, value clipping và chiến lược huấn luyện để cải thiện hiệu suất.
+    \item Đề xuất các cải tiến về learning rate scheduling, value clipping và policy để đáp ứng với thực nghiệm.
 
-    \item Thiết kế phần cứng robot prototype với cảm biến LiDAR để chuẩn bị cho việc triển khai thực tế.
+    \item Thiết kế phần cứng robot prototype với cảm biến LiDAR, Jetson và Arduino đơn giản và chi phí thấp.
+
+    \item Triển khai và kiểm nghiệm thực tế mô hình trên 2 robot trong thực nghiệm.
 \end{enumerate}
 
 %% ============================================================================
@@ -56,9 +55,9 @@ Mục tiêu chính của luận văn là nghiên cứu và phát triển thuật
 
 \begin{itemize}
     \item \textbf{Kiểu robot:} Nonholonomic robots (robot không toàn hướng) di chuyển trên mặt phẳng 2D
-    \item \textbf{Cảm biến:} LiDAR 360 độ với 454 điểm quét
+    \item \textbf{Cảm biến:} LiDAR $360^\circ$ với độ phân giải $0.8^\circ$
     \item \textbf{Hành động:} Điều khiển vận tốc tuyến tính $v$ và vận tốc góc $\omega$
-    \item \textbf{Số lượng:} 44-58 robots hoạt động đồng thời
+    \item \textbf{Số lượng:} 44-58 robots hoạt động đồng thời trong mô phỏng; 2 robot trong thực nghiệm
 \end{itemize}
 
 \subsection{Phạm vi nghiên cứu}
@@ -70,6 +69,9 @@ Luận văn tập trung vào các khía cạnh sau:
     \item Môi trường mô phỏng 2D với chướng ngại vật tĩnh
     \item Quan sát cục bộ (local observation) từ cảm biến LiDAR
     \item Không sử dụng truyền thông giữa các robot (fully decentralized)
+    \item Tuning PID ổn định điều khiển robot thực nghiệm
+    \item Triển khai được model huấn luyện từ mô phỏng vào robot thực nghiệm
+    \item Sensor fusing để robot có thể hoạt động và xác định chính xác vị trí của nó trong môi trường với các cảm biến giá rẻ
     \item Mục tiêu: Di chuyển từ vị trí xuất phát đến đích mà không va chạm
 \end{itemize}
 
@@ -95,9 +97,8 @@ Luận văn đóng góp vào lĩnh vực nghiên cứu đa robot và học tăng
         \item \textit{Learning Rate Warmup}: Tăng dần learning rate trong giai đoạn đầu
     \end{itemize}
 
-    \item Nghiên cứu scalability của thuật toán với số lượng robot lớn (so với bài báo gốc: 4-20 robots).
-
-    \item Phân tích chi tiết 8 revisions thực nghiệm và ảnh hưởng của các hyperparameters.
+    \item Nghiên cứu khả năng thực tiễn của mô hình với robot Nonholonomic
+    
 \end{itemize}
 
 \subsection{Ý nghĩa thực tiễn}
@@ -107,17 +108,13 @@ Kết quả nghiên cứu có thể ứng dụng vào:
 \begin{itemize}
     \item \textbf{Kho hàng tự động (Automated Warehouses):} Điều khiển nhiều robot AGV (Automated Guided Vehicle) di chuyển hàng hóa hiệu quả.
 
-    \item \textbf{Nhà máy thông minh (Smart Factories):} Phối hợp nhiều robot công nghiệp di động trong dây chuyền sản xuất.
+    \item \textbf{Nhà máy thông minh (Smart Factories):} Phối hợp nhiều robot công nghiệp trong dây chuyền sản xuất.
 
     \item \textbf{Logistics và vận tải:} Quản lý đội xe tự hành trong khu vực hạn chế.
 \end{itemize}
 
-Kết quả đạt được (88\% test success rate với 50 robots) gần với bài báo gốc (96.5\% với 20 robots), chứng minh tính khả thi của phương pháp trong điều kiện thử nghiệm khắt khe hơn.
+Kết quả đạt được trên robot thực nghiệm chứng minh tính khả thi của phương pháp trong điều kiện thực tế với mô hình phần cứng đơn giản và dễ dàng mở rộng với số lượng robot lớn.
 
 %% ============================================================================
 %% Chapter conclusion (required by FR-014)
 %% ============================================================================
-
-\vspace{1cm}
-
-Tóm lại, chương này đã trình bày động lực, mục tiêu, phạm vi và ý nghĩa của đề tài nghiên cứu. Các chương tiếp theo sẽ trình bày chi tiết về tổng quan nghiên cứu liên quan, phương pháp thực hiện, kết quả đạt được và kết luận.

@@ -18,22 +18,46 @@
 % Vietnamese language support
 \usepackage[vietnamese]{babel}
 
+% TikZ for cover page borders and diagrams
+\usepackage{tikz}
+\usetikzlibrary{calc, positioning, shapes.geometric}
+
+% Fancy headers for page number positioning
+\usepackage{fancyhdr}
+
 %% ============================================================================
 %% Page Layout and Formatting
 %% ============================================================================
 
 % Page margins (HCMUT requirement: Top 3cm, Bottom 3cm, Left 3.5cm, Right 2cm)
+% IMPORTANT: Use asymmetric to ensure all pages have identical margins (no mirroring for even/odd pages)
 \usepackage[
     top=3cm,
     bottom=3cm,
     left=3.5cm,
     right=2cm,
-    a4paper
+    a4paper,
+    asymmetric
 ]{geometry}
 
 % Line spacing (HCMUT requirement: 1.5)
 \usepackage{setspace}
 \onehalfspacing  % 1.5 line spacing
+
+% Page number style: bottom center
+\pagestyle{fancy}
+\fancyhf{}  % Clear all headers and footers
+\fancyfoot[C]{\thepage}  % Page number at bottom center
+\renewcommand{\headrulewidth}{0pt}  % No header line
+\renewcommand{\footrulewidth}{0pt}  % No footer line
+
+% Apply same style to chapter pages (plain style)
+\fancypagestyle{plain}{
+  \fancyhf{}
+  \fancyfoot[C]{\thepage}  % Page number at bottom center for chapter pages too
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
+}
 
 %% ============================================================================
 %% Graphics and Figures
@@ -103,16 +127,27 @@
 %% Table of Contents Configuration
 %% ============================================================================
 
+% Package for customizing TOC/LOF/LOT appearance
+\usepackage{tocloft}
+
 % TOC depth (4 levels: chapter.section.subsection.subsubsection)
 \setcounter{tocdepth}{3}
 \setcounter{secnumdepth}{3}
 
-% Vietnamese TOC, LOF, LOT titles
+% Vietnamese TOC, LOF, LOT titles (will use chapter* format = 16pt)
 \addto\captionsvietnamese{%
     \renewcommand{\contentsname}{MỤC LỤC}%
     \renewcommand{\listfigurename}{DANH MỤC HÌNH}%
     \renewcommand{\listtablename}{DANH MỤC BẢNG}%
 }
+
+% Format for TOC/LOF/LOT titles (same as chapter* = 16pt, centered, bold, uppercase)
+\renewcommand{\cfttoctitlefont}{\hfill\fontsize{16}{19}\selectfont\bfseries\MakeUppercase}
+\renewcommand{\cftaftertoctitle}{\hfill}
+\renewcommand{\cftloftitlefont}{\hfill\fontsize{16}{19}\selectfont\bfseries\MakeUppercase}
+\renewcommand{\cftafterloftitle}{\hfill}
+\renewcommand{\cftlottitlefont}{\hfill\fontsize{16}{19}\selectfont\bfseries\MakeUppercase}
+\renewcommand{\cftafterlottitle}{\hfill}
 
 %% ============================================================================
 %% Chapter and Section Formatting (Vietnamese Style)
@@ -121,28 +156,35 @@
 % Customize chapter headings to Vietnamese format
 \usepackage{titlesec}
 
-% Chapter format: centered, uppercase "CHƯƠNG X"
+% Chapter format: centered, uppercase "CHƯƠNG X" (size 16pt like cover title)
+% Reduce top spacing with \titlespacing
 \titleformat{\chapter}[display]
-    {\normalfont\huge\bfseries\centering}
+    {\normalfont\fontsize{16}{19}\selectfont\bfseries\centering}
     {\MakeUppercase{Chương} \thechapter}
-    {20pt}
-    {\Huge\MakeUppercase}
+    {10pt}
+    {\fontsize{16}{19}\selectfont\MakeUppercase}
 
-% Section, subsection formatting (keep default with Vietnamese numbering)
+% Reduce space before chapter title: {left}{before-sep}{after-sep}
+% Default before-sep is 50pt, reduce to 10pt for minimal spacing
+\titlespacing*{\chapter}{0pt}{5pt}{15pt}
+
+% Section formatting (size 14pt, slightly larger than body)
 \titleformat{\section}
-    {\normalfont\Large\bfseries}
+    {\normalfont\fontsize{14}{16}\selectfont\bfseries}
     {\thesection}
     {1em}
     {}
 
+% Subsection formatting (size 13pt, same as body but bold)
 \titleformat{\subsection}
-    {\normalfont\large\bfseries}
+    {\normalfont\fontsize{13}{15}\selectfont\bfseries}
     {\thesubsection}
     {1em}
     {}
 
+% Subsubsection formatting (size 13pt, same as body but bold)
 \titleformat{\subsubsection}
-    {\normalfont\normalsize\bfseries}
+    {\normalfont\fontsize{13}{15}\selectfont\bfseries}
     {\thesubsubsection}
     {1em}
     {}

@@ -32,28 +32,9 @@ Cuối cùng, tôi xin cảm ơn gia đình, bạn bè đã luôn động viên 
 
 Luận văn này nghiên cứu ứng dụng học tăng cường sâu (Deep Reinforcement Learning) vào bài toán điều khiển phân tán hệ đa robot tránh va chạm. Dựa trên thuật toán Proximal Policy Optimization (PPO), nghiên cứu đề xuất các cải tiến về learning rate scheduling, value clipping và chiến lược huấn luyện hai giai đoạn để cải thiện hiệu suất và khả năng mở rộng của hệ thống.
 
-Kết quả thực nghiệm cho thấy mô hình đạt tỷ lệ thành công 71\% trong quá trình huấn luyện với 58 robots và 88\% trong kiểm thử với 50 robots. Các cải tiến đề xuất bao gồm Adaptive Learning Rate Scheduler, Value Clipping, và việc sử dụng hai optimizer riêng biệt cho actor và critic networks đã giúp cải thiện độ ổn định và tốc độ hội tụ của quá trình huấn luyện.
+Các cải tiến đề xuất bao gồm Adaptive Learning Rate Scheduler, Value Clipping, và việc sử dụng hai optimizer riêng biệt cho actor và critic networks đã giúp cải thiện độ ổn định và tốc độ hội tụ của quá trình huấn luyện. 
 
-Nghiên cứu cũng trình bày thiết kế phần cứng robot sử dụng cảm biến LiDAR 360 độ và Raspberry Pi, chuẩn bị cho việc triển khai thuật toán trên robot thực tế trong tương lai.
-
-\textbf{Từ khóa:} Học tăng cường, PPO, Đa robot, Tránh va chạm, Điều khiển phân tán
-
-\clearpage
-
-%% ============================================================================
-%% ABSTRACT (ENGLISH)
-%% ============================================================================
-
-\chapter*{ABSTRACT}
-\addcontentsline{toc}{chapter}{ABSTRACT}
-
-This thesis investigates the application of Deep Reinforcement Learning to decentralized multi-robot collision avoidance control systems. Based on the Proximal Policy Optimization (PPO) algorithm, the research proposes improvements in learning rate scheduling, value clipping, and two-stage training strategy to enhance system performance and scalability.
-
-Experimental results demonstrate that the model achieves a 71\% success rate during training with 58 robots and 88\% during testing with 50 robots. The proposed improvements, including Adaptive Learning Rate Scheduler, Value Clipping, and separate optimizers for actor and critic networks, have enhanced training stability and convergence speed.
-
-The research also presents a hardware design using 360-degree LiDAR sensors and Raspberry Pi, preparing for future deployment on real robots.
-
-\textbf{Keywords:} Reinforcement Learning, PPO, Multi-robot, Collision Avoidance, Decentralized Control
+Nghiên cứu cũng trình bày thiết kế phần cứng robot sử dụng cảm biến LiDAR 360 độ và động cơ encoder điều khiển bằng PID, chuẩn bị cho việc triển khai thuật toán trên robot thực tế. Kết quả từ thực nghiệm cho thấy mô hình hoàn toàn có khả năng triển khai và hoạt động tốt không chỉ trên mô phỏng mà còn ở thực tế.
 
 \clearpage
 
