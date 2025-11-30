@@ -71,7 +71,7 @@ class RobotControl:
         self.odom_broadcaster = tf.TransformBroadcaster()
 
         # rospy.loginfo("Robot")
-        rospy.Timer(rospy.Duration(0.02), callback=self.update_odometry)  # 50Hz odometry update
+        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 20Hz odometry update (giảm CPU load)
 
         Thread(target=self.serial_worker, daemon=True).start()
 
@@ -356,9 +356,6 @@ class RobotControl:
             VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
             ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
 
-            # DEBUG: Log encoder values to diagnose position update issues
-            rospy.loginfo_throttle(1.0, f"[ODOM DEBUG] Left: {left_vel_local:.4f} m/s, Right: {right_vel_local:.4f} m/s, Linear: {linear_vel:.4f} m/s")
-
             if abs(linear_vel) < VEL_DEADBAND:
                 linear_vel = 0.0
             if abs(angular_vel) < ANGVEL_DEADBAND:
@@ -379,9 +376,6 @@ class RobotControl:
             self.current_x += delta_x
             self.current_y += delta_y
             self.current_theta += delta_theta
-
-            # DEBUG: Log position update
-            rospy.loginfo_throttle(1.0, f"[POS UPDATE] x: {self.current_x:.3f}, y: {self.current_y:.3f}, theta: {self.current_theta:.3f}, dt: {dt:.4f}")
         # else: KHÔNG cập nhật gì cả khi đứng im
 
         self.last_time = current_time

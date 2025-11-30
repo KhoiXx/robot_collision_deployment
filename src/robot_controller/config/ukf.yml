@@ -3,8 +3,8 @@
 # Fusion: Wheel Odometry + IMU
 # ==============================================================================
 
-frequency: 60  # Match với 50Hz input từ odom + IMU
-sensor_timeout: 0.1  # Giảm timeout vì freq cao hơn
+frequency: 20  # Giảm để tiết kiệm CPU, đủ cho control 10Hz
+sensor_timeout: 0.2  # Tăng timeout phù hợp với frequency thấp
 two_d_mode: true
 print_diagnostics: false  # TẮT để giảm CPU load
 publish_acceleration: false  # Không cần publish acceleration
