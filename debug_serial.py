@@ -32,7 +32,9 @@ def send_get_speed(port):
     crc = calculate_crc(send_data)
     send_data.append(crc)
     port.write(send_data)
-    print("Sent GET_SPEED command: " + send_data.hex())
+    # Python 2/3 compatible hex conversion
+    hex_str = ''.join('%02x' % b for b in send_data)
+    print("Sent GET_SPEED command: " + hex_str)
 
 def main():
     print("=" * 60)
@@ -91,8 +93,9 @@ def main():
                 # Try to read more if available
                 if ser.in_waiting > 0:
                     rest = ser.read(ser.in_waiting)
-                    rest_hex = rest.hex() if hasattr(rest, 'hex') else rest.encode('hex')
-                    print("    + %d more bytes: %s..." % (len(rest), rest_hex[:40]))
+                    # Python 2/3 compatible hex
+                    rest_hex = ''.join('%02x' % (ord(b) if isinstance(b, str) else b) for b in rest[:20])
+                    print("    + %d more bytes: %s..." % (len(rest), rest_hex))
         time.sleep(0.01)
 
     if packet_count == 0:
@@ -111,7 +114,8 @@ def main():
 
     if ser.in_waiting > 0:
         data = ser.read(ser.in_waiting)
-        data_hex = data.hex() if hasattr(data, 'hex') else data.encode('hex')
+        # Python 2/3 compatible hex
+        data_hex = ''.join('%02x' % (ord(b) if isinstance(b, str) else b) for b in data)
         print("    [OK] Received %d bytes: %s" % (len(data), data_hex))
 
         # Try to parse speed packet
