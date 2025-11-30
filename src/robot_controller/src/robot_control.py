@@ -358,8 +358,6 @@ class RobotControl:
 
             if abs(linear_vel) < VEL_DEADBAND:
                 linear_vel = 0.0
-            if abs(angular_vel) < ANGVEL_DEADBAND:
-                angular_vel = 0.0
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
@@ -367,15 +365,15 @@ class RobotControl:
         dt = (current_time - self.last_time).to_sec()
 
         # CHỈ tích phân khi có chuyển động thực sự
-        if abs(linear_vel) > 0.0 or abs(angular_vel) > 0.0:
-            delta_x = linear_vel * dt * np.cos(self.current_theta)
-            delta_y = linear_vel * dt * np.sin(self.current_theta)
-            delta_theta = angular_vel * dt
+        # if abs(linear_vel) > 0.0 or abs(angular_vel) > 0.0:
+        delta_x = linear_vel * dt * np.cos(self.current_theta)
+        delta_y = linear_vel * dt * np.sin(self.current_theta)
+        delta_theta = angular_vel * dt
 
-            # Cập nhật vị trí và hướng của robot
-            self.current_x += delta_x
-            self.current_y += delta_y
-            self.current_theta += delta_theta
+        # Cập nhật vị trí và hướng của robot
+        self.current_x += delta_x
+        self.current_y += delta_y
+        self.current_theta += delta_theta
         # else: KHÔNG cập nhật gì cả khi đứng im
 
         self.last_time = current_time
@@ -404,9 +402,9 @@ class RobotControl:
         odom.twist.twist.angular.z = angular_vel
 
         # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
-        # is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
-        # odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
-        # odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
+        is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
+        odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
+        odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
 
         # Publish odom
         self.odom_pub.publish(odom)
