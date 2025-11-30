@@ -67,9 +67,11 @@ class RobotControl:
         # ACCURACY: Cache odometry covariance matrices to avoid recreation
         self._init_covariance_matrices()
 
+        # Initialize TF broadcaster BEFORE Timer (to avoid AttributeError)
+        self.odom_broadcaster = tf.TransformBroadcaster()
+
         # rospy.loginfo("Robot")
         rospy.Timer(rospy.Duration(0.02), callback=self.update_odometry)  # 50Hz odometry update
-        self.odom_broadcaster = tf.TransformBroadcaster()
 
         Thread(target=self.serial_worker, daemon=True).start()
 
@@ -83,6 +85,16 @@ class RobotControl:
             0,     0,     0,     1e6,   0,     0,
             0,     0,     0,     0,     1e6,   0,
             0,     0,     0,     0,     0,     0.05
+        ]
+
+        # Pose covariance for stationary (high uncertainty - drift prone)
+        self.pose_cov_stationary = [
+            0.1,   0,     0,     0,     0,     0,
+            0,     0.1,   0,     0,     0,     0,
+            0,     0,     1e6,   0,     0,     0,
+            0,     0,     0,     1e6,   0,     0,
+            0,     0,     0,     0,     1e6,   0,
+            0,     0,     0,     0,     0,     0.2
         ]
 
         # Twist covariance for moving (low uncertainty)
@@ -172,7 +184,7 @@ class RobotControl:
         self.last_commanded_w = w
         self.last_cmd_vel_time = rospy.Time.now()  # Update timestamp
 
-        # rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
+        rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
         self.send_command(
             CMD_VEL,
             "<ff",
@@ -344,9 +356,8 @@ class RobotControl:
             VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
             ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
 
-            # Debug: Log raw encoder values (only when moving) - REMOVED f-string for performance
-            # if abs(linear_vel) > VEL_DEADBAND or abs(angular_vel) > ANGVEL_DEADBAND:
-            #     rospy.loginfo_throttle(2.0, f"Moving - Left: {left_vel_local:.4f}, Right: {right_vel_local:.4f}")
+            # DEBUG: Log encoder values to diagnose position update issues
+            rospy.loginfo_throttle(1.0, f"[ODOM DEBUG] Left: {left_vel_local:.4f} m/s, Right: {right_vel_local:.4f} m/s, Linear: {linear_vel:.4f} m/s")
 
             if abs(linear_vel) < VEL_DEADBAND:
                 linear_vel = 0.0
@@ -368,10 +379,10 @@ class RobotControl:
             self.current_x += delta_x
             self.current_y += delta_y
             self.current_theta += delta_theta
-        # else: KHÔNG cập nhật gì cả khi đứng im
 
-        # rospy.loginfo(f"Encoder position: x: {self.current_x}, y: {self.current_y};")
-        # rospy.loginfo(f"IMU position: x: {self.imu_x}, y: {self.imu_y};")
+            # DEBUG: Log position update
+            rospy.loginfo_throttle(1.0, f"[POS UPDATE] x: {self.current_x:.3f}, y: {self.current_y:.3f}, theta: {self.current_theta:.3f}, dt: {dt:.4f}")
+        # else: KHÔNG cập nhật gì cả khi đứng im
 
         self.last_time = current_time
 
@@ -398,11 +409,9 @@ class RobotControl:
         odom.twist.twist.linear.x = linear_vel
         odom.twist.twist.angular.z = angular_vel
 
-        # OPTIMIZATION: Use pre-calculated covariance matrices
-        odom.pose.covariance = self.pose_cov_moving
-
-        # Select twist covariance based on motion state
+        # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
         is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
+        odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
         odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
 
         # Publish odom

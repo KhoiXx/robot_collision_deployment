@@ -34,7 +34,7 @@ NUM_ROBOTS = int(os.getenv('NUM_ROBOTS', "1"))  # FIXED: Single robot deployment
 
 # CRITICAL FIX: Match training bounds to prevent robot from going too fast!
 # Training: [[0, -1.0], [0.7, 1.0]] means max linear vel = 0.7 m/s, max angular = 1.0 rad/s
-ACTION_BOUND = ast.literal_eval(os.getenv('ACTION_BOUND', "[[0, -1.0], [0.7, 1.0]]"))
+ACTION_BOUND = ast.literal_eval(os.getenv('ACTION_BOUND', "[[0, -1.0], [0.3, 1.0]]"))
 ROBOT_PORT = os.getenv("ROBOT_PORT", "/dev/ttyUSB0")
 BAUDRATE = int(os.getenv("BAUDRATE", "115200"))
 

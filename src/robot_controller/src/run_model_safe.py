@@ -292,9 +292,9 @@ class RunModelSafe:
 
         # Initialize state
         obs = self.robot.get_laser_observation()
-        obs_stack = deque[NDArray[floating[Any]]]([obs, obs, obs])
+        obs_stack = deque([obs, obs, obs])
         if obs_stack is None:
-            obs_stack = deque[NDArray[floating[Any]]]([obs] * LASER_HIST)
+            obs_stack = deque([obs] * LASER_HIST)
         else:
             _ = obs_stack.popleft()
             obs_stack.append(obs)
@@ -440,26 +440,24 @@ class RunModelSafe:
         rospy.loginfo(f"NEW GOAL RECEIVED: ({x:.2f}, {y:.2f})")
         rospy.loginfo("="*60)
 
-        # Stop current navigation immediately
-        self.terminal = True
-
-        # Set new goal (will be used when run() is called again)
+        # Set new goal
         self.robot.set_new_goal([x, y])
 
-        # Start new navigation in separate thread to avoid blocking
+        # Stop current navigation if running
+        if self.robot_status == RobotStatus.RUNNING:
+            rospy.loginfo("Stopping current navigation...")
+            self.terminal = True
+
+        # Start new navigation in thread to avoid blocking
         import threading
         def start_navigation():
-            # Wait for current navigation to stop
-            timeout = 0
-            while self.robot_status != RobotStatus.IDLE and timeout < 10:
+            # Wait for current run() to finish if needed
+            while self.robot_status == RobotStatus.RUNNING:
                 rospy.sleep(0.1)
-                timeout += 1
 
-            if self.robot_status == RobotStatus.IDLE:
-                rospy.loginfo(f"Starting navigation to ({x:.2f}, {y:.2f})")
-                self.run()
-            else:
-                rospy.logerr("Timeout waiting for robot to be ready")
+            # Now start new navigation
+            rospy.loginfo(f"Starting navigation to ({x:.2f}, {y:.2f})")
+            self.run()
 
         nav_thread = threading.Thread(target=start_navigation)
         nav_thread.daemon = True
@@ -486,7 +484,7 @@ if __name__ == "__main__":
         rospy.wait_for_service("/get_robot_counter", timeout=5.0)
 
         rospy.loginfo("Initializing model node...")
-        index = get_index()
+        index = 0
 
         rospy.init_node(f'robot_{index}_model_safe')
 

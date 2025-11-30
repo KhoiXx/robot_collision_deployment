@@ -11,6 +11,7 @@ from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Bool, Float32MultiArray
 
 from settings import *
+from collections import deque
 
 
 class RobotStatus(Enum):
