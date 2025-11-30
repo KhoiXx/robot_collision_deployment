@@ -71,7 +71,7 @@ class RobotControl:
         self.odom_broadcaster = tf.TransformBroadcaster()
 
         # rospy.loginfo("Robot")
-        rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 20Hz odometry update (giảm CPU load)
+        rospy.Timer(rospy.Duration(0.033), callback=self.update_odometry)  # 30Hz odometry update (balance CPU & responsiveness)
 
         Thread(target=self.serial_worker, daemon=True).start()
 
@@ -97,24 +97,24 @@ class RobotControl:
             0,     0,     0,     0,     0,     0.2
         ]
 
-        # Twist covariance for moving (low uncertainty)
+        # Twist covariance for moving (VERY low uncertainty - trust encoder highly)
         self.twist_cov_moving = [
-            0.001, 0,     0,     0,     0,     0,
-            0,     0.001, 0,     0,     0,     0,
-            0,     0,     1e6,   0,     0,     0,
-            0,     0,     0,     1e6,   0,     0,
-            0,     0,     0,     0,     1e6,   0,
-            0,     0,     0,     0,     0,     0.01
+            0.0001, 0,      0,     0,     0,     0,
+            0,      0.0001, 0,     0,     0,     0,
+            0,      0,      1e6,   0,     0,     0,
+            0,      0,      0,     1e6,   0,     0,
+            0,      0,      0,     0,     1e6,   0,
+            0,      0,      0,     0,     0,     0.001
         ]
 
-        # Twist covariance for stationary (high uncertainty)
+        # Twist covariance for stationary (low uncertainty)
         self.twist_cov_stationary = [
-            0.05,  0,     0,     0,     0,     0,
-            0,     0.05,  0,     0,     0,     0,
-            0,     0,     1e6,   0,     0,     0,
-            0,     0,     0,     1e6,   0,     0,
-            0,     0,     0,     0,     1e6,   0,
-            0,     0,     0,     0,     0,     0.1
+            0.001,  0,      0,     0,     0,     0,
+            0,      0.001,  0,     0,     0,     0,
+            0,      0,      1e6,   0,     0,     0,
+            0,      0,      0,     1e6,   0,     0,
+            0,      0,      0,     0,     1e6,   0,
+            0,      0,      0,     0,     0,     0.01
         ]
 
     def serial_worker(self):
@@ -405,7 +405,7 @@ class RobotControl:
 
         # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
         is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
-        odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
+        # odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
         odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
 
         # Publish odom

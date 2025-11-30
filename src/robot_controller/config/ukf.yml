@@ -3,8 +3,8 @@
 # Fusion: Wheel Odometry + IMU
 # ==============================================================================
 
-frequency: 20  # Giảm để tiết kiệm CPU, đủ cho control 10Hz
-sensor_timeout: 0.2  # Tăng timeout phù hợp với frequency thấp
+frequency: 30  # Balance giữa CPU và responsiveness
+sensor_timeout: 0.15  # Phù hợp với frequency 30Hz
 two_d_mode: true
 print_diagnostics: false  # TẮT để giảm CPU load
 publish_acceleration: false  # Không cần publish acceleration
@@ -77,8 +77,8 @@ process_noise_covariance: [0.05, 0,    0,    0,    0,    0,    0,     0,     0, 
 # Large values = fast convergence for measured variables
 # Small values = slow convergence
 # ==============================================================================
-initial_estimate_covariance: [1e-9, 0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
-                              0,    1e-9, 0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
+initial_estimate_covariance: [0.5,  0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
+                              0,    0.5,  0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,     0,     0,     0,    0,    0,

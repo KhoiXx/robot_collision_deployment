@@ -38,8 +38,8 @@ kld_z: 0.99                   # KLD sampling confidence
 # UPDATE THRESHOLDS
 # Reduced for more frequent updates
 # ==============================================================================
-update_min_d: 0.1             # Update mỗi 10cm - ổn định hơn
-update_min_a: 0.1             # Update mỗi ~6 degrees
+update_min_d: 0.05            # Update mỗi 5cm - responsive hơn
+update_min_a: 0.05            # Update mỗi ~3 degrees - responsive hơn
 resample_interval: 1          # Resample mỗi lần update để converge nhanh
 
 # ==============================================================================
