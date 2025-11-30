@@ -404,9 +404,9 @@ class RobotControl:
         odom.twist.twist.angular.z = angular_vel
 
         # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
-        is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
+        # is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
         # odom.pose.covariance = self.pose_cov_stationary if is_stationary else self.pose_cov_moving
-        odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
+        # odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
 
         # Publish odom
         self.odom_pub.publish(odom)
