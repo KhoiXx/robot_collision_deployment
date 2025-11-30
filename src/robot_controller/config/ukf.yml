@@ -6,7 +6,7 @@
 frequency: 30  # Balance giữa CPU và responsiveness
 sensor_timeout: 0.15  # Phù hợp với frequency 30Hz
 two_d_mode: true
-print_diagnostics: false  # TẮT để giảm CPU load
+print_diagnostics: true  # BẬT để debug - xem filter reject measurements không
 publish_acceleration: false  # Không cần publish acceleration
 
 # Frame configuration
@@ -19,9 +19,9 @@ publish_tf: true  # BẬT - UKF publish TF với IMU fusion cho yaw chính xác
 # SENSOR 0: Wheel Odometry
 # ==============================================================================
 odom0: /robot_0/odom
-odom0_config: [true,  true,  false,   # x, y, z position - DÙNG LẠI position
+odom0_config: [false, false, false,   # x, y, z position - TẮT (tránh duplicate info)
                false, false, false,   # roll, pitch, yaw - KHÔNG DÙNG (dùng IMU)
-               true,  true,  false,   # x_vel, y_vel, z_vel - VẪN DÙNG velocity
+               true,  true,  false,   # x_vel, y_vel, z_vel - CHỈ DÙNG velocity
                false, false, false,   # roll_vel, pitch_vel, yaw_vel - KHÔNG DÙNG
                false, false, false]   # x_acc, y_acc, z_acc
 odom0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
@@ -40,7 +40,7 @@ imu0_config: [false, false, false,   # x, y, z position
               false, false, true,    # roll, pitch, yaw - CHỈ DÙNG YAW (quan trọng!)
               false, false, false,   # x_vel, y_vel, z_vel
               false, false, true,    # roll_vel, pitch_vel, yaw_vel - CHỈ DÙNG YAW VELOCITY
-              true,  true,  false]   # x_acc, y_acc, z_acc - Dùng để estimate velocity
+              false, false, false]   # x_acc, y_acc, z_acc - TẮT (tránh gây nhiễu position)
 imu0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 imu0_remove_gravitational_acceleration: true
 imu0_differential: false
@@ -62,8 +62,8 @@ process_noise_covariance: [0.001, 0,    0,    0,    0,    0,    0,     0,     0,
                            0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0.025, 0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0.025, 0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0.005, 0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0.005, 0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
@@ -83,8 +83,8 @@ initial_estimate_covariance: [0.5,  0,    0,    0,    0,    0,    0,    0,    0,
                               0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,     0,     0,     0,    0,    0,
-                              0,    0,    0,    0,    0,    0,    1e-9, 0,    0,    0,     0,     0,     0,    0,    0,
-                              0,    0,    0,    0,    0,    0,    0,    1e-9, 0,    0,     0,     0,     0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0.1,  0,    0,    0,     0,     0,     0,    0,    0,
+                              0,    0,    0,    0,    0,    0,    0,    0.1,  0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0,    0,    1e-9,  0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0,    0,    0,     1e-9,  0,     0,    0,    0,
