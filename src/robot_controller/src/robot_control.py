@@ -262,39 +262,53 @@ class RobotControl:
         ROBUST PACKET PARSING: Handle all packet types correctly
         - 'S' prefix: String debug messages
         - 'B' prefix: Binary packets (SPEED, PID_DATA)
+
+        CRITICAL FIX: Read ALL available packets in buffer!
+        Arduino sends 50Hz, we read 30Hz → must process multiple packets per call
         """
-        num_bytes = self.port.in_waiting
-        if num_bytes < 1:
-            return
+        # LOOP to read ALL packets in buffer (prevent overflow/miss)
+        max_reads = 10  # Safety limit to prevent infinite loop
+        reads = 0
 
-        # Read packet type prefix
-        datatype = self.port.read(1)
+        while self.port.in_waiting > 0 and reads < max_reads:
+            num_bytes = self.port.in_waiting
+            if num_bytes < 1:
+                break
 
-        if datatype == b'S':
-            # String debug message - read until newline
-            received_string = self.port.readline().decode().strip()
-            return received_string
+            # Read packet type prefix
+            datatype = self.port.read(1)
 
-        elif datatype == b'B':
-            # Binary packet - need to read command type to route correctly
-            if num_bytes < 2:
-                return  # Not enough data yet
+            if datatype == b'S':
+                # String debug message - read until newline
+                received_string = self.port.readline().decode().strip()
+                # Don't return - continue reading more packets
 
-            cmd_type_byte = self.port.read(1)
-            if not cmd_type_byte:
-                return
+            elif datatype == b'B':
+                # Binary packet - need to read command type to route correctly
+                if num_bytes < 2:
+                    break  # Not enough data yet
 
-            cmd_type = cmd_type_byte[0]
+                cmd_type_byte = self.port.read(1)
+                if not cmd_type_byte:
+                    break
 
-            # Route to appropriate parser
-            if cmd_type == GET_SPEED:
-                self._parse_speed_packet()
-            elif cmd_type == GET_PID_DATA:
-                self._parse_pid_packet()
+                cmd_type = cmd_type_byte[0]
+
+                # Route to appropriate parser
+                if cmd_type == GET_SPEED:
+                    self._parse_speed_packet()
+                elif cmd_type == GET_PID_DATA:
+                    self._parse_pid_packet()
+                else:
+                    # Unknown packet type - clear buffer to resync
+                    rospy.logwarn(f"Unknown packet type: 0x{cmd_type:02x}")
+                    self.port.reset_input_buffer()
+                    break
             else:
-                # Unknown packet type - clear buffer to resync
-                rospy.logwarn(f"Unknown packet type: 0x{cmd_type:02x}")
-                self.port.reset_input_buffer()
+                # Unknown prefix - skip this byte and continue
+                pass
+
+            reads += 1
 
     def _parse_speed_packet(self):
         """
@@ -358,6 +372,8 @@ class RobotControl:
 
             if abs(linear_vel) < VEL_DEADBAND:
                 linear_vel = 0.0
+            if abs(angular_vel) < ANGVEL_DEADBAND:
+                angular_vel = 0.0
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
