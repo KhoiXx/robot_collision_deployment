@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Debug script to check serial communication with ESP32
 Run this ON THE JETSON to diagnose encoder issues
@@ -31,7 +32,7 @@ def send_get_speed(port):
     crc = calculate_crc(send_data)
     send_data.append(crc)
     port.write(send_data)
-    print(f"Sent GET_SPEED command: {send_data.hex()}")
+    print("Sent GET_SPEED command: " + send_data.hex())
 
 def main():
     print("=" * 60)
@@ -39,33 +40,33 @@ def main():
     print("=" * 60)
 
     # Step 1: Check if serial port exists
-    print(f"\n[1] Checking serial port: {ROBOT_PORT}")
+    print("\n[1] Checking serial port: " + ROBOT_PORT)
     try:
         import os
         if os.path.exists(ROBOT_PORT):
-            print(f"✓ Serial port {ROBOT_PORT} exists")
+            print("[OK] Serial port " + ROBOT_PORT + " exists")
         else:
-            print(f"✗ Serial port {ROBOT_PORT} NOT FOUND!")
+            print("[FAIL] Serial port " + ROBOT_PORT + " NOT FOUND!")
             print("\nAvailable serial ports:")
             import glob
             ports = glob.glob('/dev/tty[AU]*')
             if ports:
                 for p in ports:
-                    print(f"  - {p}")
+                    print("  - " + p)
             else:
                 print("  No USB/ACM devices found!")
             return
     except Exception as e:
-        print(f"Error checking port: {e}")
+        print("Error checking port: " + str(e))
         return
 
     # Step 2: Try to open serial port
-    print(f"\n[2] Opening serial port at {BAUDRATE} baud...")
+    print("\n[2] Opening serial port at " + str(BAUDRATE) + " baud...")
     try:
         ser = serial.Serial(ROBOT_PORT, BAUDRATE, timeout=1.0)
-        print(f"✓ Serial port opened successfully")
+        print("[OK] Serial port opened successfully")
     except Exception as e:
-        print(f"✗ Failed to open serial port: {e}")
+        print("[FAIL] Failed to open serial port: " + str(e))
         return
 
     # Step 3: Wait for ESP to boot
@@ -82,20 +83,21 @@ def main():
         if ser.in_waiting > 0:
             byte = ser.read(1)
             if byte:
-                print(f"    Received byte: 0x{byte[0]:02x} ('{chr(byte[0]) if 32 <= byte[0] < 127 else '?'}')")
+                char = chr(byte[0]) if 32 <= byte[0] < 127 else '?'
+                print("    Received byte: 0x{:02x} ('{}')".format(byte[0], char))
                 packet_count += 1
 
                 # Try to read more if available
                 if ser.in_waiting > 0:
                     rest = ser.read(ser.in_waiting)
-                    print(f"    + {len(rest)} more bytes: {rest[:20].hex()}...")
+                    print("    + {} more bytes: {}...".format(len(rest), rest[:20].hex()))
         time.sleep(0.01)
 
     if packet_count == 0:
-        print("    ✗ NO DATA RECEIVED!")
-        print("    → ESP is NOT auto-pushing data")
+        print("    [FAIL] NO DATA RECEIVED!")
+        print("    -> ESP is NOT auto-pushing data")
     else:
-        print(f"    ✓ Received {packet_count} bytes")
+        print("    [OK] Received {} bytes".format(packet_count))
 
     # Step 5: Try manual GET_SPEED request
     print("\n[5] Sending manual GET_SPEED command...")
@@ -107,19 +109,19 @@ def main():
 
     if ser.in_waiting > 0:
         data = ser.read(ser.in_waiting)
-        print(f"    ✓ Received {len(data)} bytes: {data.hex()}")
+        print("    [OK] Received {} bytes: {}".format(len(data), data.hex()))
 
         # Try to parse speed packet
         if len(data) >= 11 and data[0:1] == b'B' and data[1] == GET_SPEED:
             try:
                 left_vel, right_vel = struct.unpack('<ff', data[2:10])
-                print(f"    → Left vel: {left_vel:.4f} m/s")
-                print(f"    → Right vel: {right_vel:.4f} m/s")
+                print("    -> Left vel: {:.4f} m/s".format(left_vel))
+                print("    -> Right vel: {:.4f} m/s".format(right_vel))
             except:
                 print("    Failed to parse speed data")
     else:
-        print("    ✗ NO RESPONSE!")
-        print("    → ESP is not responding to GET_SPEED")
+        print("    [FAIL] NO RESPONSE!")
+        print("    -> ESP is not responding to GET_SPEED")
 
     # Step 6: Summary
     print("\n" + "=" * 60)
@@ -127,7 +129,7 @@ def main():
     print("=" * 60)
 
     if packet_count == 0:
-        print("✗ ESP is NOT sending data automatically")
+        print("[FAIL] ESP is NOT sending data automatically")
         print("  Possible causes:")
         print("  1. ESP firmware not flashed or crashed")
         print("  2. ESP not connected to Jetson")
@@ -138,8 +140,8 @@ def main():
         print("  2. Re-flash ESP firmware")
         print("  3. Check USB cable connection")
     else:
-        print("✓ ESP is sending data")
-        print("  → Issue may be in robot_control.py parsing logic")
+        print("[OK] ESP is sending data")
+        print("  -> Issue may be in robot_control.py parsing logic")
 
     print("=" * 60)
     ser.close()
@@ -150,6 +152,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n\nInterrupted by user")
     except Exception as e:
-        print(f"\nUnexpected error: {e}")
+        print("\nUnexpected error: " + str(e))
         import traceback
         traceback.print_exc()
