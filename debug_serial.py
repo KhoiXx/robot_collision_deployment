@@ -83,21 +83,23 @@ def main():
         if ser.in_waiting > 0:
             byte = ser.read(1)
             if byte:
-                char = chr(byte[0]) if 32 <= byte[0] < 127 else '?'
-                print("    Received byte: 0x{:02x} ('{}')".format(byte[0], char))
+                byte_val = ord(byte) if isinstance(byte, str) else byte[0]
+                char = chr(byte_val) if 32 <= byte_val < 127 else '?'
+                print("    Received byte: 0x%02x ('%s')" % (byte_val, char))
                 packet_count += 1
 
                 # Try to read more if available
                 if ser.in_waiting > 0:
                     rest = ser.read(ser.in_waiting)
-                    print("    + {} more bytes: {}...".format(len(rest), rest[:20].hex()))
+                    rest_hex = rest.hex() if hasattr(rest, 'hex') else rest.encode('hex')
+                    print("    + %d more bytes: %s..." % (len(rest), rest_hex[:40]))
         time.sleep(0.01)
 
     if packet_count == 0:
         print("    [FAIL] NO DATA RECEIVED!")
         print("    -> ESP is NOT auto-pushing data")
     else:
-        print("    [OK] Received {} bytes".format(packet_count))
+        print("    [OK] Received %d bytes" % packet_count)
 
     # Step 5: Try manual GET_SPEED request
     print("\n[5] Sending manual GET_SPEED command...")
@@ -109,14 +111,15 @@ def main():
 
     if ser.in_waiting > 0:
         data = ser.read(ser.in_waiting)
-        print("    [OK] Received {} bytes: {}".format(len(data), data.hex()))
+        data_hex = data.hex() if hasattr(data, 'hex') else data.encode('hex')
+        print("    [OK] Received %d bytes: %s" % (len(data), data_hex))
 
         # Try to parse speed packet
         if len(data) >= 11 and data[0:1] == b'B' and data[1] == GET_SPEED:
             try:
                 left_vel, right_vel = struct.unpack('<ff', data[2:10])
-                print("    -> Left vel: {:.4f} m/s".format(left_vel))
-                print("    -> Right vel: {:.4f} m/s".format(right_vel))
+                print("    -> Left vel: %.4f m/s" % left_vel)
+                print("    -> Right vel: %.4f m/s" % right_vel)
             except:
                 print("    Failed to parse speed data")
     else:
