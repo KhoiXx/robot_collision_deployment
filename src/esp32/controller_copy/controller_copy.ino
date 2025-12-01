@@ -34,7 +34,7 @@ const unsigned long pidSampleTime = 20;
 
 // AUTO-PUSH: Send speed data automatically (50Hz = 20ms interval)
 unsigned long lastAutoSpeedSend = 0;
-const unsigned long AUTO_SPEED_INTERVAL = 20;  // 50Hz - match PID loop rate
+const unsigned long AUTO_SPEED_INTERVAL = 33;  // 50Hz - match PID loop rate
 
 const int baudRate = 115200;
 float leftWheelSpeed = 0.0;

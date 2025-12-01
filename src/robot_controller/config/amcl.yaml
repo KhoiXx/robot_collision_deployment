@@ -5,14 +5,14 @@
 
 # ==============================================================================
 # ODOMETRY MODEL (differential drive)
-# Match với gmapping: srr=0.1, srt=0.15, str=0.1, stt=0.1
+# GIẢM noise để tin UKF filtered odometry hơn
 # ==============================================================================
 odom_model_type: diff
-odom_alpha1: 0.1   # Rotation noise from rotation (match gmapping srr)
-odom_alpha2: 0.15  # Rotation noise from translation (match gmapping srt)
-odom_alpha3: 0.1   # Translation noise from translation (match gmapping stt)
-odom_alpha4: 0.1   # Translation noise from rotation (match gmapping str)
-odom_alpha5: 0.1   # Translation noise (diff-corrected model)
+odom_alpha1: 0.05  # Rotation noise from rotation - GIẢM (tin UKF)
+odom_alpha2: 0.05  # Rotation noise from translation - GIẢM
+odom_alpha3: 0.05  # Translation noise from translation - GIẢM
+odom_alpha4: 0.05  # Translation noise from rotation - GIẢM
+odom_alpha5: 0.05  # Translation noise (diff-corrected model) - GIẢM
 
 # ==============================================================================
 # LASER MODEL
@@ -38,14 +38,14 @@ kld_z: 0.99                   # KLD sampling confidence
 # UPDATE THRESHOLDS
 # Reduced for more frequent updates
 # ==============================================================================
-update_min_d: 0.05            # Update mỗi 5cm - responsive hơn
-update_min_a: 0.05            # Update mỗi ~3 degrees - responsive hơn
-resample_interval: 1          # Resample mỗi lần update để converge nhanh
+update_min_d: 0.01            # Update mỗi 1cm - rất responsive
+update_min_a: 0.01            # Update mỗi ~0.5 degrees - rất responsive
+resample_interval: 2          # Resample mỗi 2 lần update (giảm CPU)
 
 # ==============================================================================
 # TRANSFORM
 # ==============================================================================
-transform_tolerance: 0.2      # Độ trễ TF cho phép (seconds)
+transform_tolerance: 1.0      # Độ trễ TF cho phép (seconds) - tăng lên vì UKF 30Hz
 
 # ==============================================================================
 # INITIAL POSE (khi set trong RViz)
