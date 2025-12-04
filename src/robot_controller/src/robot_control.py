@@ -397,7 +397,25 @@ class RobotControl:
         delta_y = linear_vel * dt * np.sin(self.current_theta)
         delta_theta = angular_vel * dt
 
-        # Cập nhật vị trí và hướng của robot
+        # ======================================================================
+        # CRITICAL: OUTLIER DETECTION - Reject impossible movements
+        # Prevents SLAM jump 45° from sensor spikes!
+        # ======================================================================
+        MAX_DELTA_THETA = 0.15  # rad (~8.6°) in 0.04s → 3.75 rad/s max (robot can't do this!)
+        MAX_DELTA_XY = 0.02     # m in 0.04s → 0.5 m/s max (robot max = 0.3 m/s)
+
+        if abs(delta_theta) > MAX_DELTA_THETA:
+            rospy.logwarn_throttle(1.0, f"OUTLIER REJECTED: delta_theta={delta_theta:.3f} rad (>{MAX_DELTA_THETA})")
+            delta_theta = 0.0  # Reject this measurement
+            angular_vel = 0.0  # Also zero velocity for this cycle
+
+        if abs(delta_x) > MAX_DELTA_XY or abs(delta_y) > MAX_DELTA_XY:
+            rospy.logwarn_throttle(1.0, f"OUTLIER REJECTED: delta_x={delta_x:.3f}, delta_y={delta_y:.3f} m (>{MAX_DELTA_XY})")
+            delta_x = 0.0
+            delta_y = 0.0
+            linear_vel = 0.0
+
+        # Cập nhật vị trí và hướng của robot (after outlier check)
         self.current_x += delta_x
         self.current_y += delta_y
         self.current_theta += delta_theta

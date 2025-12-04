@@ -28,9 +28,9 @@ odom0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 odom0_differential: false  # TẮT differential - dùng position trực tiếp
 odom0_relative: false
 
-# Rejection thresholds (Mahalanobis distance) - TĂNG TRUST ENCODER YAW
-odom0_pose_rejection_threshold: 2.5  # GIẢM từ 4.0 → 2.5 (tin encoder yaw hơn)
-odom0_twist_rejection_threshold: 2.5  # GIẢM từ 3.0 → 2.5
+# Rejection thresholds (Mahalanobis distance) - NGHIÊM NGẶT để tránh SLAM jump
+odom0_pose_rejection_threshold: 1.5  # CRITICAL: Thắt chặt từ 2.5 → 1.5 (reject outliers)
+odom0_twist_rejection_threshold: 2.0  # Thắt chặt từ 2.5 → 2.0
 
 # ==============================================================================
 # SENSOR 1: IMU
@@ -46,10 +46,10 @@ imu0_remove_gravitational_acceleration: true
 imu0_differential: false
 imu0_relative: false
 
-# IMU rejection thresholds - GIẢM TRUST IMU để cân bằng với encoder
-imu0_pose_rejection_threshold: 5.0  # TĂNG từ 3.0 → 5.0 (giảm trust IMU yaw, ưu tiên encoder)
-imu0_twist_rejection_threshold: 2.0  # TĂNG từ 1.0 → 2.0
-imu0_linear_acceleration_rejection_threshold: 2.0  # TĂNG từ 1.5 → 2.0
+# IMU rejection thresholds - NGHIÊM NGẶT để reject spike (NGUYÊN NHÂN CHÍNH SLAM JUMP!)
+imu0_pose_rejection_threshold: 1.5  # CRITICAL FIX: Giảm từ 5.0 → 1.5 (reject IMU spike 45°!)
+imu0_twist_rejection_threshold: 1.2  # Thắt chặt từ 2.0 → 1.2 (reject angular velocity spike)
+imu0_linear_acceleration_rejection_threshold: 1.5  # Giữ nguyên 1.5 (acceleration OK)
 
 # ==============================================================================
 # PROCESS NOISE COVARIANCE (CRITICAL - prevents NaN and filters drift)
