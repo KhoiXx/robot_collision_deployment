@@ -1,0 +1,101 @@
+<launch>
+  <!-- ============================================================================
+       CARTOGRAPHER NAVIGATION MODE (Localization Only)
+       ============================================================================
+       Thay thế AMCL - localization nhẹ hơn, chính xác hơn
+
+       Usage:
+         roslaunch robot_controller cartographer_navigation.launch map_name:=cartographer_map
+
+       Prerequisites:
+         1. Map đã được tạo bằng cartographer_mapping.launch
+         2. File .pbstream tồn tại trong maps/ folder
+  -->
+
+  <!-- Arguments -->
+  <arg name="robot_namespace" default="/robot_0"/>
+  <arg name="map_name" default="cartographer_map"/>  <!-- Map name (without extension) -->
+  <arg name="configuration_basename" default="robot_2d_localization.lua"/>
+
+  <param name="use_sim_time" value="false"/>
+
+  <!-- ============================================================================
+       LOAD MAP
+       ============================================================================ -->
+
+  <!-- Load static map for visualization (converted from .pbstream) -->
+  <node pkg="map_server" type="map_server" name="map_server"
+        args="$(find robot_controller)/maps/$(arg map_name).yaml"
+        output="screen"/>
+
+  <!-- ============================================================================
+       CARTOGRAPHER NODE - LOCALIZATION MODE
+       ============================================================================ -->
+
+  <node name="cartographer_node" pkg="cartographer_ros" type="cartographer_node"
+        args="-configuration_directory $(find robot_controller)/config/cartographer
+              -configuration_basename $(arg configuration_basename)
+              -load_state_filename $(find robot_controller)/maps/$(arg map_name).pbstream"
+        output="screen">
+
+    <!-- Topic remapping -->
+    <remap from="scan" to="$(arg robot_namespace)/scan" />
+    <remap from="odom" to="$(arg robot_namespace)/odometry/filtered" />  <!-- Use UKF filtered odom -->
+    <remap from="imu" to="$(arg robot_namespace)/imu/data" />
+
+    <!-- Start in localization mode -->
+    <param name="start_trajectory_with_default_topics" value="true" />
+  </node>
+
+  <!-- Cartographer Occupancy Grid Node (for visualization) -->
+  <node name="cartographer_occupancy_grid_node"
+        pkg="cartographer_ros"
+        type="cartographer_occupancy_grid_node"
+        args="-resolution 0.05" />
+
+  <!-- ============================================================================
+       RL MODEL (Autonomous Navigation)
+       ============================================================================ -->
+
+  <node pkg="robot_controller" type="run_model.py" name="model_controller"
+        ns="$(arg robot_namespace)" output="screen">
+    <param name="model_path" value="$(find robot_controller)/src/policy/cnn_modern_best_71pct.pth"/>
+  </node>
+
+  <!-- ============================================================================
+       NOTES
+       ============================================================================
+
+       Navigation procedure:
+       1. Start this launch file
+       2. Wait for Cartographer to load map (~5-10s)
+       3. Robot automatically localizes (no need to set initial pose!)
+       4. RL model starts navigating autonomously
+
+       Set initial pose (if localization fails):
+         rostopic pub /initialpose geometry_msgs/PoseWithCovarianceStamped ...
+         Or use RViz "2D Pose Estimate" button
+
+       Monitor:
+       - /tracked_pose: Current robot pose in map frame
+       - CPU on Jetson: python3 ~/thesis/deployment/src/robot_controller/src/diagnose_jetson.py
+
+       Expected performance (vs AMCL):
+       ┌──────────────────┬──────────┬─────────────┐
+       │                  │ AMCL     │ Cartographer│
+       ├──────────────────┼──────────┼─────────────┤
+       │ Jetson CPU       │ N/A      │ 10-15%      │
+       │ Master CPU       │ 40-60%   │ 10-20%      │
+       │ Memory           │ 400MB    │ 300-400MB   │
+       │ Lag/Freeze       │ YES ❌   │ NO ✅       │
+       │ Accuracy         │ Good     │ Excellent   │
+       │ Initial pose     │ Required │ Auto!       │
+       └──────────────────┴──────────┴─────────────┘
+
+       Troubleshooting:
+       - If not localizing: Drive robot slowly for 3-5 seconds
+       - If drift: Check UKF odometry quality
+       - If CPU high: Reduce num_threads in .lua to 1
+  -->
+
+</launch>
