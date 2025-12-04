@@ -38,9 +38,9 @@
     <!-- UKF publish TF từ jetson_bringup.launch với publish_tf=true -->
 
     <!-- Launch teleop_twist_keyboard for controlling the robot -->
-    <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
+    <!-- <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
         <remap from="cmd_vel" to="$(arg robot_namespace)/cmd_vel"/>
-    </node>
+    </node> -->
     <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base" args="0.0 0 0.0 0 0 0 /robot_0/odom /base_link "/> -->
 
     <!-- Start gmapping for SLAM -->
@@ -61,7 +61,7 @@
 
         <!-- Update thresholds - OPTIMIZED để giảm CPU load -->
         <param name="linearUpdate" value="0.2"/>  <!-- 20cm - giảm update frequency -->
-        <param name="angularUpdate" value="0.2"/>  <!-- ~11° - giảm update frequency -->
+        <param name="angularUpdate" value="0.1"/>  <!-- ~11° - giảm update frequency -->
         <param name="temporalUpdate" value="3.0"/>  <!-- 3s - TĂNG để giảm idle updates -->
 
         <!-- Map resolution -->
@@ -74,8 +74,8 @@
         <param name="ymax" value="10.0"/>
 
         <!-- Particle filter parameters - OPTIMIZED cho Jetson Nano -->
-        <param name="particles" value="30"/>  <!-- GIẢM từ 80 để save CPU (62% reduction) -->
-        <param name="resampleThreshold" value="0.5"/>
+        <param name="particles" value="35"/>  <!-- GIẢM từ 80 để save CPU (62% reduction) -->
+        <param name="resampleThreshold" value="0.6"/>
 
         <!-- Laser parameters -->
         <param name="maxUrange" value="5.5"/>  <!-- Max usable range -->
@@ -85,7 +85,7 @@
         <param name="minimumScore" value="80"/>  <!-- Accept good matches only -->
         <param name="lstep" value="0.05"/>
         <param name="astep" value="0.05"/>
-        <param name="iterations" value="3"/>  <!-- GIẢM từ 8 để save CPU (62% reduction) -->
+        <param name="iterations" value="2"/>  <!-- GIẢM từ 8 để save CPU (62% reduction) -->
         <param name="lsigma" value="0.075"/>
         <param name="ogain" value="3.0"/>
         <param name="lskip" value="0"/>

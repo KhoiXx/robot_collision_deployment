@@ -5,12 +5,13 @@ import serial
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
-from sensor_msgs.msg import Imu
-from std_msgs.msg import Float32
+# COMMENT: Không cần import IMU nữa - UKF lo
+# from sensor_msgs.msg import Imu
+# from std_msgs.msg import Float32
 import numpy as np
 from collections import deque
 from math import sin, cos
-
+from tf.transformations import quaternion_from_euler
 from settings import *
 from threading import Thread, Lock
 
@@ -32,29 +33,34 @@ class RobotControl:
         rospy.Subscriber(f'/robot_{index}/cmd_vel', Twist, self.cmd_vel_callback)
         # update odom topic
         self.odom_pub = rospy.Publisher(f'/robot_{index}/odom', Odometry, queue_size=10)
+
+        # COMMENT: IMU subscribers - KHÔNG CẦN NỮA, UKF lo fusion
+        # UKF sẽ subscribe /robot_0/imu/data và /robot_0/imu/yaw trực tiếp
+        # Robot control chỉ dùng encoder theta, đơn giản hóa hệ thống
         # self.imu_sub = rospy.Subscriber(f'/robot_{index}/imu/data', Imu, self.imu_callback)
-        self.imu_yaw_sub = rospy.Subscriber(f'/robot_{index}/imu/yaw', Float32, self.imu_yaw_callback)
+        # self.imu_yaw_sub = rospy.Subscriber(f'/robot_{index}/imu/yaw', Float32, self.imu_yaw_callback)
 
         self.current_x = 0.0
         self.current_y = 0.0
         self.current_theta = 0.0
-        self.imu_yaw = 0.0
-        self.imu_yaw_start = None
         self.last_time = rospy.Time.now()
         self.last_time_get_speed = rospy.Time.now()
 
-        # Yaw correction for straight motion drift prevention
+        # Yaw correction for straight motion drift prevention (using ENCODER theta)
         self.yaw_correction_active = False
-        self.yaw_at_straight_start = 0.0
+        self.theta_at_straight_start = 0.0  # DÙNG ENCODER THETA thay vì IMU
         self.last_commanded_v = 0.0
         self.last_commanded_w = 0.0
         self.last_cmd_vel_time = rospy.Time.now()  # Track when last cmd_vel received
 
-        self.imu_vx = 0.0
-        self.imu_vy = 0.0
-        self.imu_x = 0.0
-        self.imu_y = 0.0
-        self.last_imu_time = rospy.Time.now()
+        # COMMENT: IMU variables - không dùng nữa, UKF lo
+        # self.imu_yaw = 0.0
+        # self.imu_yaw_start = None
+        # self.imu_vx = 0.0
+        # self.imu_vy = 0.0
+        # self.imu_x = 0.0
+        # self.imu_y = 0.0
+        # self.last_imu_time = rospy.Time.now()
 
         # ACCURACY: Thread-safe velocity variables with lock
         self.vel_lock = Lock()
@@ -77,14 +83,14 @@ class RobotControl:
 
     def _init_covariance_matrices(self):
         """OPTIMIZATION: Pre-calculate covariance matrices to avoid runtime recreation"""
-        # Pose covariance for moving state
+        # Pose covariance for moving state - GIẢM yaw covariance (encoder chính xác hơn)
         self.pose_cov_moving = [
             0.001, 0,     0,     0,     0,     0,
             0,     0.001, 0,     0,     0,     0,
             0,     0,     1e6,   0,     0,     0,
             0,     0,     0,     1e6,   0,     0,
             0,     0,     0,     0,     1e6,   0,
-            0,     0,     0,     0,     0,     0.05
+            0,     0,     0,     0,     0,     0.01  # GIẢM từ 0.05 → 0.01 (encoder yaw chính xác)
         ]
 
         # Twist covariance for moving (low uncertainty)
@@ -142,7 +148,7 @@ class RobotControl:
         w = cmd.angular.z
 
         # ==================================================================
-        # LAYER 2: IMU Yaw Correction for Straight Motion Drift
+        # LAYER 2: ENCODER Theta Correction for Straight Motion Drift
         # ==================================================================
 
         abs_w = abs(w)
@@ -150,19 +156,19 @@ class RobotControl:
 
         # Detect if we're attempting straight motion
         if abs_w < 0.05 and abs_v > 0.1:  # Straight motion threshold
-            # Starting straight motion - record initial yaw
+            # Starting straight motion - record initial theta (from encoder)
             if not self.yaw_correction_active:
                 self.yaw_correction_active = True
-                self.yaw_at_straight_start = self.imu_yaw
+                self.theta_at_straight_start = self.current_theta
 
-            # Calculate yaw drift
-            yaw_drift = self.imu_yaw - self.yaw_at_straight_start
+            # Calculate theta drift (từ encoder differential drive)
+            theta_drift = self.current_theta - self.theta_at_straight_start
 
             # Only correct if drift exceeds threshold (0.1 rad = ~5.7 degrees)
-            if abs(yaw_drift) > 0.1:
+            if abs(theta_drift) > 0.1:
                 # Apply conservative correction
                 KP_YAW = 0.4
-                w_correction = -KP_YAW * yaw_drift
+                w_correction = -KP_YAW * theta_drift
 
                 # Limit max correction to avoid instability
                 MAX_CORRECTION = 0.15  # rad/s
@@ -174,7 +180,7 @@ class RobotControl:
                 # Apply correction
                 w += w_correction
 
-                # rospy.loginfo_throttle(1.0, f"Yaw correction: drift={yaw_drift:.3f}, w_corr={w_correction:.3f}")
+                # rospy.loginfo_throttle(1.0, f"Theta correction: drift={theta_drift:.3f}, w_corr={w_correction:.3f}")
         else:
             # Not straight motion - disable correction
             self.yaw_correction_active = False
@@ -192,10 +198,15 @@ class RobotControl:
             w
         )
 
-    def imu_yaw_callback(self, msg: Float32):
-        if self.imu_yaw_start is None:
-            self.imu_yaw_start = msg.data
-        self.imu_yaw = msg.data - self.imu_yaw_start
+    # ========================================================================
+    # COMMENT: IMU callbacks - KHÔNG CẦN NỮA
+    # UKF sẽ subscribe IMU trực tiếp, robot_control chỉ dùng encoder
+    # ========================================================================
+    # def imu_yaw_callback(self, msg: Float32):
+    #     if self.imu_yaw_start is None:
+    #         self.imu_yaw_start = msg.data
+    #     self.imu_yaw = msg.data - self.imu_yaw_start
+
     # def imu_callback(self, msg: Imu):
     #     now = rospy.Time.now()
     #     dt = (now - self.last_imu_time).to_sec()
@@ -407,11 +418,12 @@ class RobotControl:
         odom.pose.pose.position.z = 0.0
 
         # OPTIMIZATION: Fast 2D quaternion (yaw-only rotation) instead of tf.transformations
-        half_yaw = self.current_theta * 0.5
-        odom.pose.pose.orientation.x = 0.0
-        odom.pose.pose.orientation.y = 0.0
-        odom.pose.pose.orientation.z = sin(half_yaw)
-        odom.pose.pose.orientation.w = cos(half_yaw)
+        q = quaternion_from_euler(0, 0, self.current_theta)
+        odom.pose.pose.orientation.x = q[0]
+        odom.pose.pose.orientation.y = q[1]
+        odom.pose.pose.orientation.z = q[2]
+        odom.pose.pose.orientation.w = q[3]
+
 
         # Thiết lập vận tốc
         odom.twist.twist.linear.x = linear_vel
@@ -420,7 +432,7 @@ class RobotControl:
         # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
         is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
         odom.pose.covariance = self.pose_cov_moving
-        odom.twist.covariance = self.twist_cov_stationary if is_stationary else self.twist_cov_moving
+        odom.twist.covariance = self.twist_cov_moving
 
         # Publish odom
         self.odom_pub.publish(odom)

@@ -3,7 +3,7 @@
 # Fusion: Wheel Odometry + IMU
 # ==============================================================================
 
-frequency: 20  # OPTIMIZED: Giảm từ 30Hz để tiết kiệm CPU (~33% reduction)
+frequency: 25  # OPTIMIZED: Giảm từ 30Hz để tiết kiệm CPU (~33% reduction)
 sensor_timeout: 0.2  # Phù hợp với frequency 20Hz (increased from 0.15)
 two_d_mode: true
 print_diagnostics: false  # TẮT để giảm CPU load
@@ -19,18 +19,18 @@ publish_tf: true  # BẬT - UKF publish TF với IMU fusion cho yaw chính xác
 # SENSOR 0: Wheel Odometry
 # ==============================================================================
 odom0: /robot_0/odom
-odom0_config: [true,  true,  false,   # x, y, z position - DÙNG LẠI position
-               false, false, false,   # roll, pitch, yaw - KHÔNG DÙNG (dùng IMU)
-               true,  true,  false,   # x_vel, y_vel, z_vel - CHỈ DÙNG velocity
+odom0_config: [true,  true,  false,   # x, y, z position - DÙNG position
+               false, false, true,    # roll, pitch, yaw - BẬT YAW TỪ ENCODER! (CRITICAL FIX)
+               true,  true,  false,   # x_vel, y_vel, z_vel - DÙNG velocity
                false, false, false,   # roll_vel, pitch_vel, yaw_vel - KHÔNG DÙNG
                false, false, false]   # x_acc, y_acc, z_acc
 odom0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 odom0_differential: false  # TẮT differential - dùng position trực tiếp
 odom0_relative: false
 
-# Rejection thresholds (Mahalanobis distance)
-odom0_pose_rejection_threshold: 5.0
-odom0_twist_rejection_threshold: 3.0  # Tăng tolerance
+# Rejection thresholds (Mahalanobis distance) - TĂNG TRUST ENCODER YAW
+odom0_pose_rejection_threshold: 2.5  # GIẢM từ 4.0 → 2.5 (tin encoder yaw hơn)
+odom0_twist_rejection_threshold: 2.5  # GIẢM từ 3.0 → 2.5
 
 # ==============================================================================
 # SENSOR 1: IMU
@@ -46,10 +46,10 @@ imu0_remove_gravitational_acceleration: true
 imu0_differential: false
 imu0_relative: false
 
-# IMU rejection thresholds - Giảm để tin IMU hơn
-imu0_pose_rejection_threshold: 3.0  # TĂNG - tin yaw từ IMU
-imu0_twist_rejection_threshold: 1.5  # TĂNG
-imu0_linear_acceleration_rejection_threshold: 1.5  # TĂNG
+# IMU rejection thresholds - GIẢM TRUST IMU để cân bằng với encoder
+imu0_pose_rejection_threshold: 5.0  # TĂNG từ 3.0 → 5.0 (giảm trust IMU yaw, ưu tiên encoder)
+imu0_twist_rejection_threshold: 2.0  # TĂNG từ 1.0 → 2.0
+imu0_linear_acceleration_rejection_threshold: 2.0  # TĂNG từ 1.5 → 2.0
 
 # ==============================================================================
 # PROCESS NOISE COVARIANCE (CRITICAL - prevents NaN and filters drift)
@@ -61,7 +61,7 @@ process_noise_covariance: [0.001, 0,    0,    0,    0,    0,    0,     0,     0,
                            0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0.06, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0.03, 0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0.005, 0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0.005, 0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
@@ -76,13 +76,14 @@ process_noise_covariance: [0.001, 0,    0,    0,    0,    0,    0,     0,     0,
 # INITIAL ESTIMATE COVARIANCE (CRITICAL - prevents NaN at startup)
 # Large values = fast convergence for measured variables
 # Small values = slow convergence
+# Tăng yaw covariance để cho phép fusion nhanh hơn
 # ==============================================================================
 initial_estimate_covariance: [0.5,  0,    0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0.5,  0,    0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    1e-9, 0,    0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    1e-9, 0,    0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    1e-9, 0,    0,    0,    0,    0,     0,     0,     0,    0,    0,
-                              0,    0,    0,    0,    0,    1e-9, 0,    0,    0,    0,     0,     0,     0,    0,    0,
+                              0,    0,    0,    0,    0,    0.1,  0,    0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0.1,  0,    0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0.1,  0,    0,     0,     0,     0,    0,    0,
                               0,    0,    0,    0,    0,    0,    0,    0,    1e-9, 0,     0,     0,     0,    0,    0,
