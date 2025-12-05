@@ -4,7 +4,7 @@
 # ==============================================================================
 
 frequency: 25  # OPTIMIZED: Giảm từ 30Hz để tiết kiệm CPU (~33% reduction)
-sensor_timeout: 0.2  # Phù hợp với frequency 20Hz (increased from 0.15)
+sensor_timeout: 0.5  # CRITICAL FIX: TĂNG từ 0.2 → 0.5s (sync với Cartographer, tránh drop data)
 two_d_mode: true
 print_diagnostics: false  # TẮT để giảm CPU load
 publish_acceleration: true  # Không cần publish acceleration

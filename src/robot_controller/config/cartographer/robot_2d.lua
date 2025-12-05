@@ -24,11 +24,11 @@ options = {
   num_subdivisions_per_laser_scan = 1,     -- NO subdivision (giảm timing issues)
   num_point_clouds = 0,
   lookup_transform_timeout_sec = 0.5,      -- CRITICAL FIX: TĂNG từ 0.2 → 0.5s (tránh drop data!)
-  submap_publish_period_sec = 0.3,         -- Publish submaps every 0.3s
+  submap_publish_period_sec = 0.5,         -- Publish submaps every 0.3s
   pose_publish_period_sec = 0.05,          -- GIẢM từ 0.03 → 0.05 (20Hz thay vì 33Hz, giảm tải)
   trajectory_publish_period_sec = 0.05,    -- GIẢM từ 0.04 → 0.05 (20Hz, match pose)
   rangefinder_sampling_ratio = 1.0,        -- Use all laser scans
-  odometry_sampling_ratio = 1.0,           -- Use all odom messages
+  odometry_sampling_ratio = 0.8,           -- Use all odom messages
   fixed_frame_pose_sampling_ratio = 1.0,
   imu_sampling_ratio = 0.0,                -- Disable IMU (use UKF odom instead)
   landmarks_sampling_ratio = 1.0,
@@ -38,6 +38,7 @@ options = {
 -- MAP BUILDER (OPTIMIZED for Jetson Nano)
 -- ============================================================================
 MAP_BUILDER.use_trajectory_builder_2d = true
+MAP_BUILDER.num_background_threads = 1  -- Giảm background threads (tránh optimization)
 
 -- ============================================================================
 -- TRAJECTORY BUILDER 2D (SLAM Parameters)
@@ -47,14 +48,14 @@ TRAJECTORY_BUILDER_2D.max_range = 5.0                    -- Max laser range (5m,
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 5.0
 TRAJECTORY_BUILDER_2D.use_imu_data = false               -- Disable IMU (UKF already has it)
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true  -- Better matching
-TRAJECTORY_BUILDER_2D.motion_filter.max_distance_meters = 0.1               -- TĂNG từ 0.15 (ít update hơn)
-TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.pi / 180 * 1.0  -- TĂNG từ 1.5° lên 3° (ít update hơn)
+TRAJECTORY_BUILDER_2D.motion_filter.max_distance_meters = 0.05              -- CRITICAL: GIẢM từ 0.1 → 0.05m (update nhiều hơn khi di chuyển)
+TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.pi / 180 * 0.5  -- CRITICAL: GIẢM từ 1° → 0.5° (update nhiều hơn khi xoay!)
 
--- Real-time correlative scan matcher (TIGHTENED to prevent jumps)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.08  -- GIẢM từ 0.1 → 0.08 (nghiêm hơn)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(15.)  -- GIẢM từ 20° → 15° (CRITICAL!)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 5.0   -- TĂNG từ 1.0 → 5.0 (phạt drift nhiều hơn)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 10.0     -- TĂNG từ 1.0 → 10.0 (phạt rotation drift!)
+-- Real-time correlative scan matcher (BALANCED - update all directions)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15  -- TĂNG từ 0.08 → 0.15 (match rộng hơn cho backward/side)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(30.)  -- TĂNG từ 15° → 30° (match mọi hướng!)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 1.0   -- GIẢM từ 5.0 → 1.0 (ít phạt, linh hoạt hơn)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 1.0     -- GIẢM từ 10.0 → 1.0 (cho phép update backward)
 
 -- Ceres scan matcher (OPTIMIZED for accuracy)
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 4.0   -- GIẢM từ 10.0 về 5.0 (cân bằng)
@@ -64,20 +65,20 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_s
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 12  -- GIẢM từ 20
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 4          -- Jetson 4 cores, dùng 2
 
--- Submaps (OPTIMIZED for memory)
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 90        -- TĂNG từ 60 về 90 (submap lớn hơn, ổn định hơn)
+-- Submaps (INCREASED for better coverage all directions)
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 120       -- TĂNG từ 90 → 120 (submap lớn hơn, bao phủ mọi hướng)
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.grid_type = "PROBABILITY_GRID"
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05  -- 5cm resolution
 
 -- ============================================================================
 -- POSE GRAPH OPTIMIZATION (Background Loop Closure)
--- TIGHTENED to prevent false matches causing 45° jumps!
+-- COMPLETELY DISABLED - Tắt hẳn để tránh finish_trajectory làm nát map!
 -- ============================================================================
-POSE_GRAPH.optimize_every_n_nodes = 200                   -- TĂNG từ 100 → 200 (ít optimize hơn, tránh jump!)
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.3       -- GIẢM từ 0.4 → 0.3 (ít check loop closure)
-POSE_GRAPH.constraint_builder.max_constraint_distance = 10.  -- GIẢM từ 15 → 10m (chỉ check gần)
-POSE_GRAPH.constraint_builder.min_score = 0.85           -- CRITICAL: TĂNG từ 0.75 → 0.85 (CHỈ match cực chắc!)
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.85  -- TĂNG từ 0.75 → 0.85
+POSE_GRAPH.optimize_every_n_nodes = 0                     -- TẮT optimization trong lúc map
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.0       -- CRITICAL FIX: TẮT hẳn constraint builder (0.3 → 0.0)!
+POSE_GRAPH.constraint_builder.max_constraint_distance = 10.
+POSE_GRAPH.constraint_builder.min_score = 0.99           -- Tăng lên 0.99 (không match được)
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.99  -- Tăng lên 0.99
 
 -- Fast correlative scan matcher (for loop closure) - TIGHTENED
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 5.  -- GIẢM từ 7 → 5m
@@ -92,19 +93,19 @@ POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.use_nonmon
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10  -- GIẢM
 POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 2
 
--- Optimization problem - TIGHTENED rotation trust
+-- Optimization problem - COMPLETELY DISABLED!
 POSE_GRAPH.optimization_problem.huber_scale = 1e1
 POSE_GRAPH.optimization_problem.acceleration_weight = 1e3
-POSE_GRAPH.optimization_problem.rotation_weight = 5e5  -- TĂNG từ 3e5 → 5e5 (tin rotation hơn)
+POSE_GRAPH.optimization_problem.rotation_weight = 5e5
 POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e5
-POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 2e5  -- TĂNG từ 1e5 → 2e5 (tin local rotation)
-POSE_GRAPH.optimization_problem.odometry_translation_weight = 1e5  -- Trust UKF odometry
-POSE_GRAPH.optimization_problem.odometry_rotation_weight = 3e5  -- CRITICAL: TĂNG từ 1e5 → 3e5 (TIN UKF rotation rất cao!)
+POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 2e5
+POSE_GRAPH.optimization_problem.odometry_translation_weight = 1e5
+POSE_GRAPH.optimization_problem.odometry_rotation_weight = 3e5
 POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 1e1
-POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 1e3  -- TĂNG từ 1e2 → 1e3
-POSE_GRAPH.optimization_problem.log_solver_summary = false         -- Disable logging (save CPU)
+POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 1e3
+POSE_GRAPH.optimization_problem.log_solver_summary = false
 POSE_GRAPH.optimization_problem.ceres_solver_options.use_nonmonotonic_steps = false
-POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 50
+POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 1  -- Tối thiểu (không được = 0!)
 POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 2
 
 -- ============================================================================
