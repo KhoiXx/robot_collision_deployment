@@ -28,6 +28,7 @@ class MotorController{
         long getEncoderPulse();
         int getOutput();
         void adjustOutput(int adjustment);  // For cross-coupling synchronization
+        void setMaxAcceleration(float maxAccel);  // Set maximum acceleration for ramping
         double kp, ki, kd;
         float currentSpeed;
         int outputPwm;
@@ -36,7 +37,7 @@ class MotorController{
         PID_v2 pid;
         void controlMotor(int pwmValue);
         float mapData(float x, float in_min, float in_max, float out_min, float out_max);
-        
+
     private:
         ESP32Encoder encoder;
         u_int8_t clkPin; // CLK of encoder
@@ -55,6 +56,13 @@ class MotorController{
 
         // OPTIMIZATION 1: Cached direction multiplier (calculated once in constructor)
         int directionMultiplier;
+
+        // Velocity ramping variables
+        float targetSpeed;           // Target speed to reach
+        float currentRampedSpeed;    // Current ramped speed (smoothed)
+        float maxAcceleration;       // Maximum acceleration (m/s^2), default 2.5 for smooth ramp
+        unsigned long lastRampTime;  // Last time ramp was updated
+        float applyRamp(float target, float current, float dt);  // Apply ramping calculation
 };
 
 #endif

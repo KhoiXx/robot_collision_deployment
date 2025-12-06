@@ -47,6 +47,12 @@ MotorController::MotorController(
     // DIRECT = 0 → directionMultiplier = 1
     // REVERSE = 1 → directionMultiplier = -1
     directionMultiplier = (dir == DIRECT) ? 1 : -1;
+
+    // Initialize velocity ramping variables
+    targetSpeed = 0.0;
+    currentRampedSpeed = 0.0;
+    maxAcceleration = 2.5;  // Default: 2.5 m/s^2 for smooth acceleration
+    lastRampTime = millis();
 }
 
 void MotorController::setTunings(double Kp, double Ki, double Kd) {
@@ -58,8 +64,15 @@ void MotorController::setSpeed(float speed, float Kp) {
     if (Kp != -1.0f) {
         setTunings(Kp, ki, kd);
     }
-    long setPulses = this->mapData(speed, -maxSpeed, maxSpeed, -255, 255);
-    pid.Setpoint(setPulses);
+    // Store target speed for ramping (don't set directly to PID)
+    targetSpeed = speed;
+
+    // If ramping is disabled (maxAcceleration <= 0), set speed immediately
+    if (maxAcceleration <= 0.0) {
+        currentRampedSpeed = speed;
+        long setPulses = this->mapData(speed, -maxSpeed, maxSpeed, -255, 255);
+        pid.Setpoint(setPulses);
+    }
 }
 
 float MotorController::mapData(float x, float in_min, float in_max, float out_min, float out_max) {
@@ -133,6 +146,21 @@ int MotorController::getOutput() {
 void MotorController::runPID() {
     currentSpeed = this->calculateSpeed();
     currentSpeedPulse = this->mapData(currentSpeed, -maxSpeed, maxSpeed, -255, 255);
+
+    // Apply velocity ramping if enabled
+    if (maxAcceleration > 0.0) {
+        unsigned long currentTime = millis();
+        float dt = (currentTime - lastRampTime) / 1000.0;  // Convert to seconds
+        lastRampTime = currentTime;
+
+        // Calculate ramped speed
+        currentRampedSpeed = applyRamp(targetSpeed, currentRampedSpeed, dt);
+
+        // Set ramped speed as PID setpoint
+        long setPulses = this->mapData(currentRampedSpeed, -maxSpeed, maxSpeed, -255, 255);
+        pid.Setpoint(setPulses);
+    }
+
     const double output = pid.Run(currentSpeedPulse);
     this->controlMotor((int)output);
     outputPwm = (int)output;
@@ -149,4 +177,33 @@ void MotorController::adjustOutput(int adjustment) {
     // Apply adjusted PWM to motor
     this->controlMotor(adjustedPwm);
     outputPwm = adjustedPwm;
+}
+
+void MotorController::setMaxAcceleration(float maxAccel) {
+    maxAcceleration = maxAccel;
+}
+
+float MotorController::applyRamp(float target, float current, float dt) {
+    // Calculate the difference between target and current speed
+    float speedDiff = target - current;
+
+    // If we're already at target, return target
+    if (abs(speedDiff) < 0.001) {
+        return target;
+    }
+
+    // Calculate maximum allowed change in this time step
+    float maxChange = maxAcceleration * dt;
+
+    // Apply the change with acceleration limit
+    if (speedDiff > maxChange) {
+        // Need to accelerate, but limit the increase
+        return current + maxChange;
+    } else if (speedDiff < -maxChange) {
+        // Need to decelerate, but limit the decrease
+        return current - maxChange;
+    } else {
+        // Can reach target in this step
+        return target;
+    }
 }
