@@ -45,8 +45,8 @@ float setLeftWheelSpeed = 0.0;   // Track commanded speed for sync logic
 float setRightWheelSpeed = 0.0;
 float currentAngularVel = 0.0;    // Angular velocity for mode detection
 
-MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, DIRECT);
-MotorController rightWheel(18, 19, 21, 22, 23, 15000, 0.033, 11.6, 5.2, 0.01, pidSampleTime, 1.15, REVERSE);
+MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.0342, 11.6, 5.2, 0.01, pidSampleTime, 1.15, DIRECT);
+MotorController rightWheel(18, 19, 21, 22, 23, 15000, 0.0342, 11.6, 5.2, 0.01, pidSampleTime, 1.15, REVERSE);
 
 
 float Kpv(float set_vel){

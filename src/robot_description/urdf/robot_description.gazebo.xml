@@ -28,7 +28,7 @@
       <!-- The distance from the center of one wheel to the other, in meters, defaults to 0.34 m -->
       <wheelSeparation>0.21</wheelSeparation>
       <!-- Diameter of the wheels, in meters, defaults to 0.15 m -->
-      <wheelDiameter>0.066</wheelDiameter>
+      <wheelDiameter>0.0684</wheelDiameter>
       <!-- Wheel acceleration, in rad/s^2, defaults to 0.0 rad/s^2 -->
       <wheelAcceleration>1.0</wheelAcceleration>
       <!-- Maximum torque which the wheels can produce, in Nm, defaults to 5 Nm -->
