@@ -59,17 +59,16 @@ TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_wei
 
 -- Ceres scan matcher (OPTIMIZED for accuracy)
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 4.0   -- GIẢM từ 10.0 về 5.0 (cân bằng)
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 20.0     -- GIẢM từ 50.0 về 20.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 60.0        -- GIẢM từ 100.0 về 60.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 60.0     -- GIẢM từ 50.0 về 20.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 40.0        -- GIẢM từ 100.0 về 60.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = false
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 12  -- GIẢM từ 20
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 14  -- GIẢM từ 20
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 2          -- Jetson 4 cores, dùng 2
 
 -- Submaps (INCREASED for better coverage all directions)
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 120       -- TĂNG từ 90 → 120 (submap lớn hơn, bao phủ mọi hướng)
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 200       -- TĂNG từ 90 → 120 (submap lớn hơn, bao phủ mọi hướng)
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.grid_type = "PROBABILITY_GRID"
-TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05  -- 5cm resolution
-
+TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.04  -- 5cm resolution
 -- ============================================================================
 -- POSE GRAPH OPTIMIZATION (Background Loop Closure)
 -- COMPLETELY DISABLED - Tắt hẳn để tránh finish_trajectory làm nát map!

@@ -18,7 +18,7 @@ TRAJECTORY_BUILDER.pure_localization = true
 POSE_GRAPH.optimize_every_n_nodes = 5  -- NO optimization (map is FIXED!)
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.1  -- ZERO constraints
 POSE_GRAPH.global_sampling_ratio = 0.1  -- ZERO global constraints
-
+POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 2
 -- FREEZE MAP: Disable all background optimizations
 -- POSE_GRAPH.optimization_problem.huber_scale = 1e10  -- Ignore optimization
 -- POSE_GRAPH.optimization_problem.acceleration_weight = 0.0
@@ -46,6 +46,10 @@ TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.pi / 180 * 2.0  -- 
 -- DISABLE voxel filtering to handle LiDAR lag better
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true  -- Use correlative matching (more robust)
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 1.0  -- TĂNG voxel size (faster processing)
+
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 10.0     -- GIẢM từ 50.0 về 20.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 30.0 
+
 
 -- ============================================================================
 -- NOTES

@@ -14,7 +14,7 @@
 
   <!-- Arguments -->
   <arg name="robot_namespace" default="/robot_0"/>
-  <arg name="map_name" default="finish"/>  <!-- Map name (without extension) - UPDATED to test 09 -->
+  <arg name="map_name" default="end_map_2"/>  <!-- Map name (without extension) - UPDATED to test 09 -->
   <arg name="configuration_basename" default="robot_2d_localization.lua"/>
 
   <param name="use_sim_time" value="false"/>
@@ -51,7 +51,7 @@
   <node name="cartographer_occupancy_grid_node"
         pkg="cartographer_ros"
         type="cartographer_occupancy_grid_node"
-        args="-resolution 0.05" />
+        args="-resolution 0.04" />
 
   <!-- ============================================================================
        RL MODEL (Autonomous Navigation) - SAFE VERSION
