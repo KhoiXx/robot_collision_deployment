@@ -19,9 +19,9 @@ publish_tf: true  # BẬT - UKF publish TF với IMU fusion cho yaw chính xác
 # SENSOR 0: Wheel Odometry
 # ==============================================================================
 odom0: /robot_0/odom
-odom0_config: [true,  true,  false,   # x, y, z position - DÙNG position (x, y từ encoder chính xác)
-               false, false, false,   # roll, pitch, yaw - TẮT ENCODER YAW! (dễ drift do wheel slip)
-               true,  true,  false,   # x_vel, y_vel, z_vel - DÙNG velocity (vx, vy từ encoder OK)
+odom0_config: [true,  true,  false,   # x, y, z position - DÙNG position
+               false, false, true,    # roll, pitch, yaw - BẬT YAW TỪ ENCODER! (CRITICAL FIX)
+               true,  true,  false,   # x_vel, y_vel, z_vel - DÙNG velocity
                false, false, false,   # roll_vel, pitch_vel, yaw_vel - KHÔNG DÙNG
                false, false, false]   # x_acc, y_acc, z_acc
 odom0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
@@ -33,13 +33,13 @@ odom0_pose_rejection_threshold: 1.5  # CRITICAL: Thắt chặt từ 2.5 → 1.5 
 odom0_twist_rejection_threshold: 2.0  # Thắt chặt từ 2.5 → 2.0
 
 # ==============================================================================
-# SENSOR 1: IMU (PRIMARY SOURCE FOR YAW - absolute orientation, không bị wheel slip)
+# SENSOR 1: IMU
 # ==============================================================================
 imu0: /robot_0/imu/data
-imu0_config: [false, false, false,   # x, y, z position - KHÔNG DÙNG (encoder tốt hơn)
-              false, false, true,    # roll, pitch, yaw - BẬT IMU YAW! (absolute orientation, chính xác)
-              false, false, false,   # x_vel, y_vel, z_vel - KHÔNG DÙNG
-              false, false, true,    # roll_vel, pitch_vel, yaw_vel - BẬT GYRO (angular velocity)
+imu0_config: [false, false, false,   # x, y, z position
+              false, false, true,    # roll, pitch, yaw - CHỈ DÙNG YAW (quan trọng!)
+              false, false, false,   # x_vel, y_vel, z_vel
+              false, false, true,    # roll_vel, pitch_vel, yaw_vel - CHỈ DÙNG YAW VELOCITY
               true,  true,  false]   # x_acc, y_acc, z_acc - Dùng để estimate velocity
 imu0_queue_size: 5  # Giảm từ 10 để tiết kiệm memory
 imu0_remove_gravitational_acceleration: true
@@ -54,21 +54,20 @@ imu0_linear_acceleration_rejection_threshold: 1.5  # Giữ nguyên 1.5 (accelera
 # ==============================================================================
 # PROCESS NOISE COVARIANCE (CRITICAL - prevents NaN and filters drift)
 # Order: x, y, z, roll, pitch, yaw, vx, vy, vz, vroll, vpitch, vyaw, ax, ay, az
-# GIẢM yaw noise (row 6) vì chỉ trust IMU (chính xác hơn encoder)
-# GIẢM vyaw noise (row 12) vì trust IMU gyro
+# TĂNG velocity noise để lọc drift khi đứng im
 # ==============================================================================
 process_noise_covariance: [0.001, 0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0.001, 0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0.06, 0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0.03, 0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0.03, 0,    0,     0,     0,    0,    0,    0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0.01, 0,     0,     0,    0,    0,    0,    0,    0,    0,
+                           0,    0,    0,    0,    0,    0.03, 0,     0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0.005, 0,     0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0.005, 0,    0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0.04, 0,    0,    0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0.01, 0,    0,    0,    0,
-                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.01, 0,    0,    0,
+                           0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0.02, 0,    0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0.01, 0,    0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0.01, 0,
                            0,    0,    0,    0,    0,    0,    0,     0,     0,    0,    0,    0,    0,    0,    0.015]

@@ -308,6 +308,7 @@ class RobotControl:
                 # Route to appropriate parser
                 if cmd_type == GET_SPEED:
                     self._parse_speed_packet()
+                    rospy.loginfo(f"Left velocity: {self.left_vel} m/s, Right velocity: {self.right_vel} m/s")
                 elif cmd_type == GET_PID_DATA:
                     self._parse_pid_packet()
                 else:
@@ -364,27 +365,21 @@ class RobotControl:
 
         # ACCURACY: Thread-safe velocity read
         with self.vel_lock:
-            left_vel_local = self.left_vel
-            right_vel_local = self.right_vel
+            left_vel_local = float(self.left_vel)
+            right_vel_local = float(self.right_vel)
 
-        if time_since_cmd > CMD_TIMEOUT or (abs(self.last_commanded_v) < 0.01 and abs(self.last_commanded_w) < 0.01):
-            # No command or zero command → FORCE velocities to 0
+        rospy.loginfo(f"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: {CMD_TIMEOUT}")
+
+        # Normal operation - calculate from encoders
+        linear_vel = (right_vel_local + left_vel_local) / 2
+        angular_vel = (right_vel_local - left_vel_local) / float(ROBOT_WHEEL_DISTANCE)
+
+        # DEADBAND: Lọc nhiễu encoder khi đứng im
+        VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
+
+        if abs(linear_vel) < VEL_DEADBAND:
             linear_vel = 0.0
-            angular_vel = 0.0
-            # rospy.loginfo_throttle(1.0, "Robot stationary - forcing velocity = 0")
-        else:
-            # Normal operation - calculate from encoders
-            linear_vel = (right_vel_local + left_vel_local) / 2
-            angular_vel = (right_vel_local - left_vel_local) / ROBOT_WHEEL_DISTANCE
-
-            # DEADBAND: Lọc nhiễu encoder khi đứng im
-            VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
-            ANGVEL_DEADBAND = 0.05  # rad/s (~3 độ/s)
-
-            if abs(linear_vel) < VEL_DEADBAND:
-                linear_vel = 0.0
-            if abs(angular_vel) < ANGVEL_DEADBAND:
-                angular_vel = 0.0
+        
 
         # Nội suy vị trí robot
         current_time = rospy.Time.now()
@@ -396,6 +391,9 @@ class RobotControl:
         delta_x = linear_vel * dt * np.cos(self.current_theta)
         delta_y = linear_vel * dt * np.sin(self.current_theta)
         delta_theta = angular_vel * dt
+        rospy.loginfo(f"AAAAAAA Angular vel: {angular_vel} rad/s")
+
+
 
         # ======================================================================
         # CRITICAL: OUTLIER DETECTION - Reject impossible movements
@@ -452,6 +450,7 @@ class RobotControl:
         odom.pose.covariance = self.pose_cov_moving
         odom.twist.covariance = self.twist_cov_moving
 
+        rospy.loginfo(f"Theta: {self.current_theta} rad ~ {self.current_theta * 57.296} deg")
         # Publish odom
         self.odom_pub.publish(odom)
 
