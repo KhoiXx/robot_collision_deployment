@@ -16,8 +16,8 @@ const int baudRate = 9600;
 float leftWheelSpeed = 0.0;
 float rightWheelSpeed = 0.0;
 
-MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.033, 11.2, 4.8, 0.0, 50, 1.15);
-MotorController rightWheel(26, 25, 1, 3, 22, 15000, 0.033, 11.2, 4.8, 0.0, 50, 1.15);
+MotorController leftWheel(14, 27, 16, 17, 4, 15000, 0.0342, 11.2, 4.8, 0.0, 50, 1.15);
+MotorController rightWheel(26, 25, 1, 3, 22, 15000, 0.0342, 11.2, 4.8, 0.0, 50, 1.15);
 
 void setup() {
     Serial.begin(baudRate);

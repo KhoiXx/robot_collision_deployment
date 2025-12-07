@@ -27,7 +27,7 @@ byte expectedCRC;
 #define LEFT_WHEEL 0
 #define RIGHT_WHEEL 1
 
-#define ROBOT_WHEEL_DISTANCE 0.21
+#define ROBOT_WHEEL_DISTANCE 0.204
 
 unsigned long lastPIDUpdate = 0;
 const unsigned long pidSampleTime = 20;

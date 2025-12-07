@@ -159,7 +159,7 @@
     name="left_wheel_jl"
     type="continuous">
     <origin
-      xyz="-0.000275319332503843 0.105 -0.0266929866933577"
+      xyz="-0.000275319332503843 0.102 -0.0266929866933577"
       rpy="0 0 0" />
     <parent
       link="base_link" />
@@ -215,7 +215,7 @@
     name="right_wheel_jl"
     type="continuous">
     <origin
-      xyz="-0.000172826687894733 -0.105 -0.0273779601243553"
+      xyz="-0.000172826687894733 -0.102 -0.0273779601243553"
       rpy="0 0 0" />
     <parent
       link="base_link" />

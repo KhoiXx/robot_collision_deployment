@@ -5,7 +5,7 @@ from enum import Enum
 import numpy as np
 import rospy
 import tf
-from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Twist
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Bool, Float32MultiArray
@@ -21,7 +21,7 @@ class RobotStatus(Enum):
 
 
 class RobotEnv:
-    def __init__(self, index: int):
+    def __init__(self, index: int, use_pure_ukf: bool = False, use_cartographer: bool = False):
         # rospy.init_node(f"robot_env_{index}", anonymous=True)
         self.goal_size = 0.15
         self.distance = 0.0
@@ -30,10 +30,24 @@ class RobotEnv:
 
         # Robot index for unique topic names
         self.index = index
+        self.use_pure_ukf = use_pure_ukf
+        self.use_cartographer = use_cartographer
 
         # Subscribe to IMU, Lidar, and Odometry topics
         self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odometry/filtered", Odometry, self.odom_callback)
-        self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
+
+        # Subscribe to localization source
+        if use_pure_ukf:
+            # Pure UKF mode - no external localization
+            pass
+        elif use_cartographer:
+            # Cartographer localization - use TF listener instead of topic
+            self.tf_listener = tf.TransformListener()
+            # Start TF polling timer
+            rospy.Timer(rospy.Duration(0.05), self.cartographer_tf_callback)  # 20Hz
+        else:
+            # AMCL localization (default)
+            self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
 
         self.cmd_vel = rospy.Publisher(f"/robot_{self.index}/cmd_vel", Twist, queue_size=10)
         self.cmd_pose = rospy.Publisher(f"/robot_{self.index}/cmd_pose", Twist, queue_size=10)
@@ -70,10 +84,15 @@ class RobotEnv:
     def lidar_callback(self, data: LaserScan):
         """
         scan_msg: LaserScan
+        Only check crash in front 120° (from n//3 to n - n//3)
         """
         self.scan = np.asarray(data.ranges)[:NUM_OBS]
         crash_distance = ROBOT_RADIUS + SAFE_DISTANCE
-        valid_scan = self.scan[np.isfinite(self.scan)]
+
+        # Only check front 120° for crash detection
+        n = len(self.scan)
+        front_scan = self.scan[n//3 : n - n//3]  # Front 120° sector
+        valid_scan = front_scan[np.isfinite(front_scan)]
         is_crash = np.any(valid_scan <= crash_distance)
         self.crash_pub.publish(is_crash)
         self.is_crash = is_crash
@@ -119,7 +138,49 @@ class RobotEnv:
         vx = odometry.twist.twist.linear.x
         wz = odometry.twist.twist.angular.z
         self.speed = [vx, wz]
+
+        # If pure UKF mode, use UKF for ground truth (no AMCL blending)
+        if self.use_pure_ukf:
+            self.state_GT = [pos.x, pos.y, yaw]
+            self.speed_GT = [vx, wz]
     
+    def cartographer_tf_callback(self, event):
+        """Cartographer TF callback - poll map->base_link transform"""
+        try:
+            # Get transform from map to robot base_link
+            (trans, rot) = self.tf_listener.lookupTransform('/map', 'dummy_base_link', rospy.Time(0))
+
+            # Extract position and orientation
+            pos_x, pos_y = trans[0], trans[1]
+            euler = tf.transformations.euler_from_quaternion(rot)
+            yaw = normalize_angle(euler[2])
+
+            self.state_GT = [pos_x, pos_y, yaw]
+
+            # Calculate speed from pose changes
+            current_time = rospy.Time.now().to_sec()
+            current_position = np.array([pos_x, pos_y])
+            current_yaw = euler[2]
+
+            if self.amcl_prev_time is not None:
+                delta_t = current_time - self.amcl_prev_time
+                if delta_t > 0:
+                    delta_position = current_position - self.amcl_prev_position
+                    linear_vel = np.linalg.norm(delta_position) / delta_t
+                    delta_yaw = current_yaw - self.amcl_prev_yaw
+                    angular_vel = normalize_angle(delta_yaw) / delta_t
+                    self.speed_GT = [linear_vel, angular_vel]
+            else:
+                self.speed_GT = [0.0, 0.0]
+
+            self.amcl_prev_time = current_time
+            self.amcl_prev_position = current_position
+            self.amcl_prev_yaw = current_yaw
+
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            # TF not available yet - Cartographer still localizing
+            pass
+
     def amcl_callback(self, amcl_pose: PoseWithCovarianceStamped):
         pos = amcl_pose.pose.pose.position
         quat = amcl_pose.pose.pose.orientation
@@ -160,11 +221,11 @@ class RobotEnv:
         self.amcl_prev_yaw = current_yaw
 
     def get_local_goal(self):
-        # Use AMCL if available, fallback to UKF odom if AMCL stale
+        # Use ground truth pose (UKF if pure mode, AMCL/Cartographer otherwise)
         if self.state_GT is not None:
             [x, y, theta] = self.state_GT
         else:
-            # Fallback to UKF odometry if AMCL not available
+            # Fallback to UKF odometry if state_GT not available yet
             [x, y, theta] = self.state if self.state is not None else [0, 0, 0]
 
         [goal_x, goal_y] = self.goal_point

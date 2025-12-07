@@ -229,8 +229,8 @@ def main():
     print_section("6. CONSISTENCY CHECK")
 
     # Expected values
-    EXPECTED_WHEEL_SEP = 0.21  # 21 cm
-    EXPECTED_WHEEL_RADIUS = 0.033  # 3.3 cm
+    EXPECTED_WHEEL_SEP = 0.204  # 20.4 cm
+    EXPECTED_WHEEL_RADIUS = 0.0342  # 3.42 cm
     EXPECTED_MAX_VEL = 0.3  # 0.3 m/s
 
     TOLERANCE = 0.001  # 1mm tolerance
@@ -238,7 +238,7 @@ def main():
     all_pass = True
 
     # Check wheel separation
-    print("\n  Wheel Separation (21 cm = 0.21 m):")
+    print("\n  Wheel Separation (20.4 cm = 0.204 m):")
 
     if urdf_sep:
         match = abs(urdf_sep - EXPECTED_WHEEL_SEP) < TOLERANCE
@@ -272,7 +272,7 @@ def main():
     all_pass = all_pass and match
 
     # Check wheel radius
-    print("\n  Wheel Radius (3.3 cm = 0.033 m):")
+    print("\n  Wheel Radius (3.42 cm = 0.0342 m):")
 
     if gazebo_radius:
         match = abs(gazebo_radius - EXPECTED_WHEEL_RADIUS) < TOLERANCE
