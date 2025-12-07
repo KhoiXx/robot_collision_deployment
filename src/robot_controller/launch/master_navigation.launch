@@ -12,8 +12,8 @@
     -->
 
     <arg name="num_robots" default="2"/>
-    <arg name="map_file" default="$(find robot_controller)/maps/map_final.yaml"/>
-
+    <arg name="map_file" default="$(find robot_controller)/maps/cate_test_11.yaml"/>
+    <arg name="robot_namespace" default="/robot_0"/>
     <!-- ============================================== -->
     <!-- MAP SERVER -->
     <!-- ============================================== -->
@@ -89,5 +89,10 @@
        rostopic pub /robot_0/move_base_simple/goal ...
        rostopic pub /robot_1/move_base_simple/goal ...
     -->
+  <node pkg="robot_controller" type="run_model_safe.py" name="model_controller_safe"
+        ns="$(arg robot_namespace)" output="screen">
+    <!-- Model loads from settings.py POLICY_PATH -->
+    <!-- Includes safety features: stuck detection, emergency stop, obstacle avoidance -->
+  </node>
 
 </launch>
