@@ -18,22 +18,27 @@ class MotorController{
             double Kp, double Ki, double Kd,
             int sampleTime,
             float maxSpeed_,
-            int reverseAtStart_
+            PID::Direction dir
         );
         void setTunings(double Kp, double Ki, double Kd);
-        void setSpeed(float speed);
+        void setSpeed(float speed, float Kp=-1.0f);
         float calculateSpeed();
         void runPID();
         float getCurrentSpeed();
         long getEncoderPulse();
         int getOutput();
+        void adjustOutput(int adjustment);  // For cross-coupling synchronization
+        void setMaxAcceleration(float maxAccel);  // Set maximum acceleration for ramping
         double kp, ki, kd;
         float currentSpeed;
         int outputPwm;
         int currentSpeedPulse;
-        
-    private:
+        PID::Direction direction;
         PID_v2 pid;
+        void controlMotor(int pwmValue);
+        float mapData(float x, float in_min, float in_max, float out_min, float out_max);
+
+    private:
         ESP32Encoder encoder;
         u_int8_t clkPin; // CLK of encoder
         u_int8_t dtPin;  // DT of encoder
@@ -45,11 +50,19 @@ class MotorController{
         long prevPosition;
         unsigned long prevTime;
         const float wheelCircumference;
-        float mapData(float x, float in_min, float in_max, float out_min, float out_max);
-        void controlMotor(int pwmValue);
         float maxSpeed;
         int reverse;
         int reverseAtStart;
+
+        // OPTIMIZATION 1: Cached direction multiplier (calculated once in constructor)
+        int directionMultiplier;
+
+        // Velocity ramping variables
+        float targetSpeed;           // Target speed to reach
+        float currentRampedSpeed;    // Current ramped speed (smoothed)
+        float maxAcceleration;       // Maximum acceleration (m/s^2), default 2.5 for smooth ramp
+        unsigned long lastRampTime;  // Last time ramp was updated
+        float applyRamp(float target, float current, float dt);  // Apply ramping calculation
 };
 
 #endif

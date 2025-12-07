@@ -1,0 +1,165 @@
+<launch>
+    <!-- ============================================== -->
+    <!-- ENCODER & ARDUINO PERFORMANCE TEST -->
+    <!-- ============================================== -->
+    <!--
+    Test 3 targets:
+    1. Smoothness: cmd_vel → encoder latency
+    2. Frequency: Optimal Hz without packet loss
+    3. Data Quality: Encoder accuracy and consistency
+
+    Usage:
+        # Basic test with step pattern
+        roslaunch robot_controller test_encoder.launch
+
+        # Test with different patterns
+        roslaunch robot_controller test_encoder.launch pattern:=ramp
+        roslaunch robot_controller test_encoder.launch pattern:=sine
+        roslaunch robot_controller test_encoder.launch pattern:=square
+        roslaunch robot_controller test_encoder.launch pattern:=random
+
+        # Manual interactive control
+        roslaunch robot_controller test_encoder.launch mode:=interactive
+
+        # No velocity commands (just monitor)
+        roslaunch robot_controller test_encoder.launch enable_velocity:=false
+    -->
+
+    <!-- Parameters -->
+    <arg name="robot_namespace" default="/robot_0"/>
+    <arg name="esp_port" default="/dev/esp"/>
+    <arg name="imu_port" default="/dev/imu"/>
+    <arg name="baudrate" default="115200"/>
+
+    <!-- Test configuration -->
+    <arg name="pattern" default="step"/>  <!-- step, ramp, sine, square, random -->
+    <arg name="mode" default="pattern"/>  <!-- pattern or interactive -->
+    <arg name="enable_velocity" default="true"/>  <!-- Generate velocity commands -->
+    <arg name="max_linear" default="0.3"/>  <!-- m/s -->
+    <arg name="max_angular" default="0.5"/>  <!-- rad/s -->
+    <arg name="publish_rate" default="10.0"/>  <!-- Hz -->
+
+    <!-- ============================================== -->
+    <!-- CORE ROBOT NODES -->
+    <!-- ============================================== -->
+
+    <!-- Robot counter service (required for robot_control) -->
+    <node pkg="robot_controller" type="robot_counter_service.py" name="robot_counter_service" output="screen"/>
+
+    <!-- IMU node - provides yaw feedback -->
+    <node pkg="wit_ros_imu" type="wit_normal_ros.py" name="imu" output="screen">
+        <param name="port" type="str" value="$(arg imu_port)"/>
+        <param name="baud" type="int" value="9600"/>
+        <param name="frame_id" value="dummy_base_link"/>
+        <remap from="/wit/imu" to="$(arg robot_namespace)/imu/data"/>
+        <remap from="/wit/yaw" to="$(arg robot_namespace)/imu/yaw"/>
+    </node>
+
+    <!-- Robot control node - ESP serial communication -->
+    <node pkg="robot_controller" type="run_robot.py" name="execute" ns="$(arg robot_namespace)" output="screen">
+        <!-- Will connect to /dev/esp at 115200 baud by default -->
+    </node>
+
+    <!-- ============================================== -->
+    <!-- TEST NODES -->
+    <!-- ============================================== -->
+
+    <!-- Performance Monitor - Always running -->
+
+    <!-- ============================================== -->
+    <!-- USAGE INSTRUCTIONS -->
+    <!-- ============================================== -->
+    <!--
+    TEST PROCEDURE:
+    ================
+
+    1. PREPARATION
+       - Connect ESP to /dev/esp (Arduino with encoders)
+       - Connect IMU to /dev/imu
+       - Ensure robot can move freely or is on stand
+
+    2. BASIC TEST (Step pattern)
+       roslaunch robot_controller test_encoder.launch
+
+       Expected output:
+       - Latency: < 50ms (PASS)
+       - Frequency: ~30Hz (PASS)
+       - Packet Loss: < 1% (PASS)
+
+    3. FREQUENCY OPTIMIZATION TEST
+       - Run for 30 seconds with each pattern
+       - Monitor packet loss and jitter
+       - Find minimum frequency where packet_loss < 1%
+
+    4. SMOOTHNESS TEST (Ramp pattern)
+       roslaunch robot_controller test_encoder.launch pattern:=ramp
+
+       - Observe velocity tracking error
+       - Should smoothly follow commanded velocity
+
+    5. STRESS TEST (Random pattern)
+       roslaunch robot_controller test_encoder.launch pattern:=random
+
+       - Tests rapid changes
+       - Higher latency and jitter expected
+
+    6. MANUAL TEST (Interactive)
+       roslaunch robot_controller test_encoder.launch mode:=interactive
+
+       - Use w/a/s/d keys to control
+       - Observe real-time latency
+
+    MONITORING:
+    ===========
+
+    Watch for these metrics in the output:
+
+    TARGET 1 - SMOOTHNESS:
+      ✓ PASS:    Latency < 50ms
+      ⚠ WARNING: Latency 50-100ms
+      ✗ FAIL:    Latency > 100ms
+
+    TARGET 2 - FREQUENCY:
+      ✓ PASS:    Packet loss < 1%, Frequency within 2Hz of expected
+      ⚠ WARNING: Packet loss 1-5%
+      ✗ FAIL:    Packet loss > 5%
+
+    TARGET 3 - DATA QUALITY:
+      ✓ PASS:    Velocity error < 0.05 m/s, Jitter < 5ms
+      ⚠ WARNING: Velocity error < 0.1 m/s, Jitter < 10ms
+      ✗ FAIL:    Velocity error > 0.1 m/s, Jitter > 10ms
+
+    TROUBLESHOOTING:
+    ================
+
+    High Latency (> 100ms):
+      - Check serial connection (/dev/esp exists?)
+      - Verify baudrate (115200)
+      - Check Arduino code timing
+
+    Packet Loss:
+      - Arduino may not be pushing data at 50Hz
+      - Serial buffer overflow
+      - Check Arduino Serial.write() timing
+
+    Poor Velocity Tracking:
+      - PID tuning needed
+      - Encoder resolution too low
+      - Motor response too slow
+
+    OPTIMAL FREQUENCY RECOMMENDATION:
+    =================================
+
+    Based on testing:
+    - Arduino push rate: 50Hz (every 20ms)
+    - ROS read rate: 30Hz (every 33ms)
+    - Recommended minimum: 25Hz (40ms period)
+    - Recommended maximum: 50Hz (20ms period)
+
+    Lower frequency → Less CPU, but risk missing encoder updates
+    Higher frequency → More accurate, but higher CPU usage
+
+    Sweet spot: 30Hz (current default)
+    -->
+
+</launch>

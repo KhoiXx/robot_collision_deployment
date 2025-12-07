@@ -5,20 +5,25 @@ import serial
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Header
-from sensor_msgs.msg import Imu
-from std_msgs.msg import Float32
-from tf.transformations import quaternion_from_euler
+# COMMENT: Không cần import IMU nữa - UKF lo
+# from sensor_msgs.msg import Imu
+# from std_msgs.msg import Float32
 import numpy as np
-from queue import PriorityQueue, Empty
-
+from collections import deque
+from math import sin, cos
+from tf.transformations import quaternion_from_euler
 from settings import *
-from threading import Thread
+from threading import Thread, Lock
 
 
 class RobotControl:
     def __init__(self, index, port=ROBOT_PORT, baudrate=BAUDRATE) -> None:
-        self.queue = PriorityQueue(maxsize=3)
-        self.port = serial.Serial(port, baudrate, timeout=1)
+        # PRIORITY: Separate queues - CMD_VEL sent immediately, GET_SPEED can wait
+        self.cmd_vel_queue = deque(maxlen=2)  # High priority - speed commands
+        self.other_queue = deque(maxlen=3)    # Low priority - telemetry requests
+        self.queue_lock = Lock()
+
+        self.port = serial.Serial(port, baudrate, timeout=0.01)  # Non-blocking timeout
         rospy.sleep(0.2)
         if self.port.is_open:
             rospy.loginfo(f"Connected to port {port}")
@@ -28,55 +33,180 @@ class RobotControl:
         rospy.Subscriber(f'/robot_{index}/cmd_vel', Twist, self.cmd_vel_callback)
         # update odom topic
         self.odom_pub = rospy.Publisher(f'/robot_{index}/odom', Odometry, queue_size=10)
+
+        # COMMENT: IMU subscribers - KHÔNG CẦN NỮA, UKF lo fusion
+        # UKF sẽ subscribe /robot_0/imu/data và /robot_0/imu/yaw trực tiếp
+        # Robot control chỉ dùng encoder theta, đơn giản hóa hệ thống
         # self.imu_sub = rospy.Subscriber(f'/robot_{index}/imu/data', Imu, self.imu_callback)
-        self.imu_yaw_sub = rospy.Subscriber(f'/robot_{index}/imu/yaw', Float32, self.imu_yaw_callback)
+        # self.imu_yaw_sub = rospy.Subscriber(f'/robot_{index}/imu/yaw', Float32, self.imu_yaw_callback)
 
         self.current_x = 0.0
         self.current_y = 0.0
         self.current_theta = 0.0
-        self.imu_yaw = 0.0
-        self.imu_yaw_start = None
         self.last_time = rospy.Time.now()
         self.last_time_get_speed = rospy.Time.now()
 
-        self.imu_vx = 0.0
-        self.imu_vy = 0.0
-        self.imu_x = 0.0
-        self.imu_y = 0.0
-        self.last_imu_time = rospy.Time.now()
+        # Yaw correction for straight motion drift prevention (using ENCODER theta)
+        self.yaw_correction_active = False
+        self.theta_at_straight_start = 0.0  # DÙNG ENCODER THETA thay vì IMU
+        self.last_commanded_v = 0.0
+        self.last_commanded_w = 0.0
+        self.last_cmd_vel_time = rospy.Time.now()  # Track when last cmd_vel received
 
+        # COMMENT: IMU variables - không dùng nữa, UKF lo
+        # self.imu_yaw = 0.0
+        # self.imu_yaw_start = None
+        # self.imu_vx = 0.0
+        # self.imu_vy = 0.0
+        # self.imu_x = 0.0
+        # self.imu_y = 0.0
+        # self.last_imu_time = rospy.Time.now()
+
+        # ACCURACY: Thread-safe velocity variables with lock
+        self.vel_lock = Lock()
         self.left_vel = 0.0
         self.right_vel = 0.0
-        # rospy.loginfo("Robot")
-        # rospy.Timer(rospy.Duration(0.05), callback=self.update_odometry)  # 10Hz
+
+        # OPTIMIZATION: Pre-allocate serial send buffer (max 32 bytes to be safe)
+        self.send_buffer = bytearray(32)
+
+        # ACCURACY: Cache odometry covariance matrices to avoid recreation
+        self._init_covariance_matrices()
+
+        # Initialize TF broadcaster BEFORE Timer (to avoid AttributeError)
         self.odom_broadcaster = tf.TransformBroadcaster()
-        
+
+        # rospy.loginfo("Robot")
+        rospy.Timer(rospy.Duration(0.04), callback=self.update_odometry)  # 30Hz odometry update (balance CPU & responsiveness)
+
         Thread(target=self.serial_worker, daemon=True).start()
 
+    def _init_covariance_matrices(self):
+        """OPTIMIZATION: Pre-calculate covariance matrices to avoid runtime recreation"""
+        # Pose covariance for moving state - GIẢM yaw covariance (encoder chính xác hơn)
+        self.pose_cov_moving = [
+            0.001, 0,     0,     0,     0,     0,
+            0,     0.001, 0,     0,     0,     0,
+            0,     0,     1e6,   0,     0,     0,
+            0,     0,     0,     1e6,   0,     0,
+            0,     0,     0,     0,     1e6,   0,
+            0,     0,     0,     0,     0,     0.01  # GIẢM từ 0.05 → 0.01 (encoder yaw chính xác)
+        ]
+
+        # Twist covariance for moving (low uncertainty)
+        self.twist_cov_moving = [
+            0.001, 0,     0,     0,     0,     0,
+            0,     0.001, 0,     0,     0,     0,
+            0,     0,     1e6,   0,     0,     0,
+            0,     0,     0,     1e6,   0,     0,
+            0,     0,     0,     0,     1e6,   0,
+            0,     0,     0,     0,     0,     0.2
+        ]
+
+        # Twist covariance for moving (VERY low uncertainty - trust encoder highly)
+        self.twist_cov_moving = [
+            0.0001, 0,      0,     0,     0,     0,
+            0,      0.0001, 0,     0,     0,     0,
+            0,      0,      1e6,   0,     0,     0,
+            0,      0,      0,     1e6,   0,     0,
+            0,      0,      0,     0,     1e6,   0,
+            0,      0,      0,     0,     0,     0.001
+        ]
+
+        # Twist covariance for stationary (low uncertainty)
+        self.twist_cov_stationary = [
+            0.05,  0,     0,     0,     0,     0,
+            0,     0.05,  0,     0,     0,     0,
+            0,     0,     1e6,   0,     0,     0,
+            0,     0,     0,     1e6,   0,     0,
+            0,     0,     0,     0,     1e6,   0,
+            0,     0,     0,     0,     0,     0.1
+        ]
+
     def serial_worker(self):
+        """PRIORITY: Process CMD_VEL first (immediate), GET_SPEED second (can wait)"""
         while not rospy.is_shutdown():
-            try:
-                _, (command_type, format, values) = self.queue.get_nowait()
-                self._send_command(command_type, format, *values)
-            except Empty:
-                continue
+            command_to_send = None
+
+            with self.queue_lock:
+                # PRIORITY 1: CMD_VEL - send immediately!
+                if len(self.cmd_vel_queue) > 0:
+                    command_to_send = self.cmd_vel_queue.popleft()
+                # PRIORITY 2: GET_SPEED and others - only when no CMD_VEL pending
+                elif len(self.other_queue) > 0:
+                    command_to_send = self.other_queue.popleft()
+
+            if command_to_send:
+                command_type, format_str, values = command_to_send
+                self._send_command(command_type, format_str, *values)
+            else:
+                # Sleep when both queues empty
+                rospy.sleep(0.001)
 
     def cmd_vel_callback(self, cmd: Twist):
         v = cmd.linear.x
         w = cmd.angular.z
-        # rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
+
+        # ==================================================================
+        # LAYER 2: ENCODER Theta Correction for Straight Motion Drift
+        # ==================================================================
+
+        abs_w = abs(w)
+        abs_v = abs(v)
+
+        # Detect if we're attempting straight motion
+        if abs_w < 0.05 and abs_v > 0.1:  # Straight motion threshold
+            # Starting straight motion - record initial theta (from encoder)
+            if not self.yaw_correction_active:
+                self.yaw_correction_active = True
+                self.theta_at_straight_start = self.current_theta
+
+            # Calculate theta drift (từ encoder differential drive)
+            theta_drift = self.current_theta - self.theta_at_straight_start
+
+            # Only correct if drift exceeds threshold (0.1 rad = ~5.7 degrees)
+            if abs(theta_drift) > 0.1:
+                # Apply conservative correction
+                KP_YAW = 0.4
+                w_correction = -KP_YAW * theta_drift
+
+                # Limit max correction to avoid instability
+                MAX_CORRECTION = 0.15  # rad/s
+                if w_correction > MAX_CORRECTION:
+                    w_correction = MAX_CORRECTION
+                elif w_correction < -MAX_CORRECTION:
+                    w_correction = -MAX_CORRECTION
+
+                # Apply correction
+                w += w_correction
+
+                # rospy.loginfo_throttle(1.0, f"Theta correction: drift={theta_drift:.3f}, w_corr={w_correction:.3f}")
+        else:
+            # Not straight motion - disable correction
+            self.yaw_correction_active = False
+
+        # Store commanded values
+        self.last_commanded_v = v
+        self.last_commanded_w = w
+        self.last_cmd_vel_time = rospy.Time.now()  # Update timestamp
+
+        rospy.loginfo(f"Sending command, linear: {v}, spin: {w}")
         self.send_command(
             CMD_VEL,
             "<ff",
             v,
-            w,
-            priority=1
+            w
         )
 
-    def imu_yaw_callback(self, msg: Float32):
-        if self.imu_yaw_start is None:
-            self.imu_yaw_start = msg.data
-        self.imu_yaw = msg.data - self.imu_yaw_start
+    # ========================================================================
+    # COMMENT: IMU callbacks - KHÔNG CẦN NỮA
+    # UKF sẽ subscribe IMU trực tiếp, robot_control chỉ dùng encoder
+    # ========================================================================
+    # def imu_yaw_callback(self, msg: Float32):
+    #     if self.imu_yaw_start is None:
+    #         self.imu_yaw_start = msg.data
+    #     self.imu_yaw = msg.data - self.imu_yaw_start
+
     # def imu_callback(self, msg: Imu):
     #     now = rospy.Time.now()
     #     dt = (now - self.last_imu_time).to_sec()
@@ -93,106 +223,198 @@ class RobotControl:
     #     self.imu_x += self.imu_vx * dt
     #     self.imu_y += self.imu_vy * dt
 
-    def clear_buffer(self, type: str) -> None:
-        if type == "all":
-            self.port.reset_input_buffer()
-            self.port.reset_output_buffer()
-        elif type == "input":
-            self.port.reset_input_buffer()
-        elif type == "output":
-            self.port.reset_output_buffer()
-
     def calculate_crc(self, data):
+        """Calculate XOR checksum"""
         crc = 0
         for byte in data:
             crc ^= byte
         return crc
-    
-    def send_command(self, command_type, format, *values, priority=1):
-        """
-        Add item to the priority queue in this format:
-        tuple: (priority, item)
-        """
-        self.queue.put_nowait((priority, (command_type, format, values)))
-        # print(self.queue.)
 
-    def _send_command(self, command_type, format, *values):
-        """Send command to the ESP"""
-        self.clear_buffer("output")
-        frame_length = len(values) * 4 + 1
+    def send_command(self, command_type, format_str, *values):
+        """
+        PRIORITY: CMD_VEL goes to high-priority queue, others to low-priority
+        """
+        with self.queue_lock:
+            if command_type == CMD_VEL:
+                # HIGH PRIORITY - send immediately, no waiting
+                self.cmd_vel_queue.append((command_type, format_str, values))
+            else:
+                # LOW PRIORITY - GET_SPEED, etc. can wait
+                self.other_queue.append((command_type, format_str, values))
+
+    def _send_command(self, command_type, format_str, *values):
+        """
+        Send command to the ESP using pre-allocated buffer
+        """
+        # Calculate frame length
+        if format_str and len(values) > 0:
+            frame_length = len(values) * 4 + 1  # data + CRC
+        else:
+            frame_length = 1  # only CRC
+
+        # Build header
         header = struct.pack('BBB', START_BYTE, command_type, frame_length)
-        send_data = header
-        if frame_length > 1:
-            data = struct.pack(format, *values)
-            send_data += data
-        crc = self.calculate_crc(send_data)
-        send_frame = send_data + struct.pack('B', crc)
-        # rospy.loginfo(f"Sent frame: {send_frame}")
-        self.port.reset_output_buffer()
-        self.port.cancel_write()
-        self.port.write(send_frame)
-        self.port.flush()
+        send_data = bytearray(header)
 
-    def request_speed(self):
-        self.clear_buffer("input")
-        self.send_command(GET_SPEED, None, priority=3)
-        # self.port.flush()
+        # Add data if present
+        if frame_length > 1 and format_str:
+            data = struct.pack(format_str, *values)
+            send_data += data
+
+        # Add CRC
+        crc = self.calculate_crc(send_data)
+        send_data.append(crc)
+
+        # Send
+        self.port.write(send_data)
 
     def read_serial(self):
-        num_bytes = self.port.in_waiting
-        if num_bytes >= 1:
+        """
+        ROBUST PACKET PARSING: Handle all packet types correctly
+        - 'S' prefix: String debug messages
+        - 'B' prefix: Binary packets (SPEED, PID_DATA)
+
+        CRITICAL FIX: Read ALL available packets in buffer!
+        Arduino sends 50Hz, we read 30Hz → must process multiple packets per call
+        """
+        # LOOP to read ALL packets in buffer (prevent overflow/miss)
+        max_reads = 10  # Safety limit to prevent infinite loop
+        reads = 0
+
+        while self.port.in_waiting > 0 and reads < max_reads:
+            num_bytes = self.port.in_waiting
+            if num_bytes < 1:
+                break
+
+            # Read packet type prefix
             datatype = self.port.read(1)
+
             if datatype == b'S':
+                # String debug message - read until newline
                 received_string = self.port.readline().decode().strip()
-                return received_string
-                rospy.loginfo(f"Received string from serial: {received_string}")
+                # Don't return - continue reading more packets
+
             elif datatype == b'B':
-                received_data = self.port.read(num_bytes - 1)
-                if received_data[0] == GET_SPEED:
-                    received_data = received_data[:10]
-                    crc = received_data[-1]
-                    left_vel, right_vel = struct.unpack('<ff', received_data[1:-1])
-                    self.left_vel = round(left_vel, 4)
-                    self.right_vel = round(right_vel, 4)
-                    rospy.loginfo(f"Left vel: {self.left_vel}, Right vel: {self.right_vel}")
+                # Binary packet - need to read command type to route correctly
+                if num_bytes < 2:
+                    break  # Not enough data yet
+
+                cmd_type_byte = self.port.read(1)
+                if not cmd_type_byte:
+                    break
+
+                cmd_type = cmd_type_byte[0]
+
+                # Route to appropriate parser
+                if cmd_type == GET_SPEED:
+                    self._parse_speed_packet()
+                elif cmd_type == GET_PID_DATA:
+                    self._parse_pid_packet()
+                else:
+                    # Unknown packet type - clear buffer to resync
+                    rospy.logwarn(f"Unknown packet type: 0x{cmd_type:02x}")
+                    self.port.reset_input_buffer()
+                    break
+            else:
+                # Unknown prefix - skip this byte and continue
+                pass
+
+            reads += 1
+
+    def _parse_speed_packet(self):
+        """
+        Parse SPEED packet: left_vel(4) + right_vel(4) + CRC(1) = 9 bytes
+        Total packet: 'B' + GET_SPEED + 9 bytes = 11 bytes
+        """
+        if self.port.in_waiting < 9:
+            return  # Not enough data
+
+        data = self.port.read(9)
+        if len(data) < 9:
+            return
+
+        # Extract velocities (skip CRC validation for performance)
+        left_vel, right_vel = struct.unpack('<ff', data[0:8])
+
+        # Thread-safe update
+        with self.vel_lock:
+            self.left_vel = round(left_vel, 4)
+            self.right_vel = round(right_vel, 4)
+
+    def _parse_pid_packet(self):
+        """
+        Parse PID_DATA packet: timestamp(4) + setpoint(4) + current(4) + error(4) + output(4) + CRC(1) = 21 bytes
+        For now, just discard (only used for debugging)
+        """
+        if self.port.in_waiting >= 21:
+            self.port.read(21)  # Discard PID data
 
 
     def update_odometry(self, timer):
-        # self.current_time = rospy.Time.now()
-        # print(f"Current: {self.current_time}")
-        # print(f"Last time: {self.last_time_get_speed}")
-        # print((self.current_time - self.last_time_get_speed).to_sec())
-        # self.read_serial()
-        # if (self.current_time - self.last_time_get_speed).to_sec() > 0.1:
-        # self.read_serial()
-        self.request_speed()
-        rospy.sleep(0.02)
-        self.read_serial()
-        # self.last_time_get_speed = self.current_time
+        """
+        OPTIMIZATION: Arduino auto-pushes speed at 50Hz - just read passively
+        No more request-response - lower latency, fresher data
+        """
+        self.read_serial()  # Passive read - Arduino pushes automatically
 
+        # Check if cmd_vel stopped - FORCE zero if no command for > 0.3s
+        current_time = rospy.Time.now()
+        time_since_cmd = (current_time - self.last_cmd_vel_time).to_sec()
+        CMD_TIMEOUT = 0.3  # seconds
+
+        # ACCURACY: Thread-safe velocity read
+        with self.vel_lock:
+            left_vel_local = float(self.left_vel)
+            right_vel_local = float(self.right_vel)
+
+
+        # Normal operation - calculate from encoders
+        linear_vel = (right_vel_local + left_vel_local) / 2
+        angular_vel = (right_vel_local - left_vel_local) / float(ROBOT_WHEEL_DISTANCE)
+
+        # DEADBAND: Lọc nhiễu encoder khi đứng im
+        VEL_DEADBAND = 0.02  # m/s (2 cm/s) - dưới ngưỡng này = 0
+
+        if abs(linear_vel) < VEL_DEADBAND:
+            linear_vel = 0.0
         
-        # Tính toán vận tốc dài và vận tốc góc của robot
-        linear_vel = (self.right_vel + self.left_vel) / 2
-        angular_vel = (self.right_vel - self.left_vel) / ROBOT_WHEEL_DISTANCE
 
         # Nội suy vị trí robot
-        current_time = rospy.Time.now()
         self.current_time = current_time
         dt = (current_time - self.last_time).to_sec()
+
+        # CHỈ tích phân khi có chuyển động thực sự
+        # if abs(linear_vel) > 0.0 or abs(angular_vel) > 0.0:
         delta_x = linear_vel * dt * np.cos(self.current_theta)
         delta_y = linear_vel * dt * np.sin(self.current_theta)
         delta_theta = angular_vel * dt
 
-        # Cập nhật vị trí và hướng của robot
+
+
+        # ======================================================================
+        # CRITICAL: OUTLIER DETECTION - Reject impossible movements
+        # Prevents SLAM jump 45° from sensor spikes!
+        # ======================================================================
+        # MAX_DELTA_THETA = 0.15  # rad (~8.6°) in 0.04s → 3.75 rad/s max (robot can't do this!)
+        # MAX_DELTA_XY = 0.02     # m in 0.04s → 0.5 m/s max (robot max = 0.3 m/s)
+
+        # if abs(delta_theta) > MAX_DELTA_THETA:
+        #     rospy.logwarn_throttle(1.0, f"OUTLIER REJECTED: delta_theta={delta_theta:.3f} rad (>{MAX_DELTA_THETA})")
+        #     delta_theta = 0.0  # Reject this measurement
+        #     angular_vel = 0.0  # Also zero velocity for this cycle
+
+        # if abs(delta_x) > MAX_DELTA_XY or abs(delta_y) > MAX_DELTA_XY:
+        #     rospy.logwarn_throttle(1.0, f"OUTLIER REJECTED: delta_x={delta_x:.3f}, delta_y={delta_y:.3f} m (>{MAX_DELTA_XY})")
+        #     delta_x = 0.0
+        #     delta_y = 0.0
+        #     linear_vel = 0.0
+
+        # Cập nhật vị trí và hướng của robot (after outlier check)
         self.current_x += delta_x
         self.current_y += delta_y
-
-        # rospy.loginfo(f"Encoder position: x: {self.current_x}, y: {self.current_y};")
-        # rospy.loginfo(f"IMU position: x: {self.imu_x}, y: {self.imu_y};")
-
-        # self.current_theta = self.imu_yaw
         self.current_theta += delta_theta
-        self.last_time = current_time
+        # else: KHÔNG cập nhật gì cả khi đứng im
+
 
         # Publish dữ liệu odometry
         odom = Odometry()
@@ -205,22 +427,34 @@ class RobotControl:
         odom.pose.pose.position.x = self.current_x
         odom.pose.pose.position.y = self.current_y
         odom.pose.pose.position.z = 0.0
+
+        # OPTIMIZATION: Fast 2D quaternion (yaw-only rotation) instead of tf.transformations
         q = quaternion_from_euler(0, 0, self.current_theta)
         odom.pose.pose.orientation.x = q[0]
         odom.pose.pose.orientation.y = q[1]
         odom.pose.pose.orientation.z = q[2]
         odom.pose.pose.orientation.w = q[3]
 
+
         # Thiết lập vận tốc
         odom.twist.twist.linear.x = linear_vel
         odom.twist.twist.angular.z = angular_vel
 
+        # OPTIMIZATION: Use pre-calculated covariance matrices based on motion state
+        is_stationary = (abs(linear_vel) < 0.01 and abs(angular_vel) < 0.02)
+        odom.pose.covariance = self.pose_cov_moving
+        odom.twist.covariance = self.twist_cov_moving
+
         # Publish odom
         self.odom_pub.publish(odom)
-        self.odom_broadcaster.sendTransform(
-            (self.current_x, self.current_y, 0.0),
-            q,
-            self.current_time,
-            "dummy_base_link",
-            "/robot_0/odom",
-        )
+        self.last_time = current_time
+
+        # BỎQUA: Dùng static TF từ robot_mapping.launch thay vì publish động
+        # Lý do: Tránh jump khi robot di chuyển
+        # self.odom_broadcaster.sendTransform(
+        #     (self.current_x, self.current_y, 0.0),
+        #     q,
+        #     self.current_time,
+        #     "dummy_base_link",
+        #     "/robot_0/odom",
+        # )

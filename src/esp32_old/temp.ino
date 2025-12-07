@@ -8,7 +8,7 @@
 #define ENA 5        // Chân PWM động cơ
 
 const int pulsesPerRevolution = 15000;   // Số xung mỗi vòng quay
-const float wheelRadius = 0.033;         // Bán kính bánh xe (m)
+const float wheelRadius = 0.0342;         // Bán kính bánh xe (m)
 const float wheelCircumference = 2 * 3.14159 * wheelRadius;  // Chu vi bánh xe (m)
 
 // Biến PID

@@ -1,42 +1,51 @@
 <launch>
-    <!-- Parameter for use_sim_time -->
+    <!-- Arguments -->
     <arg name="robot_namespace" default="/robot_0"/>
     <arg name="map_file" default="$(find robot_controller)/maps/map_final.yaml" />
 
     <param name="use_sim_time" value="false"/>
-    <!-- <include file="$(find robot_controller)/launch/robot_bringup.launch" /> -->
 
+    <!-- Include robot bringup (LiDAR, IMU, odometry fusion, motor control) -->
+    <include file="$(find robot_controller)/launch/robot_bringup.launch">
+        <arg name="robot_namespace" value="$(arg robot_namespace)"/>
+    </include>
 
-    <!-- Load robot description (URDF file) -->
-    <!-- <group ns="robot_0">
-        <param name="robot_description" command="$(find xacro)/xacro '$(find robot_description)/urdf/robot_description_xacro.xacro' prefix:=robot_0" />
-        <node pkg="robot_state_publisher" type="robot_state_publisher" name="state_pub_0" />
-    </group> -->
-
+    <!-- Load robot description (URDF) for visualization -->
     <include file="$(find robot_description)/launch/single_robot.launch" />
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_controller)/rviz/navigation.rviz"/>
-    <!-- Launch teleop_twist_keyboard for controlling the robot -->
-    <!-- <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard" output="screen">
-        <remap from="cmd_vel" to="$(arg robot_namespace)/cmd_vel"/>
-        <param name="scale_linear" value="0.35" />
-        <param name="scale_angular" value="1.0" />
-    </node> -->
-    <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="laser_to_base" args="0.0 0 0.0 0 0 0 /robot_0/odom /base_link "/> -->
+
+    <!-- RViz for visualization (optional, comment out if running on robot without display) -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_controller)/rviz/navigation.rviz"/> -->
 
     <!-- Load static map -->
-    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" />
-    <node pkg="robot_controller" type="run_model.py" name="model" ns="$(arg robot_namespace)" output="screen"/>
+    <node pkg="map_server" type="map_server" name="map_server" args="$(arg map_file)" output="screen"/>
 
-    <!-- Launch AMCL for localization -->
-    
+    <!-- RL Model node for autonomous navigation -->
+    <node pkg="robot_controller" type="run_model.py" name="model_controller"
+          ns="$(arg robot_namespace)" output="screen">
+        <param name="model_path" value="$(find robot_controller)/src/policy/cnn_modern_best_71pct.pth"/>
+    </node>
+
+    <!-- AMCL for localization -->
     <node pkg="amcl" type="amcl" name="amcl" ns="$(arg robot_namespace)" output="screen">
-        <param name="use_map_topic" value="true" />
+        <!-- Load AMCL configuration from yaml file -->
+        <rosparam command="load" file="$(find robot_controller)/config/amcl.yaml"/>
+
+        <!-- Frame IDs -->
         <param name="odom_frame_id" value="/robot_0/odom" />
         <param name="base_frame_id" value="dummy_base_link" />
         <param name="global_frame_id" value="map" />
-        <param name="update_min_d" value="0.2" />
-        <param name="update_min_a" value="0.5" />
+
+        <!-- Topic remapping -->
         <remap from="/robot_0/map" to="/map" />
         <remap from="/robot_0/initialpose" to="/initialpose" />
+        <remap from="/robot_0/scan" to="/robot_0/scan" />
     </node>
+
+    <!-- Notes:
+         1. Make sure map_final.yaml and map_final.pgm exist in robot_controller/maps/
+         2. Set initial pose in RViz using "2D Pose Estimate" button
+         3. Set goal using "2D Nav Goal" button or publish to /robot_0/move_base_simple/goal
+         4. Monitor /robot_0/cmd_vel to see model commands
+         5. Check AMCL particle cloud for localization quality
+    -->
 </launch>

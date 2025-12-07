@@ -33,7 +33,8 @@ class RunModel:
     def __init__(self, robot: RobotEnv):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.robot = robot
-        self.gather_node = GatherNode(robot.index)
+        # SINGLE ROBOT MODE: Comment out gather_node for single robot deployment
+        # self.gather_node = GatherNode(robot.index)
         self.robot_status = RobotStatus.IDLE
         self.__init_topic()
         self.__load_policy()
@@ -68,8 +69,8 @@ class RunModel:
             exit()
 
         # IMPORTANT: Update this to your actual trained model file!
-        # Copy your trained model: policy/stage2/cnn_gru_attention_5700.pth -> deployment/policy/
-        file = POLICY_PATH / Path("cnn_gru_attention_5700.pth")
+        # Using best model: 71% train, 88% test success rate (Stage 2)
+        file = POLICY_PATH / Path("cnn_modern_best_71pct.pth")
         if os.path.exists(file):
             print("####################################")
             print("####### Loading Trained Model ######")
@@ -81,6 +82,24 @@ class RunModel:
             rospy.logerr(f"Policy file not found: {file}")
             rospy.logerr("Please copy your trained model to the policy directory!")
             exit()
+
+    def _prepare_state_tensor(self, state):
+        """Convert state to model input tensors for single robot"""
+        obs_stack, goal, speed = state
+        # Stack 3 frames: (3, 454)
+        obs = torch.FloatTensor(np.array(obs_stack)).unsqueeze(0).to(self.device)
+        goal_tensor = torch.FloatTensor(goal).unsqueeze(0).to(self.device)
+        speed_tensor = torch.FloatTensor(speed).unsqueeze(0).to(self.device)
+        return {'obs': obs, 'goal': goal_tensor, 'speed': speed_tensor}
+
+    def _scale_action(self, action):
+        """Scale action from [0,1] and [-1,1] to real bounds
+        action[0]: v ∈ [0, 1] → [0, 0.7] m/s
+        action[1]: ω ∈ [-1, 1] → [-1, 1] rad/s
+        """
+        v = action[0] * ACTION_BOUND[1][0]  # Scale to [0, 0.7]
+        w = action[1] * ACTION_BOUND[1][1]  # Scale to [-1, 1]
+        return np.array([v, w])
 
     def run(self):
         buff = []
@@ -96,87 +115,59 @@ class RunModel:
         speed = np.asarray(self.robot.speed)
         state = [obs_stack, goal, speed]
 
-        self.publish_robot_state(state, self.state_publish)
-        self.gather_node.set_cur_robot_state(state)
-        rospy.sleep(0.002)
+        # SINGLE ROBOT MODE: Remove gather_node logic
+        # self.publish_robot_state(state, self.state_publish)
+        # self.gather_node.set_cur_robot_state(state)
+        # rospy.sleep(0.002)
 
-        rospy.loginfo("########### Start running ###########")
+        rospy.loginfo("########### Start running (Single Robot Mode) ###########")
         while not self.terminal and not rospy.is_shutdown():
             start_time = time.time()
-            state_list = self.gather_node.subscriber_states
-            if None in state_list:
-                rospy.logerr("State were not correctly gathered")
-            print(f"Length state list: {len(state_list)}")
-            v, a, logprob, scaled_action = generate_action(
-                state_list=state_list, policy=self.policy, action_bound=ACTION_BOUND
-            )
-            real_action = scaled_action[self.robot.index]
+
+            # SINGLE ROBOT: Direct inference without gathering states
+            state_tensor = self._prepare_state_tensor(state)
+            with torch.no_grad():
+                v, action, logprob, mean = self.policy(
+                    state_tensor['obs'],
+                    state_tensor['goal'],
+                    state_tensor['speed']
+                )
+
+            # Scale action to real bounds
+            real_action = self._scale_action(mean[0].cpu().numpy())
+            rospy.loginfo(f"Action: v={real_action[0]:.3f} m/s, w={real_action[1]:.3f} rad/s")
             self.robot.control_vel(real_action)
             # FIXME: not align with real world
             rospy.sleep(0.005)
             r, self.terminal, result = self.robot.get_reward_and_terminate(step)
-            print(f"Reward: {r}, step: {step}")
+            rospy.loginfo(f"Step {step}: Reward={r:.2f}, Result={result}")
 
-            self.reward_publish.publish(r)
-            self.gather_node.set_cur_robot_reward(r)
-            self.terminal_publish.publish(self.terminal)
-            self.gather_node.set_cur_robot_terminal(self.terminal)
-            rospy.sleep(0.002)
+            # SINGLE ROBOT MODE: No reward publishing to other robots
+            # self.reward_publish.publish(r)
+            # self.gather_node.set_cur_robot_reward(r)
+            # self.terminal_publish.publish(self.terminal)
+            # self.gather_node.set_cur_robot_terminal(self.terminal)
 
             ep_reward += r
 
+            # Update state for next iteration
             state_next = self.robot.get_laser_observation()
             left = obs_stack.popleft()
             obs_stack.append(state_next)
             goal_next = np.asarray(self.robot.get_local_goal())
             speed_next = np.asarray(self.robot.speed)
-            state_next = [obs_stack, goal_next, speed_next]
+            state = [obs_stack, goal_next, speed_next]  # Update state for next loop
 
-            if step % NUM_STEPS == 0:
-                self.publish_robot_state(state_next, self.next_state_publish)
-                self.gather_node.set_cur_robot_next_state(state_next)
-                rospy.sleep(0.002)
-
-                next_state_list = self.gather_node.subscriber_next_states
-                last_v, _, _, _ = generate_action(
-                    state_list=next_state_list, policy=self.policy, action_bound=ACTION_BOUND
-                )
-            r_list = self.gather_node.subscriber_rewards
-            terminal_list = self.gather_node.subscriber_terminal
-
-            # Update policy
-            buff.append((state_list, a, r_list, terminal_list, logprob, v))
-            if len(buff) > NUM_STEPS - 1:
-                rospy.loginfo("Transform buff")
-                s_batch, goal_batch, speed_batch, a_batch, r_batch, d_batch, l_batch, v_batch = transform_buffer(
-                    buff=buff
-                )
-                t_batch, advs_batch = generate_train_data(
-                    rewards=r_batch, gamma=GAMMA, values=v_batch, last_value=last_v, dones=d_batch, lam=LAMBDA
-                )
-                memory = (s_batch, goal_batch, speed_batch, a_batch, l_batch, t_batch, v_batch, r_batch, advs_batch)
-                ppo_update(
-                    policy=self.policy,
-                    optimizer=self.optimizer,
-                    batch_size=BATCH_SIZE,
-                    memory=memory,
-                    epoch=EPOCH,
-                    coeff_entropy=COEFF_ENTROPY,
-                    clip_value=CLIP_VALUE,
-                    num_step=NUM_STEPS,
-                    num_env=NUM_ROBOTS,
-                    frames=LASER_HIST,
-                    obs_size=NUM_OBS,
-                    act_size=ACT_SIZE,
-                )
-                buff = []
-                global_update += 1
             step += 1
-            # logger_env.info(f"{id+1},{r:.5f},{env.move_distance:.5f},{real_action[0]:.4f},{real_action[1]:.4f},{self.robot.distance},{terminal},{result},{(time.time() - start_time):.5f}")
-        self.robot_status = RobotStatus.IDLE
 
-        if global_update != 0 and global_update % 20 == 0:
-            torch.save(self.policy.state_dict(), "/policy/stage1_fix.pth")
+            # INFERENCE ONLY: No online learning/policy updates
+            # All training logic removed for deployment
+            # If you want online learning, uncomment and adapt the code below
+
+        self.robot_status = RobotStatus.IDLE
+        rospy.loginfo(f"Episode finished: Result={result}, Total Reward={ep_reward:.2f}, Steps={step}")
+
+        # INFERENCE ONLY: No model saving during deployment
 
     def goal_callback(self, goal_pose: PoseStamped):
         rospy.loginfo("########### Goal callback ###########")

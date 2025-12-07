@@ -28,13 +28,13 @@ BATCH_SIZE = int(os.getenv('BATCH_SIZE', "1024"))  # Match training
 LASER_HIST = int(os.getenv('LASER_HIST', "3"))
 
 ROBOT_RADIUS = float(os.getenv('ROBOT_RADIUS', "0.13"))
-ROBOT_WHEEL_DISTANCE = float(os.getenv('ROBOT_WHEEL_DISTANCE', "0.21"))
+ROBOT_WHEEL_DISTANCE = float(os.getenv('ROBOT_WHEEL_DISTANCE', "0.205"))
 SAFE_DISTANCE = float(os.getenv('SAFE_DISTANCE', "0.13"))
-NUM_ROBOTS = int(os.getenv('NUM_ROBOTS', "2"))
+NUM_ROBOTS = int(os.getenv('NUM_ROBOTS', "1"))  # FIXED: Single robot deployment
 
 # CRITICAL FIX: Match training bounds to prevent robot from going too fast!
 # Training: [[0, -1.0], [0.7, 1.0]] means max linear vel = 0.7 m/s, max angular = 1.0 rad/s
-ACTION_BOUND = ast.literal_eval(os.getenv('ACTION_BOUND', "[[0, -1.0], [0.7, 1.0]]"))
+ACTION_BOUND = ast.literal_eval(os.getenv('ACTION_BOUND', "[[0, -1.0], [0.3, 1.0]]"))
 ROBOT_PORT = os.getenv("ROBOT_PORT", "/dev/ttyUSB0")
 BAUDRATE = int(os.getenv("BAUDRATE", "115200"))
 
@@ -47,6 +47,10 @@ CMD_VEL_RIGHT = 0x03
 GET_SPEED = 0x04
 TUNE_PID_LEFT = 0x05
 TUNE_PID_RIGHT = 0x06
+GET_PID_DATA = 0x07
+
+LEFT_WHEEL = 0
+RIGHT_WHEEL = 1
 
 # Path
 POLICY_PATH = cwd / Path('policy')

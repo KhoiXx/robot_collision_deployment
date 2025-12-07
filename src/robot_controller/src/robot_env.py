@@ -5,12 +5,13 @@ from enum import Enum
 import numpy as np
 import rospy
 import tf
-from geometry_msgs.msg import Pose, PoseWithCovarianceStamped, Twist
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Imu, LaserScan
 from std_msgs.msg import Bool, Float32MultiArray
 
 from settings import *
+from collections import deque
 
 
 class RobotStatus(Enum):
@@ -20,7 +21,7 @@ class RobotStatus(Enum):
 
 
 class RobotEnv:
-    def __init__(self, index: int):
+    def __init__(self, index: int, use_pure_ukf: bool = False, use_cartographer: bool = False):
         # rospy.init_node(f"robot_env_{index}", anonymous=True)
         self.goal_size = 0.15
         self.distance = 0.0
@@ -29,10 +30,24 @@ class RobotEnv:
 
         # Robot index for unique topic names
         self.index = index
+        self.use_pure_ukf = use_pure_ukf
+        self.use_cartographer = use_cartographer
 
         # Subscribe to IMU, Lidar, and Odometry topics
         self.odom_sub = rospy.Subscriber(f"/robot_{self.index}/odometry/filtered", Odometry, self.odom_callback)
-        self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
+
+        # Subscribe to localization source
+        if use_pure_ukf:
+            # Pure UKF mode - no external localization
+            pass
+        elif use_cartographer:
+            # Cartographer localization - use TF listener instead of topic
+            self.tf_listener = tf.TransformListener()
+            # Start TF polling timer
+            rospy.Timer(rospy.Duration(0.05), self.cartographer_tf_callback)  # 20Hz
+        else:
+            # AMCL localization (default)
+            self.amcl = rospy.Subscriber(f"/robot_{self.index}/amcl_pose", PoseWithCovarianceStamped, self.amcl_callback)
 
         self.cmd_vel = rospy.Publisher(f"/robot_{self.index}/cmd_vel", Twist, queue_size=10)
         self.cmd_pose = rospy.Publisher(f"/robot_{self.index}/cmd_pose", Twist, queue_size=10)
@@ -56,6 +71,10 @@ class RobotEnv:
         self.amcl_prev_position = None
         self.amcl_prev_yaw = None
 
+        # Track AMCL update rate
+        self.amcl_update_times = deque(maxlen=100)
+        self.amcl_update_count = 0
+
     def set_new_goal(self, goal: list):
         self.goal_point = goal
         [x, y] = self.get_local_goal()
@@ -65,10 +84,15 @@ class RobotEnv:
     def lidar_callback(self, data: LaserScan):
         """
         scan_msg: LaserScan
+        Only check crash in front 120° (from n//3 to n - n//3)
         """
         self.scan = np.asarray(data.ranges)[:NUM_OBS]
         crash_distance = ROBOT_RADIUS + SAFE_DISTANCE
-        valid_scan = self.scan[np.isfinite(self.scan)]
+
+        # Only check front 120° for crash detection
+        n = len(self.scan)
+        front_scan = self.scan[n//3 : n - n//3]  # Front 120° sector
+        valid_scan = front_scan[np.isfinite(front_scan)]
         is_crash = np.any(valid_scan <= crash_distance)
         self.crash_pub.publish(is_crash)
         self.is_crash = is_crash
@@ -108,14 +132,55 @@ class RobotEnv:
         quat = odometry.pose.pose.orientation
         euler = tf.transformations.euler_from_quaternion([quat.x, quat.y, quat.z, quat.w])
         yaw = normalize_angle(euler[2])
-        self.state = [round(pos.x, 4), round(pos.y, 4), yaw]
-
-        self.state = [odometry.pose.pose.position.x, odometry.pose.pose.position.y, euler[2]]
+        # Use UKF-filtered odometry (combines encoder + IMU)
+        self.state = [pos.x, pos.y, yaw]
 
         vx = odometry.twist.twist.linear.x
         wz = odometry.twist.twist.angular.z
-        self.speed = [round(vx, 4), round(wz, 4)]
+        self.speed = [vx, wz]
+
+        # If pure UKF mode, use UKF for ground truth (no AMCL blending)
+        if self.use_pure_ukf:
+            self.state_GT = [pos.x, pos.y, yaw]
+            self.speed_GT = [vx, wz]
     
+    def cartographer_tf_callback(self, event):
+        """Cartographer TF callback - poll map->base_link transform"""
+        try:
+            # Get transform from map to robot base_link
+            (trans, rot) = self.tf_listener.lookupTransform('/map', 'dummy_base_link', rospy.Time(0))
+
+            # Extract position and orientation
+            pos_x, pos_y = trans[0], trans[1]
+            euler = tf.transformations.euler_from_quaternion(rot)
+            yaw = normalize_angle(euler[2])
+
+            self.state_GT = [pos_x, pos_y, yaw]
+
+            # Calculate speed from pose changes
+            current_time = rospy.Time.now().to_sec()
+            current_position = np.array([pos_x, pos_y])
+            current_yaw = euler[2]
+
+            if self.amcl_prev_time is not None:
+                delta_t = current_time - self.amcl_prev_time
+                if delta_t > 0:
+                    delta_position = current_position - self.amcl_prev_position
+                    linear_vel = np.linalg.norm(delta_position) / delta_t
+                    delta_yaw = current_yaw - self.amcl_prev_yaw
+                    angular_vel = normalize_angle(delta_yaw) / delta_t
+                    self.speed_GT = [linear_vel, angular_vel]
+            else:
+                self.speed_GT = [0.0, 0.0]
+
+            self.amcl_prev_time = current_time
+            self.amcl_prev_position = current_position
+            self.amcl_prev_yaw = current_yaw
+
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            # TF not available yet - Cartographer still localizing
+            pass
+
     def amcl_callback(self, amcl_pose: PoseWithCovarianceStamped):
         pos = amcl_pose.pose.pose.position
         quat = amcl_pose.pose.pose.orientation
@@ -123,15 +188,28 @@ class RobotEnv:
         yaw = normalize_angle(euler[2])
         self.state_GT = [pos.x, pos.y, yaw]
 
-        # Calculate speed
+        # Track AMCL update rate
         current_time = rospy.Time.now().to_sec()
+        self.amcl_update_times.append(current_time)
+        self.amcl_update_count += 1
+
+        # Log AMCL rate every 100 updates
+        if self.amcl_update_count % 100 == 0 and len(self.amcl_update_times) > 10:
+            intervals = [self.amcl_update_times[i] - self.amcl_update_times[i-1]
+                        for i in range(1, len(self.amcl_update_times))]
+            avg_interval = np.mean(intervals)
+            amcl_rate = 1.0 / avg_interval if avg_interval > 0 else 0
+            rospy.loginfo(f"[AMCL] Rate: {amcl_rate:.1f} Hz | Interval: {avg_interval*1000:.1f}ms")
+
+        # Calculate speed
         current_position = np.array([pos.x, pos.y])
 
         current_yaw = euler[2]
         if self.amcl_prev_time is not None:
             delta_t = current_time - self.amcl_prev_time
             if delta_t > 0:
-                delta_position = self.amcl_prev_position - current_position
+                # FIXED: Correct direction (current - previous)
+                delta_position = current_position - self.amcl_prev_position
                 linear_vel = np.linalg.norm(delta_position) / delta_t
                 delta_yaw = current_yaw - self.amcl_prev_yaw
                 angular_vel = normalize_angle(delta_yaw) / delta_t
@@ -143,58 +221,90 @@ class RobotEnv:
         self.amcl_prev_yaw = current_yaw
 
     def get_local_goal(self):
-        [x, y, theta] = self.state_GT
+        # Use ground truth pose (UKF if pure mode, AMCL/Cartographer otherwise)
+        if self.state_GT is not None:
+            [x, y, theta] = self.state_GT
+        else:
+            # Fallback to UKF odometry if state_GT not available yet
+            [x, y, theta] = self.state if self.state is not None else [0, 0, 0]
+
         [goal_x, goal_y] = self.goal_point
         local_x = (goal_x - x) * np.cos(theta) + (goal_y - y) * np.sin(theta)
         local_y = -(goal_x - x) * np.sin(theta) + (goal_y - y) * np.cos(theta)
         return [local_x, local_y]
 
     def get_reward_and_terminate(self, t):
+        """
+        Reward function - SYNCED with training stage_world2.py
+        Same structure as training for consistent deployment behavior
+        """
         terminate = False
-        laser_scan = self.get_laser_observation()
+        # Get current robot state
+        laser_scan_raw = self.get_laser_observation()  # Normalized [-0.5, 0.5]
+        laser_scan = (laser_scan_raw + 0.5) * 6.0  # Denormalize to [0, 6] meters
         [x, y, theta] = self.state_GT
-        [v, w] = self.speed_GT
+        [v, w] = self.speed
+
         self.pre_distance = copy.deepcopy(self.distance)
         self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
-        reward_g = (self.pre_distance - self.distance) * 2.5
-        reward_c = 0
-        reward_w = 0
-        result = 0
-        reward_p = 0
-        reward_theta = 0
-        is_crash = self.is_crash
 
-        # Phần thưởng căn chỉnh hướng
-        if self.distance < 0.7:
-            angle_to_goal = np.arctan2(self.goal_point[1] - y, self.goal_point[0] - x)
-            angle_diff = normalize_angle(angle_to_goal - theta)
-            reward_theta = -0.3 * np.abs(angle_diff)
-        else:
-            if np.abs(w) > 1.45:
-                reward_w = -0.1 * np.abs(w)
+        # Get front obstacle distance - SAME as training
+        n = len(laser_scan)
+        front_distances = laser_scan[n//3:2*n//3]  # Front 1/3 of scan
+        front_distances = front_distances[front_distances < 6.0]  # Filter valid readings
+        min_obstacle_dist = np.mean(np.sort(front_distances)[:5]) if len(front_distances) > 0 else 6.0
 
-        min_distance_to_obstacle = np.min(laser_scan)
-        if min_distance_to_obstacle < 0:
-            reward_p = -0.25
-        elif min_distance_to_obstacle < 0.25:
-            reward_p = (min_distance_to_obstacle - 0.25) / 2
-
+        # ========================================
+        # TERMINAL REWARDS - SAME as training
+        # ========================================
         if self.distance < self.goal_size:
-            terminate = True
-            reward_g = 40
-            result = "Reach Goal"
+            return 30.0, True, 'Reach Goal'
+        if self.is_crash:
+            return -25.0, True, 'Crash'
+        if t >= 700:  # Match training timeout
+            return -10.0, True, 'Timeout'
 
-        if is_crash == 1:
-            # TODO: add a recover mode
-            terminate = True
-            reward_c = -15.0
-            result = "Crashed"
+        # ========================================
+        # STEP REWARDS - SYNCED with training
+        # ========================================
+        reward = 0.0
+        progress = self.pre_distance - self.distance
 
-        if t > 10000:
-            terminate = True
-            result = "Time out"
-        reward = reward_g + reward_c + reward_w + reward_p + reward_theta
-        return reward, terminate, result
+        # 1. Progress reward - training proven value
+        reward += 2.0 * progress
+
+        # 2. Safety reward - training 2-zone system
+        if min_obstacle_dist < 0.35:
+            # Very close - strong speed penalty
+            safe_speed = 0.2
+            if v > safe_speed:
+                reward -= 0.3 * (v - safe_speed)
+        elif min_obstacle_dist < 0.6:
+            # Close - moderate speed limit
+            safe_speed = 0.4
+            if v > safe_speed:
+                reward -= 0.1 * (v - safe_speed)
+
+        # 3. Rotation penalty - training proven value
+        if np.abs(w) > 0.8:
+            reward -= 0.06 * np.abs(w)
+
+        # 4. Heading bonus - ALWAYS ACTIVE (training proven)
+        local_goal = self.get_local_goal()
+        if min_obstacle_dist > 0.6:
+            goal_angle = np.arctan2(local_goal[1], local_goal[0])
+            heading_error = np.abs(goal_angle) / np.pi
+            if heading_error < 0.3:  # Only reward when reasonably aligned
+                reward += 0.1 * (1.0 - heading_error)
+
+        # 5. Velocity smoothing - ALWAYS ACTIVE (training proven)
+        if hasattr(self, 'prev_linear_vel'):
+            vel_change = abs(v - self.prev_linear_vel)
+            if vel_change > 0.1:  # Threshold for sudden change
+                reward -= 0.05 * vel_change
+        self.prev_linear_vel = v
+
+        return reward, False, None
 
     def control_vel(self, action):
         move_cmd = Twist()

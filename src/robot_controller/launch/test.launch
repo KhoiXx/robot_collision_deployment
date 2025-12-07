@@ -1,9 +1,29 @@
 <launch>
-    <node pkg="robot_controller" type="test.py" name="Test" output="screen"/>
-    <!-- <include file="$(find ldlidar_ros)/launch/ld19.launch">
-        <arg name="port_name" value="/dev/ttyUSB0"/>
-    </include> -->
-    <!-- <node pkg="robot_controller" type="test.py" name="Test" output="screen"/> -->
+    <!-- Choose test mode: 'basic', 'pid_stability' -->
+    <arg name="test_mode" default="basic"/>
+
+    <!-- PID stability test parameters -->
+    <arg name="test_wheel" default="left"/>  <!-- 'left' or 'right' -->
+    <arg name="output_dir" default="$(find robot_controller)/pid_test_results"/>
+
+    <!-- Basic test node (original) -->
+    <node if="$(eval test_mode == 'basic')"
+          pkg="robot_controller"
+          type="test.py"
+          name="Test"
+          output="screen"/>
+
+    <!-- PID stability test node -->
+    <node if="$(eval test_mode == 'pid_stability')"
+          pkg="robot_controller"
+          type="pid_stability_test.py"
+          name="PIDStabilityTest"
+          output="screen">
+        <param name="test_wheel" value="$(arg test_wheel)"/>
+        <param name="output_dir" value="$(arg output_dir)"/>
+    </node>
+
+    <!-- Lidar (commented out by default) -->
     <!-- <arg name="lidar_port" default="/dev/ttyUSB0"/>
     <include file="$(find ldlidar_ros)/launch/ld19.launch">
         <arg name="port_name" value="$(arg lidar_port)"/>

@@ -1,0 +1,98 @@
+<launch>
+    <!-- Master PC Navigation Launch File
+         To be run ON MASTER PC only
+
+         Prerequisites:
+         - roscore running
+         - All Jetsons running jetson_bringup.launch
+         - Map file exists
+
+         Usage:
+         roslaunch robot_controller master_navigation.launch num_robots:=2
+    -->
+
+    <arg name="num_robots" default="2"/>
+    <arg name="map_file" default="$(find robot_controller)/maps/cate_test_11.yaml"/>
+    <arg name="robot_namespace" default="/robot_0"/>
+    <!-- ============================================== -->
+    <!-- MAP SERVER -->
+    <!-- ============================================== -->
+
+    <node pkg="map_server" type="map_server" name="map_server"
+          args="$(arg map_file)" output="screen"/>
+
+    <!-- ============================================== -->
+    <!-- AMCL LOCALIZATION (one instance per robot) -->
+    <!-- ============================================== -->
+
+    <!-- Robot 0 AMCL -->
+    <include file="$(find robot_controller)/launch/amcl_single.launch">
+        <arg name="robot_namespace" value="/robot_0"/>
+    </include>
+
+    <!-- Robot 1 AMCL (if num_robots >= 2) -->
+    <include file="$(find robot_controller)/launch/amcl_single.launch" if="$(eval num_robots >= 2)">
+        <arg name="robot_namespace" value="/robot_1"/>
+    </include>
+
+    <!-- Robot 2 AMCL (if num_robots >= 3) -->
+    <include file="$(find robot_controller)/launch/amcl_single.launch" if="$(eval num_robots >= 3)">
+        <arg name="robot_namespace" value="/robot_2"/>
+    </include>
+
+    <!-- Robot 3 AMCL (if num_robots >= 4) -->
+    <include file="$(find robot_controller)/launch/amcl_single.launch" if="$(eval num_robots >= 4)">
+        <arg name="robot_namespace" value="/robot_3"/>
+    </include>
+
+    <!-- Add more AMCL instances as needed for more robots -->
+
+    <!-- ============================================== -->
+    <!-- TRAJECTORY LOGGING -->
+    <!-- ============================================== -->
+
+    <!-- Robot 0 Trajectory Logger -->
+    <node pkg="robot_controller" type="trajectory_logger.py" name="trajectory_logger_0"
+          output="screen">
+        <param name="robot_index" value="0"/>
+        <param name="sample_interval" value="0.1"/>
+    </node>
+
+    <!-- Robot 1 Trajectory Logger (if num_robots >= 2) -->
+    <node pkg="robot_controller" type="trajectory_logger.py" name="trajectory_logger_1"
+          output="screen" if="$(eval num_robots >= 2)">
+        <param name="robot_index" value="1"/>
+        <param name="sample_interval" value="0.1"/>
+    </node>
+
+    <!-- ============================================== -->
+    <!-- VISUALIZATION -->
+    <!-- ============================================== -->
+
+    <!-- RViz for multi-robot visualization -->
+    <!-- Uncomment if you have display on Master PC -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz"
+          args="-d $(find robot_controller)/rviz/multi_robot.rviz"/> -->
+
+    <!-- ============================================== -->
+    <!-- NOTES -->
+    <!-- ============================================== -->
+
+    <!--
+    After launching:
+    1. Set initial pose for each robot in RViz using "2D Pose Estimate"
+    2. Start model inference on Master:
+       python3 run_model_safe.py - -robot_id 0
+       python3 run_model_safe.py - -robot_id 1
+       ...
+    3. Set goals using "2D Nav Goal" in RViz or:
+       rostopic pub /robot_0/move_base_simple/goal ...
+       rostopic pub /robot_1/move_base_simple/goal ...
+    -->
+  <node pkg="robot_controller" type="run_model_safe.py" name="model_controller_safe"
+        ns="$(arg robot_namespace)" output="screen">
+    <!-- Model loads from settings.py POLICY_PATH -->
+    <!-- Includes safety features: stuck detection, emergency stop, obstacle avoidance -->
+  </node>
+
+</launch>
