@@ -308,7 +308,6 @@ class RobotControl:
                 # Route to appropriate parser
                 if cmd_type == GET_SPEED:
                     self._parse_speed_packet()
-                    rospy.loginfo(f"Left velocity: {self.left_vel} m/s, Right velocity: {self.right_vel} m/s")
                 elif cmd_type == GET_PID_DATA:
                     self._parse_pid_packet()
                 else:
@@ -368,7 +367,6 @@ class RobotControl:
             left_vel_local = float(self.left_vel)
             right_vel_local = float(self.right_vel)
 
-        rospy.loginfo(f"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: {CMD_TIMEOUT}")
 
         # Normal operation - calculate from encoders
         linear_vel = (right_vel_local + left_vel_local) / 2
@@ -382,7 +380,6 @@ class RobotControl:
         
 
         # Nội suy vị trí robot
-        current_time = rospy.Time.now()
         self.current_time = current_time
         dt = (current_time - self.last_time).to_sec()
 
@@ -391,7 +388,7 @@ class RobotControl:
         delta_x = linear_vel * dt * np.cos(self.current_theta)
         delta_y = linear_vel * dt * np.sin(self.current_theta)
         delta_theta = angular_vel * dt
-        rospy.loginfo(f"AAAAAAA Angular vel: {angular_vel} rad/s")
+        rospy.loginfo(f"AAAAAAA Angular vel: {angular_vel} rad/s, Delta t: {dt}")
 
 
 
@@ -419,7 +416,6 @@ class RobotControl:
         self.current_theta += delta_theta
         # else: KHÔNG cập nhật gì cả khi đứng im
 
-        self.last_time = current_time
 
         # Publish dữ liệu odometry
         odom = Odometry()
@@ -453,6 +449,7 @@ class RobotControl:
         rospy.loginfo(f"Theta: {self.current_theta} rad ~ {self.current_theta * 57.296} deg")
         # Publish odom
         self.odom_pub.publish(odom)
+        self.last_time = current_time
 
         # BỎQUA: Dùng static TF từ robot_mapping.launch thay vì publish động
         # Lý do: Tránh jump khi robot di chuyển
