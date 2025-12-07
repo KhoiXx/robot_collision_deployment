@@ -388,7 +388,6 @@ class RobotControl:
         delta_x = linear_vel * dt * np.cos(self.current_theta)
         delta_y = linear_vel * dt * np.sin(self.current_theta)
         delta_theta = angular_vel * dt
-        rospy.loginfo(f"AAAAAAA Angular vel: {angular_vel} rad/s, Delta t: {dt}")
 
 
 
@@ -446,7 +445,6 @@ class RobotControl:
         odom.pose.covariance = self.pose_cov_moving
         odom.twist.covariance = self.twist_cov_moving
 
-        rospy.loginfo(f"Theta: {self.current_theta} rad ~ {self.current_theta * 57.296} deg")
         # Publish odom
         self.odom_pub.publish(odom)
         self.last_time = current_time
