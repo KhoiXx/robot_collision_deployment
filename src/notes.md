@@ -69,14 +69,19 @@ Remote to robot
 ssh khoixx@192.168.3.16
 
 #### On server
+<!-- source devel/setup.bash -->
 export ROS_MASTER_URI=http://192.168.3.13:11311
 export ROS_HOSTNAME=192.168.3.13
-source devel/setup.bash
-ros_core
+roscore
 roslaunch robot_controller robot_navigation.launch
 roslaunch robot_controller teleop.launch
+roslaunch robot_controller robot_mapping.launch
+roslaunch robot_controller master_navigation.launch num_robots:=1
+
+roslaunch robot_controller cartographer_mapping.launch
+roslaunch robot_controller cartographer_navigation.launch map_name:="case_test_10"
 
 #### On robot
 export ROS_MASTER_URI=http://192.168.3.13:11311
-export ROS_HOSTNAME=192.168.3.
+export ROS_HOSTNAME=192.168.3.16
 roslaunch robot_controller robot_bringup.launch

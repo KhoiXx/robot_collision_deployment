@@ -14,7 +14,7 @@
 
   <!-- Arguments -->
   <arg name="robot_namespace" default="/robot_0"/>
-  <arg name="map_name" default="cartographer_map"/>  <!-- Map name (without extension) -->
+  <arg name="map_name" default="finish"/>  <!-- Map name (without extension) - UPDATED to test 09 -->
   <arg name="configuration_basename" default="robot_2d_localization.lua"/>
 
   <param name="use_sim_time" value="false"/>
@@ -24,9 +24,9 @@
        ============================================================================ -->
 
   <!-- Load static map for visualization (converted from .pbstream) -->
-  <node pkg="map_server" type="map_server" name="map_server"
+  <!-- <node pkg="map_server" type="map_server" name="map_server"
         args="$(find robot_controller)/maps/$(arg map_name).yaml"
-        output="screen"/>
+        output="screen"/> -->
 
   <!-- ============================================================================
        CARTOGRAPHER NODE - LOCALIZATION MODE
@@ -54,12 +54,16 @@
         args="-resolution 0.05" />
 
   <!-- ============================================================================
-       RL MODEL (Autonomous Navigation)
+       RL MODEL (Autonomous Navigation) - SAFE VERSION
        ============================================================================ -->
 
-  <node pkg="robot_controller" type="run_model.py" name="model_controller"
+  <node pkg="robot_controller" type="run_model_safe.py" name="model_controller_safe"
         ns="$(arg robot_namespace)" output="screen">
-    <param name="model_path" value="$(find robot_controller)/src/policy/cnn_modern_best_71pct.pth"/>
+    <!-- Model loads from settings.py POLICY_PATH -->
+    <!-- Includes safety features: stuck detection, emergency stop, obstacle avoidance -->
+
+    <!-- CRITICAL FIX: Use Cartographer for ground truth (not AMCL) -->
+    <param name="use_cartographer" value="true" />
   </node>
 
   <!-- ============================================================================

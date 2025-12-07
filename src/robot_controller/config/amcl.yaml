@@ -5,42 +5,42 @@
 
 # ==============================================================================
 # ODOMETRY MODEL (differential drive)
-# GIẢM noise để tin UKF filtered odometry hơn
+# TIN VÀO UKF ODOM RẤT NHIỀU - Chỉ để AMCL chỉnh drift nhẹ
 # ==============================================================================
 odom_model_type: diff
-odom_alpha1: 0.05  # Rotation noise from rotation - GIẢM (tin UKF)
-odom_alpha2: 0.05  # Rotation noise from translation - GIẢM
-odom_alpha3: 0.05  # Translation noise from translation - GIẢM
-odom_alpha4: 0.05  # Translation noise from rotation - GIẢM
-odom_alpha5: 0.05  # Translation noise (diff-corrected model) - GIẢM
+odom_alpha1: 0.01  # Rotation noise from rotation - RẤT TIN UKF!
+odom_alpha2: 0.01  # Rotation noise from translation
+odom_alpha3: 0.01  # Translation noise from translation
+odom_alpha4: 0.01  # Translation noise from rotation
+odom_alpha5: 0.01  # Translation noise (diff-corrected model)
 
 # ==============================================================================
 # LASER MODEL
-# Match với gmapping: maxRange=6.0, maxUrange=5.5
+# GIẢM TIN VÀO LASER - Chỉ dùng để correct drift nhẹ, không để jump
 # ==============================================================================
 laser_model_type: likelihood_field
-laser_max_beams: 60           # Số tia LiDAR (LD19 có 720 điểm, 60 đủ dùng)
-laser_z_hit: 0.95             # Trọng số đo đạc đúng
-laser_z_rand: 0.05            # Trọng số đo đạc ngẫu nhiên
-laser_sigma_hit: 0.075        # Match gmapping lsigma
-laser_likelihood_max_dist: 5.0  # TĂNG từ 2.0 để match gmapping maxUrange
+laser_max_beams: 30           # GIẢM từ 60 - ít correction hơn
+laser_z_hit: 0.7              # GIẢM từ 0.95 - tin laser ít hơn
+laser_z_rand: 0.3             # TĂNG từ 0.05 - cho phép noise nhiều hơn
+laser_sigma_hit: 0.2          # TĂNG từ 0.075 - mờ hơn, ít nhạy cảm
+laser_likelihood_max_dist: 5.0
 
 # ==============================================================================
 # PARTICLE FILTER
-# Reduced for faster computation on slow robot (0.4 m/s)
+# GIẢM particles để correction nhẹ hơn
 # ==============================================================================
-min_particles: 50             # GIẢM để giảm CPU load
-max_particles: 200            # GIẢM để tránh overload
-kld_err: 0.05                 # KLD sampling error
-kld_z: 0.99                   # KLD sampling confidence
+min_particles: 30             # GIẢM từ 50 - ít correction
+max_particles: 100            # GIẢM từ 200 - tránh jump mạnh
+kld_err: 0.1                  # TĂNG từ 0.05 - ít particles hơn
+kld_z: 0.95                   # GIẢM từ 0.99 - ít confidence hơn
 
 # ==============================================================================
 # UPDATE THRESHOLDS
-# Reduced for more frequent updates
+# Để visualize tốt cần update thường xuyên hơn
 # ==============================================================================
-update_min_d: 0.01            # Update mỗi 1cm - rất responsive
-update_min_a: 0.01            # Update mỗi ~0.5 degrees - rất responsive
-resample_interval: 2          # Resample mỗi 2 lần update (giảm CPU)
+update_min_d: 0.05            # Update mỗi 5cm (đủ để visualize mượt)
+update_min_a: 0.1             # Update mỗi ~6 degrees
+resample_interval: 2          # Resample thường xuyên hơn
 
 # ==============================================================================
 # TRANSFORM

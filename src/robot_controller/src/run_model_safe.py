@@ -39,17 +39,17 @@ class RunModelSafe:
         self.safety_stop = False
 
         # Safety parameters
-        self.MIN_OBSTACLE_DISTANCE = 0.25  # meters
+        self.MIN_OBSTACLE_DISTANCE = 0.18  # meters
         self.MAX_LINEAR_VEL = 0.3  # m/s - DEPLOYMENT LIMIT (training was 0.7, reduced for safety)
         self.MAX_ANGULAR_VEL = 1.0  # rad/s (MATCH TRAINING)
-        self.CONTROL_RATE = 10  # Hz (match training frequency)
-        self.MAX_STEPS_PER_GOAL = 800  # Timeout - increased because robot is slower (80s at 10Hz)
+        self.CONTROL_RATE = 20  # Hz (match training frequency)
+        self.MAX_STEPS_PER_GOAL = 500  # Timeout - increased because robot is slower (80s at 10Hz)
 
         # Stuck detection and recovery
-        self.STUCK_TIME_THRESHOLD = 3.0  # seconds - if no progress for this long, consider stuck
+        self.STUCK_TIME_THRESHOLD = 2.0  # seconds - if no progress for this long, consider stuck
         self.STUCK_DISTANCE_THRESHOLD = 0.05  # meters - minimum distance to consider as progress
-        self.REVERSE_SPEED = -0.15  # m/s - reverse speed for recovery
-        self.REVERSE_DURATION = 1.5  # seconds - how long to reverse
+        self.REVERSE_SPEED = -0.08  # m/s - reverse speed for recovery
+        self.REVERSE_DURATION = 2  # seconds - how long to reverse
         self.MAX_STUCK_RETRIES = 3  # Maximum stuck recovery attempts before giving up
 
         # Stuck detection state
@@ -107,7 +107,10 @@ class RunModelSafe:
             rospy.sleep(0.1)
 
         rospy.logerr("Sensor timeout! Check:")
-        rospy.logerr(f"  - AMCL pose: {self.robot.state_GT is not None}")
+        if self.robot.use_pure_ukf:
+            rospy.logerr(f"  - Pose (Pure UKF): {self.robot.state_GT is not None}")
+        else:
+            rospy.logerr(f"  - Pose (AMCL/Cartographer): {self.robot.state_GT is not None}")
         rospy.logerr(f"  - Speed: {self.robot.speed_GT is not None}")
         rospy.logerr(f"  - LiDAR: {len(self.robot.scan) > 0}")
         return False
@@ -300,7 +303,7 @@ class RunModelSafe:
             obs_stack.append(obs)
         goal = np.asarray(self.robot.get_local_goal())
 
-        # SAFETY: Use speed_GT (from AMCL) instead of speed (from odom)
+        # Speed: Use speed_GT (from AMCL/Cartographer or UKF depending on mode)
         speed = np.asarray(self.robot.speed_GT) if self.robot.speed_GT is not None else np.array([0.0, 0.0])
         state = [obs_stack, goal, speed]
 
@@ -348,7 +351,7 @@ class RunModelSafe:
             if is_safe:
                 self.robot.control_vel(safe_action)
                 if step % 10 == 0:  # Log every 1 second
-                    rospy.loginfo(f"Step {step}: v={safe_action[0]:.3f} m/s, w={safe_action[1]:.3f} rad/s, dist={self.robot.distance:.2f}m")
+                    rospy.loginfo(f"Step {step}: v={safe_action[0]:.3f} m/s, w={safe_action[1]:.3f} rad/s, dist={self.robot.distance:.2f}m, state: {self.robot.state_GT}")
             elif should_reverse:
                 # Obstacle too close - try to reverse
                 rospy.logwarn("Obstacle too close - attempting safe reverse")
@@ -488,7 +491,24 @@ if __name__ == "__main__":
 
         rospy.init_node(f'robot_{index}_model_safe')
 
-        robot_env = RobotEnv(index)
+        # Check localization mode
+        use_pure_ukf = rospy.get_param('~use_pure_ukf', False)
+        use_cartographer = rospy.get_param('~use_cartographer', False)
+
+        if use_pure_ukf:
+            rospy.loginfo("="*60)
+            rospy.loginfo("PURE UKF MODE: 100% UKF odometry (no AMCL/Cartographer)")
+            rospy.loginfo("="*60)
+        elif use_cartographer:
+            rospy.loginfo("="*60)
+            rospy.loginfo("CARTOGRAPHER MODE: Cartographer for ground truth pose")
+            rospy.loginfo("="*60)
+        else:
+            rospy.loginfo("="*60)
+            rospy.loginfo("AMCL MODE: AMCL for ground truth pose")
+            rospy.loginfo("="*60)
+
+        robot_env = RobotEnv(index, use_pure_ukf=use_pure_ukf, use_cartographer=use_cartographer)
         model = RunModelSafe(robot_env)
 
         rospy.loginfo("="*60)

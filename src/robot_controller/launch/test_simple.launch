@@ -1,0 +1,41 @@
+<launch>
+    <!--
+    SIMPLE TEST - Chỉ Robot Controller + Teleop
+    Chạy trên Master PC, ESP32 cắm USB trực tiếp
+
+    Usage:
+    roslaunch robot_controller test_simple.launch
+    -->
+
+    <arg name="robot_id" default="0"/>
+    <arg name="robot_namespace" default="/robot_$(arg robot_id)"/>
+    <arg name="robot_port" default="/dev/ttyUSB0"/>  <!-- Thay nếu cần -->
+
+    <!-- ============================================== -->
+    <!-- ROBOT CONTROL - Giao tiếp với ESP32 -->
+    <!-- Dùng test script trực tiếp, không cần service -->
+    <!-- ============================================== -->
+
+    <node pkg="robot_controller" type="test_robot_direct.py" name="motor_controller"
+          output="screen">
+        <param name="port" value="$(arg robot_port)"/>
+    </node>
+
+    <!-- ============================================== -->
+    <!-- TELEOP - Điều khiển bằng bàn phím -->
+    <!-- ============================================== -->
+
+    <!-- <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py"
+          name="teleop_twist_keyboard" output="screen">
+        <remap from="cmd_vel" to="$(arg robot_namespace)/cmd_vel"/>
+    </node> -->
+
+    <!-- ============================================== -->
+    <!-- MONITOR - Xem odometry -->
+    <!-- ============================================== -->
+
+    <!-- Echo velocity để xem có giựt không (DISABLED - gây spam console) -->
+    <!-- <node pkg="rostopic" type="rostopic" name="echo_velocity"
+          args="echo /robot_0/odom/twist/twist/linear/x -p" output="screen"/> -->
+
+</launch>

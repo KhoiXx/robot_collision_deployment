@@ -38,7 +38,7 @@ options = {
 -- MAP BUILDER (OPTIMIZED for Jetson Nano)
 -- ============================================================================
 MAP_BUILDER.use_trajectory_builder_2d = true
-MAP_BUILDER.num_background_threads = 1  -- Giảm background threads (tránh optimization)
+MAP_BUILDER.num_background_threads = 2  -- Giảm background threads (tránh optimization)
 
 -- ============================================================================
 -- TRAJECTORY BUILDER 2D (SLAM Parameters)
@@ -63,7 +63,7 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 20.0     -- GIẢM
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 60.0        -- GIẢM từ 100.0 về 60.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = false
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 12  -- GIẢM từ 20
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 4          -- Jetson 4 cores, dùng 2
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 2          -- Jetson 4 cores, dùng 2
 
 -- Submaps (INCREASED for better coverage all directions)
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 120       -- TĂNG từ 90 → 120 (submap lớn hơn, bao phủ mọi hướng)
@@ -77,36 +77,36 @@ TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05  -- 5cm resoluti
 POSE_GRAPH.optimize_every_n_nodes = 0                     -- TẮT optimization trong lúc map
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.0       -- CRITICAL FIX: TẮT hẳn constraint builder (0.3 → 0.0)!
 POSE_GRAPH.constraint_builder.max_constraint_distance = 10.
-POSE_GRAPH.constraint_builder.min_score = 0.99           -- Tăng lên 0.99 (không match được)
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.99  -- Tăng lên 0.99
+-- POSE_GRAPH.constraint_builder.min_score = 0.99           -- Tăng lên 0.99 (không match được)
+-- POSE_GRAPH.constraint_builder.global_localization_min_score = 0.99  -- Tăng lên 0.99
 
--- Fast correlative scan matcher (for loop closure) - TIGHTENED
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 5.  -- GIẢM từ 7 → 5m
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(15.)  -- CRITICAL: GIẢM từ 30° → 15°!
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.branch_and_bound_depth = 7
+-- -- Fast correlative scan matcher (for loop closure) - TIGHTENED
+-- POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 5.  -- GIẢM từ 7 → 5m
+-- POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(15.)  -- CRITICAL: GIẢM từ 30° → 15°!
+-- POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.branch_and_bound_depth = 7
 
--- Ceres scan matcher (for loop closure refinement) - TIGHTENED rotation
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.occupied_space_weight = 20.
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.translation_weight = 10.
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.rotation_weight = 40.  -- CRITICAL: TĂNG từ 1.0 → 40.0 (phạt nặng rotation error!)
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = true
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10  -- GIẢM
-POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 2
+-- -- Ceres scan matcher (for loop closure refinement) - TIGHTENED rotation
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.occupied_space_weight = 20.
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.translation_weight = 10.
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.rotation_weight = 40.  -- CRITICAL: TĂNG từ 1.0 → 40.0 (phạt nặng rotation error!)
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = true
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 10  -- GIẢM
+-- POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_threads = 2
 
--- Optimization problem - COMPLETELY DISABLED!
-POSE_GRAPH.optimization_problem.huber_scale = 1e1
-POSE_GRAPH.optimization_problem.acceleration_weight = 1e3
-POSE_GRAPH.optimization_problem.rotation_weight = 5e5
-POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e5
-POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 2e5
-POSE_GRAPH.optimization_problem.odometry_translation_weight = 1e5
-POSE_GRAPH.optimization_problem.odometry_rotation_weight = 3e5
-POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 1e1
-POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 1e3
-POSE_GRAPH.optimization_problem.log_solver_summary = false
-POSE_GRAPH.optimization_problem.ceres_solver_options.use_nonmonotonic_steps = false
-POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 1  -- Tối thiểu (không được = 0!)
-POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 2
+-- -- Optimization problem - COMPLETELY DISABLED!
+-- POSE_GRAPH.optimization_problem.huber_scale = 1e1
+-- POSE_GRAPH.optimization_problem.acceleration_weight = 1e3
+-- POSE_GRAPH.optimization_problem.rotation_weight = 5e5
+-- POSE_GRAPH.optimization_problem.local_slam_pose_translation_weight = 1e5
+-- POSE_GRAPH.optimization_problem.local_slam_pose_rotation_weight = 2e5
+-- POSE_GRAPH.optimization_problem.odometry_translation_weight = 1e5
+-- POSE_GRAPH.optimization_problem.odometry_rotation_weight = 3e5
+-- POSE_GRAPH.optimization_problem.fixed_frame_pose_translation_weight = 1e1
+-- POSE_GRAPH.optimization_problem.fixed_frame_pose_rotation_weight = 1e3
+-- POSE_GRAPH.optimization_problem.log_solver_summary = false
+-- POSE_GRAPH.optimization_problem.ceres_solver_options.use_nonmonotonic_steps = false
+-- POSE_GRAPH.optimization_problem.ceres_solver_options.max_num_iterations = 1  -- Tối thiểu (không được = 0!)
+-- POSE_GRAPH.optimization_problem.ceres_solver_options.num_threads = 2
 
 -- ============================================================================
 -- NOTES
