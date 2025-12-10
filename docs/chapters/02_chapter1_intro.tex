@@ -33,13 +33,11 @@ Mục tiêu chính của luận văn là nghiên cứu và phát triển thuật
 
     \item Huấn luyện mô hình neural network có khả năng điều khiển robots tránh va chạm trong môi trường mô phỏng.
 
-    \item Đạt tỷ lệ thành công tối thiểu 75%.
-
     \item Đề xuất các cải tiến về learning rate scheduling, value clipping và policy để đáp ứng với thực nghiệm.
 
     \item Thiết kế phần cứng robot prototype với cảm biến LiDAR, Jetson và Arduino đơn giản và chi phí thấp.
 
-    \item Triển khai và kiểm nghiệm thực tế mô hình trên 2 robot trong thực nghiệm.
+    \item Triển khai và kiểm nghiệm thực tế mô hình trên robot trong thực nghiệm.
 \end{enumerate}
 
 %% ============================================================================
@@ -57,7 +55,7 @@ Mục tiêu chính của luận văn là nghiên cứu và phát triển thuật
     \item \textbf{Kiểu robot:} Nonholonomic robots (robot không toàn hướng) di chuyển trên mặt phẳng 2D
     \item \textbf{Cảm biến:} LiDAR $360^\circ$ với độ phân giải $0.8^\circ$
     \item \textbf{Hành động:} Điều khiển vận tốc tuyến tính $v$ và vận tốc góc $\omega$
-    \item \textbf{Số lượng:} 44-58 robots hoạt động đồng thời trong mô phỏng; 2 robot trong thực nghiệm
+    \item \textbf{Số lượng:} 44 robots hoạt động đồng thời trong mô phỏng; 2 robot trong thực nghiệm
 \end{itemize}
 
 \subsection{Phạm vi nghiên cứu}
@@ -72,10 +70,10 @@ Luận văn tập trung vào các khía cạnh sau:
     \item Tuning PID ổn định điều khiển robot thực nghiệm
     \item Triển khai được model huấn luyện từ mô phỏng vào robot thực nghiệm
     \item Sensor fusing để robot có thể hoạt động và xác định chính xác vị trí của nó trong môi trường với các cảm biến giá rẻ
-    \item Mục tiêu: Di chuyển từ vị trí xuất phát đến đích mà không va chạm
+    \item Mục tiêu: Đạt tỉ lệ thành công robot di chuyển từ vị trí xuất phát đến đích mà không va chạm trên 80\%
 \end{itemize}
 
-\textbf{Ngoài phạm vi:} Chướng ngại vật động, môi trường 3D, multi-task learning.
+\textbf{Ngoài phạm vi:} Môi trường 3D, multi-task learning, xác định vị trí chính xác robot.
 
 %% ============================================================================
 %% Section 1.4: Ý nghĩa khoa học và thực tiễn
@@ -89,11 +87,12 @@ Luận văn tập trung vào các khía cạnh sau:
 Luận văn đóng góp vào lĩnh vực nghiên cứu đa robot và học tăng cường thông qua:
 
 \begin{itemize}
+    \item Đánh giá tính ứng dụng của mô hình học tăng cường trong điều khiển hệ robot phân tán 
     \item Đề xuất các cải tiến về thuật toán huấn luyện PPO:
     \begin{itemize}
         \item \textit{Adaptive Learning Rate Scheduler}: Duy trì learning rate khi performance cải thiện
         \item \textit{Value Clipping}: Giảm instability trong quá trình huấn luyện
-        \item \textit{Separate Optimizers}: Sử dụng learning rate khác nhau cho actor và critic (tỷ lệ 1:15)
+        \item \textit{Separate Optimizers}: Sử dụng learning rate khác nhau cho actor và critic
         \item \textit{Learning Rate Warmup}: Tăng dần learning rate trong giai đoạn đầu
     \end{itemize}
 

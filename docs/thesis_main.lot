@@ -5,8 +5,40 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces So sánh các phương pháp tránh va chạm truyền thống\relax }}{4}{table.caption.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {2.2}{\ignorespaces So sánh các thuật toán tối ưu\relax }}{13}{table.caption.9}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {2.3}{\ignorespaces So sánh PPO-Clip và PPO-Penalty\relax }}{19}{table.caption.13}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {2.4}{\ignorespaces So sánh UKF và EKF\relax }}{26}{table.caption.14}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters Stage 1 (20 robots - 74\% success)\relax }}{35}{table.caption.19}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameters Stage 2 (58 robots - 88\% test success)\relax }}{35}{table.caption.20}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.3}{\ignorespaces Bảng Routh-Hurwitz cho hệ PID bậc 3\relax }}{39}{table.caption.22}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{43}{table.caption.23}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{46}{table.caption.25}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{46}{table.caption.26}%
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.1}{\ignorespaces Metrics huấn luyện Stage 1 qua các mốc chính\relax }}{50}{table.caption.29}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.2}{\ignorespaces Metrics huấn luyện Stage 2 qua các mốc chính\relax }}{52}{table.caption.32}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.3}{\ignorespaces Kết quả Circle Test theo số lượng robots\relax }}{54}{table.caption.35}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.4}{\ignorespaces Mối quan hệ giữa khoảng cách inter-robot và success rate\relax }}{54}{table.caption.36}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả với bài báo gốc CADRL\relax }}{54}{table.caption.37}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.6}{\ignorespaces Kết quả thực nghiệm trên robot thực tế (TODO: Điền sau)\relax }}{55}{table.caption.38}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }

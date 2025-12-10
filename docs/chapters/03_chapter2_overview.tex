@@ -6,15 +6,12 @@
 \chapter{TỔNG QUAN}
 \label{chap:overview}
 
-% Chapter introduction
-Chương này trình bày tổng quan về các nghiên cứu liên quan đến hệ đa robot, các phương pháp tránh va chạm từ truyền thống đến hiện đại, các phương pháp dựa trên học sâu, phương pháp của Long et al. 2018, cơ sở lý thuyết về học tăng cường và thuật toán PPO, và các cơ sở lý thuyết cần thiết cho triển khai robot thực tế bao gồm điều khiển PID, UKF sensor fusion, và GMapping SLAM.
-
 \section{Giới thiệu về hệ đa robot}
 \label{sec:multi_robot_intro}
 
 Hệ đa robot (Multi-Robot Systems - MRS) là hệ thống bao gồm nhiều robot hoạt động đồng thời trong cùng một môi trường để thực hiện một hoặc nhiều nhiệm vụ chung. Hệ đa robot có thể được phân loại dựa trên mức độ phối hợp giữa các robot: từ hoàn toàn độc lập (independent) đến phối hợp chặt chẽ (tightly coordinated), và dựa trên kiến trúc điều khiển: tập trung (centralized) hoặc phân tán (decentralized).
 
-Trong những năm gần đây, hệ đa robot đã được ứng dụng rộng rãi trong nhiều lĩnh vực thực tế. Tại các kho hàng tự động như Amazon Fulfillment Centers, hàng trăm robot di chuyển đồng thời để vận chuyển hàng hóa, giúp tăng hiệu suất và giảm chi phí nhân công. Trong sản xuất công nghiệp, các robot di động (Automated Guided Vehicles - AGV) phối hợp vận chuyển nguyên liệu và sản phẩm giữa các trạm làm việc. Hệ đa robot cũng được ứng dụng trong logistics, nông nghiệp thông minh, cứu hộ thảm họa, và thăm dò không gian.
+Trong những năm gần đây, hệ đa robot đã được ứng dụng rộng rãi trong nhiều lĩnh vực thực tế. Tại các kho hàng tự động như Amazon Centers, hàng trăm robot di chuyển đồng thời để vận chuyển hàng hóa, giúp tăng hiệu suất và giảm chi phí nhân công. Trong sản xuất công nghiệp, các robot di động (Automated Guided Vehicles - AGV) phối hợp vận chuyển nguyên liệu và sản phẩm giữa các trạm làm việc. Hệ đa robot cũng được ứng dụng trong logistics, nông nghiệp thông minh, cứu hộ thảm họa, và thăm dò không gian.
 
 Một trong những thách thức chính trong điều khiển hệ đa robot là vấn đề tránh va chạm (collision avoidance). Khi số lượng robot tăng lên, không gian hoạt động trở nên chật hẹp và xác suất va chạm giữa các robot hoặc với chướng ngại vật tăng cao. Điều này đòi hỏi mỗi robot phải có khả năng cảm nhận môi trường xung quanh, dự đoán chuyển động của các robot khác, và điều chỉnh quỹ đạo của mình để tránh va chạm trong khi vẫn đạt được mục tiêu đề ra. Vấn đề trở nên phức tạp hơn khi môi trường có chướng ngại vật động, không gian hạn chế, hoặc yêu cầu thời gian phản ứng nhanh.
 
@@ -80,11 +77,16 @@ Bài báo của Long et al. \cite{long2018towards} đề xuất phương pháp �
 
 Bài toán được công thức hóa như một Partially Observable Markov Decision Process (POMDP) cho mỗi robot. Điểm khác biệt quan trọng so với các phương pháp trước (ORCA, GA3C-CADRL) là không giả định "perfect sensing" - mỗi robot chỉ quan sát được môi trường xung quanh từ sensor của chính nó, không biết chính xác vị trí và ý định của robots khác.
 
-\textbf{Observation space:} Mỗi robot quan sát $\mathbf{o}^t = [\mathbf{o}_z^t, \mathbf{o}_g^t, \mathbf{o}_v^t]$ gồm: (1) Laser scan 180° với 512 readings từ 3 frames liên tiếp, (2) Vị trí tương đối của goal (khoảng cách và góc), (3) Vận tốc hiện tại (linear và angular).
+\textbf{Observation space:} Mỗi robot quan sát $\mathbf{o}^t = [\mathbf{o}_z^t, \mathbf{o}_g^t, \mathbf{o}_v^t]$ gồm: 
+\begin{itemize}
+    \item Laser scan 180° với 512 beams (tia) từ 3 frames liên tiếp
+    \item Vị trí tương đối của goal (khoảng cách và góc)
+    \item Vận tốc hiện tại (linear và angular).
+\end{itemize}
 
 \textbf{Action space:} Hành động là vận tốc $\mathbf{a}^t = [v^t, w^t]$ với $v^t \in (0, 1.0)$ m/s (không cho phép lùi) và $w^t \in (-1.0, 1.0)$ rad/s, được sample từ stochastic policy $\pi_\theta$ chia sẻ bởi tất cả robots.
 
-\textbf{Objective:} Minimize thời gian đến đích trung bình của tất cả robots trong khi đảm bảo không va chạm với nhau ($\|\mathbf{p}_t^i - \mathbf{p}_t^j\| > 2R$) và với vật cản.
+\textbf{Objective (Mục tiêu):} Minimize thời gian đến đích trung bình của tất cả robots trong khi đảm bảo không va chạm với nhau ($\|\mathbf{p}_t^i - \mathbf{p}_t^j\| > 2R$) và với vật cản.
 
 \subsection{Hàm reward}
 \label{subsec:long_reward}
@@ -92,7 +94,7 @@ Bài toán được công thức hóa như một Partially Observable Markov Dec
 Reward function gồm ba thành phần: $r_t^i = (^g r)_t^i + (^c r)_t^i + (^w r)_t^i$
 
 \begin{itemize}
-\item \textbf{Goal reward}: $r_{\text{arrival}} = +15$ khi đến đích ($\|\mathbf{p}_t^i - \mathbf{g}_i\| < 0.1$); trong khi di chuyển, reward $\omega_g (\|\mathbf{p}_{t-1}^i - \mathbf{g}_i\| - \|\mathbf{p}_t^i - \mathbf{g}_i\|)$ với $\omega_g = 2.5$ tỷ lệ với khoảng cách tiến gần goal. Dense reward này giúp học nhanh hơn sparse reward.
+\item \textbf{Goal reward}: $r_{\text{arrival}} = +15$ khi đến đích ($\|\mathbf{p}_t^i - \mathbf{g}_i\| < 0.1$); trong khi di chuyển, reward $\omega_g (\|\mathbf{p}_{t-1}^i - \mathbf{g}_i\| - \|\mathbf{p}_t^i - \mathbf{g}_i\|)$ với $\omega_g = 2.5$ tỷ lệ với khoảng cách tiến gần goal.
 
 \item \textbf{Collision penalty}: $r_{\text{collision}} = -15$ khi va chạm với robot khác ($\|\mathbf{p}_t^i - \mathbf{p}_t^j\| < 2R$) hoặc vật cản. Giá trị tuyệt đối bằng arrival reward để cân bằng giữa đến đích nhanh và tránh va chạm.
 
@@ -102,7 +104,7 @@ Reward function gồm ba thành phần: $r_t^i = (^g r)_t^i + (^c r)_t^i + (^w r
 \subsection{Kiến trúc mạng nơ-ron}
 \label{subsec:long_architecture}
 
-Policy network $\pi_\theta$ ánh xạ trực tiếp từ raw sensor observation sang steering command, gồm 4 hidden layers:
+Policy network $\pi_\theta$ ánh xạ trực tiếp từ dữ liệu quan sát gốc của cảm biến (raw sensor observation) sang tín hiệu điều khiển (steering command), gồm 4 hidden layers:
 
 \textbf{Layers 1-2 (Conv1D):} Xử lý laser scan với 2 lớp tích chập 1D:
 \begin{itemize}
@@ -126,41 +128,40 @@ Hai lớp này trích xuất đặc trưng không gian từ 1536 laser readings 
 \begin{equation}
 \mathbf{a}^t \sim \pi_\theta(\mathbf{a}^t | \mathbf{o}^t)
 \end{equation}
-chỉ dựa vào observation riêng, không cần communication (inference ~1.3ms GPU, ~3ms CPU).
+chỉ dựa vào observation riêng, không cần giao tiếp giữa các robot
 
-\textbf{PPO objective:} Thuật toán PPO sử dụng objective với adaptive KL penalty:
+\textbf{PPO objective:} huật toán PPO sử dụng hàm mục tiêu có thêm một thành phần phạt KL (adaptive KL penalty). Hàm mục tiêu được viết như sau:
 \begin{equation}
 L^{PPO}(\theta) = \mathbb{E}_t \left[ \frac{\pi_\theta(\mathbf{a}_t | \mathbf{o}_t)}{\pi_{\text{old}}(\mathbf{a}_t | \mathbf{o}_t)} \hat{A}_t \right] - \beta \text{KL}[\pi_{\text{old}} \| \pi_\theta]
 \end{equation}
-trong đó $\hat{A}_t$ là advantage estimate, $\beta$ được điều chỉnh tự động để cân bằng learning speed và stability.
+trong đó $\hat{A}_t$ là ước lượng độ lợi (advantage estimate), $\beta$ được điều chỉnh tự động để cân bằng tốc độ học và độ ổn định.
 
 \textbf{Advantage estimation:} Sử dụng GAE với $\lambda = 0.95$, $\gamma = 0.99$:
 \begin{equation}
 \hat{A}_t = \sum_{l=0}^{T} (\gamma \lambda)^l \delta_t, \quad \delta_t = r_t + \gamma V_\phi(\mathbf{s}_{t+1}) - V_\phi(\mathbf{s}_t)
 \end{equation}
 
-\textbf{Hyperparameters:} Policy update 20 epochs, learning rate $5 \times 10^{-5}$ (Stage 1) hoặc $2 \times 10^{-5}$ (Stage 2). Value update 10 epochs, learning rate $1 \times 10^{-3}$. Adam optimizer.
 
 \subsection{Môi trường và kịch bản huấn luyện}
 \label{subsec:long_environment}
 
-\textbf{Môi trường simulation:} Sử dụng Stage mobile robot simulator với 7 scenarios đa dạng: (1-3, 5-6) Môi trường có walls/corridors với start/goal areas cố định, (4) Circle scenario với robots đổi chỗ qua tâm, (7) Random scenario với vị trí robots và obstacles ngẫu nhiên. Tất cả robots di chuyển đồng thời (parallel) để tạo realistic interactions.
+\textbf{Môi trường simulation:} Sử dụng thư viện mô phỏng Stage với 2 môi trường training tương ứng với 2 giai đoạn khác nhau. Giai đoạn 1: môi trường đơn giản, ít vật cản. Giai đoạn 2: 7 scenarios đa dạng: (1-3, 5-6) Môi trường có tường/vật cản với điểm bắt đầu/kết thúc cố định, (4) Trường hợp vòng tròn với robots đổi chỗ qua tâm, (7) Random scenario với vị trí robots và obstacles ngẫu nhiên. Tất cả robots di chuyển đồng thời (parallel).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.9\textwidth]{figures/04_Fig8_training_scenarios.jpg}
-    \caption{7 tình huống huấn luyện đa dạng với độ phức tạp tăng dần (Long et al. 2018)}
+    \caption{7 scenarios trong huấn luyện}
     \label{fig:training_scenarios}
 \end{figure}
 
-\textbf{Cấu hình sensor:} Laser scanner 180° mount ở phía trước robot, range 4m, 512 readings/scan. Observations được normalize (mean=0, std=1) trên toàn bộ training data để cải thiện stability và convergence.
+\textbf{Cấu hình sensor:} Laser scanner 180° gắn ở phía trước robot, range 4m, 512 tia/1 lần quét. Observations được normalize (mean=0, std=1) trên toàn bộ training data để cải thiện độ ổn định và hội tụ.
 
 \subsection{Chiến lược huấn luyện hai giai đoạn}
 \label{subsec:long_curriculum}
 
 Áp dụng curriculum learning \cite{bengio2009curriculum} với 2 stages để tránh stuck ở local optima:
 
-\textbf{Stage 1 - Foundation learning:} Huấn luyện 20 robots trên random scenario không có obstacles (~6 hours, 300 iterations). Mục tiêu: học basic collision avoidance và goal-reaching. Kết thúc khi success rate $> 0.9$.
+\textbf{Stage 1 - Foundation learning:} Huấn luyện24 robots trên random scenario không có obstacles (~6 hours, 300 iterations). Mục tiêu: học basic collision avoidance và goal-reaching. Kết thúc khi success rate $> 0.9$.
 
 \textbf{Stage 2 - Transfer learning:} Tiếp tục huấn luyện 58 robots trên tất cả 7 scenarios phức tạp (~6 hours, 300 iterations) với learning rate thấp hơn ($2 \times 10^{-5}$). Khởi tạo từ Stage 1 weights. Mục tiêu: generalize cho large-scale, obstacles, diverse environments.
 
@@ -1086,58 +1087,242 @@ Implementation & Cần tính Jacobian (phức tạp) & Không cần Jacobian (đ
 \end{tabular}
 \end{table}
 
-\subsection{GMapping và SLAM}
-\label{subsec:gmapping_slam}
+\subsection{Cartographer và SLAM}
+\label{subsec:cartographer_slam}
 
-Simultaneous Localization and Mapping (SLAM) \cite{thrun2005probabilistic} là bài toán robot tự xây dựng bản đồ môi trường đồng thời ước lượng vị trí của mình trên bản đồ đó. Đây là bài toán phụ thuộc lẫn nhau (interdependent problem): localization đòi hỏi bản đồ chính xác, trong khi mapping lại cần biết vị trí chính xác của robot.
+\subsubsection{Bài toán SLAM}
 
-\textbf{GMapping} \cite{grisetti2007gmapping} là thuật toán SLAM 2D phổ biến sử dụng Rao-Blackwellized Particle Filter (RBPF). Ý tưởng chính:
-\begin{itemize}
-\item Mỗi particle đại diện cho một giả thuyết về quỹ đạo robot $x_{1:t}$
-\item Mỗi particle có bản đồ riêng $m^{[i]}$ được xây dựng từ quỹ đạo đó
-\item Particles được weighted dựa trên khả năng (likelihood) của measurements
-\item Resampling loại bỏ particles có weight thấp
-\end{itemize}
+SLAM (Simultaneous Localization and Mapping) \cite{thrun2005probabilistic} là bài toán then chốt trong robot tự hành, yêu cầu robot đồng thời xác định vị trí của chính nó và xây dựng bản đồ môi trường chưa biết. Về mặt toán học, bài toán SLAM được biểu diễn như tìm kiếm phân phối xác suất:
 
-\textbf{Occupancy grid map:} Bản đồ được biểu diễn dưới dạng lưới (grid), mỗi ô có giá trị xác suất occupied $p(m_{x,y})$:
-\begin{itemize}
-\item $p = 0$: Free space (màu trắng)
-\item $p = 0.5$: Unknown (màu xám)
-\item $p = 1$: Occupied (màu đen)
-\end{itemize}
-
-Từ dữ liệu LiDAR, GMapping sử dụng \textbf{log-odds representation} để update map hiệu quả:
 \begin{equation}
-l(m_{x,y}) = \log \frac{p(m_{x,y})}{1 - p(m_{x,y})}
+p(\mathbf{x}_{1:t}, \mathbf{m} \mid \mathbf{z}_{1:t}, \mathbf{u}_{1:t})
+\label{eq:slam_problem}
 \end{equation}
 
-Khi có measurement mới $z_t$:
+trong đó:
+\begin{itemize}
+    \item $\mathbf{x}_{1:t} = \{\mathbf{x}_1, \mathbf{x}_2, ..., \mathbf{x}_t\}$: chuỗi pose (vị trí và hướng) của robot qua thời gian
+    \item $\mathbf{m}$: bản đồ môi trường
+    \item $\mathbf{z}_{1:t}$: dữ liệu cảm biến (laser scans, camera)
+    \item $\mathbf{u}_{1:t}$: dữ liệu điều khiển (odometry)
+\end{itemize}
+
+\subsubsection{Google Cartographer}
+
+Cartographer \cite{hess2016cartographer} là thư viện SLAM mã nguồn mở được Google phát triển, tối ưu cho việc chạy real-time trên nền tảng nhúng. Cartographer sử dụng phương pháp \textbf{graph-based SLAM} với kiến trúc submap, khác biệt so với các phương pháp truyền thống:
+
+\begin{itemize}
+    \item \textbf{GMapping}: dựa trên particle filter, tốn nhiều tài nguyên tính toán khi môi trường lớn
+    \item \textbf{Cartographer}: dựa trên pose graph optimization và submap-based matching, mở rộng tốt hơn, phát hiện loop closure hiệu quả, phù hợp với phần cứng giới hạn (Jetson Nano)
+\end{itemize}
+
+\subsubsection{Nguyên lý hoạt động}
+
+Cartographer hoạt động dựa trên nguyên lý \textbf{chia nhỏ và tối ưu hóa từng phần}:
+
+\begin{enumerate}
+    \item \textbf{Phân chia không gian thành submaps}: Thay vì xây dựng một bản đồ toàn cục lớn, môi trường được chia thành nhiều submaps nhỏ chồng lấp nhau
+
+    \item \textbf{Local optimization}: Trong mỗi submap, laser scans được căn chỉnh (scan matching) để tạo bản đồ cục bộ có độ chính xác cao
+
+    \item \textbf{Global optimization}: Khi có nhiều submaps, hệ thống tối ưu hóa mối quan hệ giữa các submaps thông qua pose graph optimization
+
+    \item \textbf{Loop closure}: Khi robot quay lại vị trí cũ, hệ thống phát hiện và điều chỉnh lại toàn bộ bản đồ để loại bỏ sai số tích lũy
+\end{enumerate}
+
+Quá trình scan matching trong Cartographer tối ưu hóa hàm chi phí:
+
 \begin{equation}
-l(m_{x,y} | z_{1:t}) = l(m_{x,y} | z_{1:t-1}) + l(m_{x,y} | z_t)
+\mathbf{x}^* = \arg\min_{\mathbf{x}} \left( \sum_{k} (1 - M(\mathbf{T}_{\mathbf{x}} \mathbf{h}_k))^2 + \lambda \|\mathbf{x} - \mathbf{x}_{odom}\|^2 \right)
+\label{eq:scan_matching}
 \end{equation}
 
-\textbf{Scan matching:} GMapping sử dụng scan matching để cải thiện ước lượng pose trước khi update map. Scan matching tìm sự dịch chuyển và rotation tốt nhất để align LiDAR scan hiện tại với map đã có.
+trong đó $M$ là occupancy grid map, $\mathbf{h}_k$ là các điểm laser scan, $\mathbf{T}_{\mathbf{x}}$ là phép biến đổi pose, và $\mathbf{x}_{odom}$ là ước lượng từ odometry.
 
-\textbf{Parameters chính của GMapping:}
+\subsubsection{Kiến trúc hệ thống}
+
+Cartographer gồm hai hệ thống con hoạt động song song (Hình \ref{fig:cartographer_architecture_ch2}):
+
+\textbf{Local SLAM (Frontend - Real-time):}
 \begin{itemize}
-\item Number of particles: 30-100 (nhiều hơn $\rightarrow$ chính xác hơn nhưng chậm hơn)
-\item Map resolution: 0.01-0.05 m/pixel (resolution cao $\rightarrow$ chi tiết hơn nhưng tốn memory)
-\item Minimum score: Threshold để accept scan matching
-\item Angular/linear update thresholds: Robot phải di chuyển đủ xa mới update map
+    \item Nhận dữ liệu từ LiDAR, odometry, và IMU (tùy chọn)
+    \item Thực hiện scan matching để ước lượng pose hiện tại
+    \item Xây dựng submaps cục bộ có tính nhất quán cao
+    \item Chạy real-time (~10-40 Hz) để đảm bảo phản hồi tức thì
 \end{itemize}
 
-\textbf{Ứng dụng trong navigation:}
+\textbf{Global SLAM (Backend - Background):}
 \begin{itemize}
-\item \textbf{Localization:} Sau khi có map từ GMapping, sử dụng AMCL (Adaptive Monte Carlo Localization) để localize robot trên map đã biết
-\item \textbf{Path planning:} Sử dụng global planner (Dijkstra, A*) trên map để tìm đường từ vị trí hiện tại đến mục tiêu
-\item \textbf{Obstacle avoidance:} Sử dụng local planner (DWA, TEB) để tránh chướng ngại vật động
+    \item Quản lý pose graph chứa tất cả submaps
+    \item Phát hiện loop closure khi robot quay lại vị trí cũ
+    \item Tối ưu hóa toàn cục để giảm sai số tích lũy
+    \item Chạy nền không ảnh hưởng đến Local SLAM
 \end{itemize}
 
-\textbf{Integration với ROS:} GMapping được tích hợp sẵn trong ROS navigation stack:
+\begin{figure}[htbp]
+\centering
+\resizebox{0.95\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, draw, minimum width=2.5cm, minimum height=0.9cm, align=center, font=\small},
+    sensor/.style={box, fill=blue!15, thick},
+    frontend/.style={box, fill=orange!25, thick},
+    backend/.style={box, fill=green!25, thick},
+    data/.style={box, fill=gray!20, thick},
+    output/.style={box, fill=red!25, thick},
+    arrow/.style={->, >=stealth, very thick}
+]
+
+% Input sensors (left column)
+\node[sensor] (lidar) {LiDAR};
+\node[sensor, below=0.5cm of lidar] (odom) {Odometry};
+\node[sensor, below=0.4cm of odom] (imu) {IMU\\(optional)};
+
+% Frontend - Local SLAM (middle-left)
+\node[frontend, right=2cm of odom] (scan_match) {Scan Matching\\(Correlative + Ceres)};
+\node[data, above=0.8cm of scan_match] (current_submap) {Submap hiện tại};
+
+% Data structures (middle-right)
+\node[data, right=2.2cm of current_submap] (submaps) {Submaps\\(bản đồ cục bộ)};
+\node[data, below=0.8cm of submaps] (pose_graph) {Pose Graph};
+
+% Backend - Global SLAM (right)
+\node[backend, right=2.2cm of submaps] (optimization) {Pose Graph\\Optimization};
+\node[backend, below=0.8cm of optimization] (loop_closure) {Loop Closure\\Detection};
+
+% Output (far right)
+\node[output, right=1.8cm of optimization] (global_map) {Global Map\\(bản đồ toàn cục)};
+
+% Arrows - Sensor to Frontend
+\draw[arrow] (lidar.east) -- (scan_match.west);
+\draw[arrow] (odom.east) -- (scan_match.west);
+\draw[arrow] (imu.east) -- (scan_match.west);
+
+% Arrows - Frontend processing
+\draw[arrow] (scan_match.north) -- (current_submap.south);
+\draw[arrow] (current_submap.east) -- node[above, font=\scriptsize] {hoàn thiện} (submaps.west);
+
+% Arrows - Submaps to Pose Graph
+\draw[arrow] (pose_graph.east) -- (loop_closure.west);
+\draw[arrow] (submaps.south) -- (pose_graph.north);
+
+% Arrows - Backend processing
+\draw[arrow] (loop_closure.north) -- (optimization.south);
+\draw[arrow] (submaps.east) -- (optimization.west);
+
+% Arrows - Output
+\draw[arrow] (optimization.east) -- (global_map.west);
+
+% Section labels
+\node[above=0.15cm of lidar, font=\small\bfseries, fill=white] {Sensors};
+\node[above=0.15cm of scan_match, font=\small\bfseries, fill=white] {Local SLAM (Frontend)};
+% \node[above=0.15cm of pose_graph, font=\small\bfseries, fill=white] {Data Structures};
+\node[above=0.15cm of loop_closure, font=\small\bfseries, fill=white] {Global SLAM (Backend)};
+
+% Real-time vs Background indicators
+\node[below=0.3cm of scan_match, font=\scriptsize\itshape] {(real-time)};
+\node[below=0.3cm of loop_closure, font=\scriptsize\itshape] {(background)};
+
+\end{tikzpicture}
+}
+\caption{Kiến trúc thuật toán Cartographer SLAM với hai hệ thống con: Local SLAM (frontend) xử lý real-time và Global SLAM (backend) tối ưu hóa toàn cục}
+\label{fig:cartographer_architecture_ch2}
+\end{figure}
+
+\subsubsection{Quy trình mapping}
+
+Quy trình xây dựng bản đồ trong Cartographer diễn ra theo các bước:
+
+\begin{enumerate}
+    \item \textbf{Thu thập dữ liệu cảm biến}
+    \begin{itemize}
+        \item LiDAR cung cấp laser scans (điểm đám mây 2D/3D)
+        \item Odometry ước lượng chuyển động của robot
+        \item IMU (tùy chọn) cung cấp thông tin gia tốc và góc xoay
+    \end{itemize}
+
+    \item \textbf{Local SLAM xử lý real-time}
+    \begin{itemize}
+        \item Nhận scan mới từ LiDAR
+        \item Sử dụng odometry làm ước lượng ban đầu
+        \item Thực hiện scan matching với submap hiện tại
+        \item Cập nhật pose của robot và thêm scan vào submap
+    \end{itemize}
+
+    \item \textbf{Xây dựng submaps}
+    \begin{itemize}
+        \item Mỗi submap chứa khoảng 90-200 laser scans
+        \item Các submaps chồng lấp 50\% để đảm bảo tính liên tục
+        \item Khi submap hoàn thiện, nó được "đóng băng" và thêm vào pose graph
+    \end{itemize}
+
+    \item \textbf{Global SLAM tối ưu hóa nền}
+    \begin{itemize}
+        \item Phát hiện loop closure: so sánh submap hiện tại với các submaps cũ
+        \item Nếu phát hiện robot quay lại vị trí đã đi qua, tạo constraint mới
+        \item Chạy pose graph optimization để điều chỉnh vị trí tất cả submaps
+        \item Đảm bảo tính nhất quán toàn cục, loại bỏ drift tích lũy
+    \end{itemize}
+
+    \item \textbf{Xuất bản đồ toàn cục}
+    \begin{itemize}
+        \item Ghép tất cả submaps đã được tối ưu hóa
+        \item Tạo occupancy grid map hoàn chỉnh
+        \item Lưu file .pbstream (định dạng riêng) hoặc .pgm (ảnh)
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Các tham số quan trọng}
+
+Theo tài liệu chính thức của Cartographer \cite{hess2016cartographer}, các tham số quan trọng nhất để tinh chỉnh được chia thành ba nhóm chính:
+
+\textbf{1. Local SLAM - Chất lượng mapping (quan trọng nhất):}
+
+\textit{Ceres Scan Matcher} là thành phần cốt lõi của Cartographer, sử dụng thư viện \textbf{Ceres Solver} (một thư viện tối ưu hóa phi tuyến mạnh mẽ của Google) để căn chỉnh laser scan với submap hiện tại. Quá trình này giải bài toán tối ưu hóa phi tuyến (Equation \ref{eq:scan_matching}) để tìm pose tốt nhất của robot, cân bằng giữa hai yếu tố: (1) mức độ khớp giữa laser scan và bản đồ, và (2) mức độ tin cậy vào odometry. Hai trọng số \texttt{translation\_weight} và \texttt{rotation\_weight} điều chỉnh độ tin cậy này.
+
+Hai tham số này quyết định chất lượng scan matching và độ chính xác bản đồ:
+
 \begin{itemize}
-\item \texttt{gmapping} node: Nhận LiDAR data (\texttt{/scan}) và odometry (\texttt{/odom}), publish map (\texttt{/map})
-\item \texttt{map\_server}: Lưu và load map dạng .pgm và .yaml
-\item \texttt{move\_base}: Node điều phối global planner, local planner, và costmap
+    \item \texttt{ceres\_scan\_matcher.translation\_weight} (mặc định: 10):
+    \begin{itemize}
+        \item Độ tin cậy vào odometry trong quá trình tịnh tiến
+        \item Tăng khi odometry tốt, giảm khi odometry nhiễu
+        \item Giá trị khuyến nghị: 1e2 (100)
+    \end{itemize}
+
+    \item \texttt{ceres\_scan\_matcher.rotation\_weight} (mặc định: 40):
+    \begin{itemize}
+        \item Độ tin cậy vào odometry trong quá trình xoay
+        \item Tăng khi IMU/encoder tốt, giảm khi robot trượt nhiều
+        \item Giá trị khuyến nghị: 4e2 (400)
+    \end{itemize}
 \end{itemize}
 
+\textbf{Nguyên tắc}: Tăng weights khi tin tưởng odometry, giảm weights khi muốn scan matching tự do hơn.
+
+\textbf{2. Global SLAM - Tối ưu hóa hiệu năng:}
+
+Nhóm tham số này giảm độ trễ (latency) cho phần cứng yếu:
+
+\begin{itemize}
+    \item \texttt{optimize\_every\_n\_nodes}: Giảm xuống để optimization chạy thường xuyên hơn nhưng tốn tài nguyên (mặc định: 90)
+
+    \item \texttt{num\_background\_threads}: Tăng theo số lõi CPU (Jetson Nano: 2-4)
+
+    \item \texttt{constraint\_builder.sampling\_ratio}: Giảm để xử lý ít constraints hơn (mặc định: 0.3)
+
+    \item \texttt{global\_sampling\_ratio}: Giảm để giảm tải Global SLAM (mặc định: 0.003)
+
+    \item \texttt{voxel\_filter\_size}: Tăng để giảm số điểm cần xử lý (mặc định: 0.025m)
+\end{itemize}
+
+\textbf{3. Submap Configuration - Cân bằng chi tiết và tốc độ:}
+
+\begin{itemize}
+    \item \texttt{submaps.num\_range\_data}: Giảm để tạo submaps nhỏ hơn, xử lý nhanh hơn (mặc định: 90)
+
+    \item \texttt{submaps.grid\_options.resolution}: Tăng để giảm chi tiết bản đồ nhưng nhanh hơn (mặc định: 0.05m)
+
+    \item \texttt{max\_range}: Giảm nếu LiDAR nhiễu ở xa (mặc định: 25m cho RPLiDAR)
+\end{itemize}
 \vspace{1cm}

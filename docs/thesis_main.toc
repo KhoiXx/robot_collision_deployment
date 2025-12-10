@@ -1,15 +1,13 @@
 \boolfalse {citerequest}\boolfalse {citetracker}\boolfalse {pagetracker}\boolfalse {backtracker}\relax 
 \babel@toc {vietnamese}{}
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{LỜI CẢM ƠN}{i}{chapter*.1}%
+\contentsline {chapter}{LỜI CẢM ƠN}{}{chapter*.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{TÓM TẮT}{iii}{chapter*.2}%
+\contentsline {chapter}{TÓM TẮT}{}{chapter*.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{ABSTRACT}{v}{chapter*.3}%
+\contentsline {chapter}{LỜI CAM ĐOAN}{}{chapter*.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{LỜI CAM ĐOAN}{vii}{chapter*.4}%
-\defcounter {refsection}{0}\relax 
-\contentsline {chapter}{DANH MỤC KÝ HIỆU VÀ CHỮ VIẾT TẮT}{xv}{chapter*.8}%
+\contentsline {chapter}{DANH MỤC KÝ HIỆU VÀ CHỮ VIẾT TẮT}{}{chapter*.4}%
 \defcounter {refsection}{0}\relax 
 \contentsline {chapter}{\numberline {1}MỞ ĐẦU}{1}{chapter.1}%
 \defcounter {refsection}{0}\relax 
@@ -17,9 +15,9 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {1.2}Mục tiêu nghiên cứu}{1}{section.1.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {1.3}Đối tượng và phạm vi nghiên cứu}{2}{section.1.3}%
+\contentsline {section}{\numberline {1.3}Đối tượng và phạm vi nghiên cứu}{1}{section.1.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.3.1}Đối tượng nghiên cứu}{2}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.1}Đối tượng nghiên cứu}{1}{subsection.1.3.1}%
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {1.3.2}Phạm vi nghiên cứu}{2}{subsection.1.3.2}%
 \defcounter {refsection}{0}\relax 
@@ -27,52 +25,214 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {1.4.1}Ý nghĩa khoa học}{2}{subsection.1.4.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {1.4.2}Ý nghĩa thực tiễn}{3}{subsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.4.2}Ý nghĩa thực tiễn}{2}{subsection.1.4.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {2}TỔNG QUAN}{5}{chapter.2}%
+\contentsline {chapter}{\numberline {2}TỔNG QUAN}{3}{chapter.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.1}Phương pháp của Long et al.}{5}{section.2.1}%
+\contentsline {section}{\numberline {2.1}Giới thiệu về hệ đa robot}{3}{section.2.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.2}So sánh các phương pháp tránh va chạm}{5}{section.2.2}%
+\contentsline {section}{\numberline {2.2}Các phương pháp tránh va chạm truyền thống}{3}{section.2.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.3}Cơ sở lý thuyết}{5}{section.2.3}%
+\contentsline {section}{\numberline {2.3}Các phương pháp dựa trên học sâu}{4}{section.2.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.3.1}Reinforcement Learning}{5}{subsection.2.3.1}%
+\contentsline {section}{\numberline {2.4}Phương pháp PPO với hệ robot phi tập trung}{5}{section.2.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {2.3.2}Proximal Policy Optimization (PPO)}{5}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.4.1}Mô hình bài toán}{5}{subsection.2.4.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {2.4}Đánh giá tình hình nghiên cứu}{5}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.2}Hàm reward}{5}{subsection.2.4.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {3}PHƯƠNG PHÁP NGHIÊN CỨU}{7}{chapter.3}%
+\contentsline {subsection}{\numberline {2.4.3}Kiến trúc mạng nơ-ron}{5}{subsection.2.4.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.1}Môi trường mô phỏng}{7}{section.3.1}%
+\contentsline {subsection}{\numberline {2.4.4}Thuật toán huấn luyện}{6}{subsection.2.4.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.2}Kiến trúc mạng nơ-ron}{7}{section.3.2}%
+\contentsline {subsection}{\numberline {2.4.5}Môi trường và kịch bản huấn luyện}{6}{subsection.2.4.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.3}Cải tiến so với bài báo gốc}{7}{section.3.3}%
+\contentsline {subsection}{\numberline {2.4.6}Chiến lược huấn luyện hai giai đoạn}{7}{subsection.2.4.6}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.4}Quy trình huấn luyện}{7}{section.3.4}%
+\contentsline {section}{\numberline {2.5}Cơ sở lý thuyết}{7}{section.2.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.5}Thiết kế robot thực tế}{7}{section.3.5}%
+\contentsline {subsection}{\numberline {2.5.1}Các thuật toán tối ưu}{7}{subsection.2.5.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {4}KẾT QUẢ VÀ THẢO LUẬN}{9}{chapter.4}%
+\contentsline {subsubsection}{\numberline {2.5.1.1}Gradient Descent}{7}{subsubsection.2.5.1.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.1}Kết quả Stage 1}{9}{section.4.1}%
+\contentsline {subsubsection}{\numberline {2.5.1.2}Stochastic Gradient Descent (SGD)}{8}{subsubsection.2.5.1.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.2}Kết quả Stage 2}{9}{section.4.2}%
+\contentsline {subsubsection}{\numberline {2.5.1.3}Momentum-based Gradient Descent}{9}{subsubsection.2.5.1.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.3}So sánh với bài báo gốc}{9}{section.4.3}%
+\contentsline {subsubsection}{\numberline {2.5.1.4}RMSProp (Root Mean Square Propagation)}{11}{subsubsection.2.5.1.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.4}Phân tích các cải tiến}{9}{section.4.4}%
+\contentsline {subsubsection}{\numberline {2.5.1.5}Adam (Adaptive Moment Estimation)}{12}{subsubsection.2.5.1.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.5}Thảo luận}{9}{section.4.5}%
+\contentsline {subsection}{\numberline {2.5.2}Reinforcement Learning}{14}{subsection.2.5.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {5}KẾT LUẬN VÀ KIẾN NGHỊ}{11}{chapter.5}%
+\contentsline {subsection}{\numberline {2.5.3}Proximal Policy Optimization (PPO)}{15}{subsection.2.5.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.1}Tóm tắt kết quả đạt được}{11}{section.5.1}%
+\contentsline {subsubsection}{\numberline {2.5.3.1}Policy Gradient cơ bản}{15}{subsubsection.2.5.3.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Hạn chế của nghiên cứu}{11}{section.5.2}%
+\contentsline {subsubsection}{\numberline {2.5.3.2}Trust Region Policy Optimization (TRPO)}{16}{subsubsection.2.5.3.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Hướng nghiên cứu tiếp theo}{11}{section.5.3}%
+\contentsline {subsubsection}{\numberline {2.5.3.3}PPO-Clip: First-order Approximation}{17}{subsubsection.2.5.3.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Lời kết}{11}{section.5.4}%
+\contentsline {subsubsection}{\numberline {2.5.3.4}Value Function Clipping}{17}{subsubsection.2.5.3.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.3.5}Complete PPO Objective}{18}{subsubsection.2.5.3.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.3.6}PPO-Penalty: Alternative Formulation}{19}{subsubsection.2.5.3.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.3.7}PPO Hyperparameters}{19}{subsubsection.2.5.3.7}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.5.4}Kiến trúc mạng nơ-ron}{19}{subsection.2.5.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.4.1}Fully Connected Neural Networks}{20}{subsubsection.2.5.4.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.4.2}Convolutional Neural Networks (CNN)}{20}{subsubsection.2.5.4.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.4.3}Loss Functions}{21}{subsubsection.2.5.4.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.4.4}Backpropagation}{22}{subsubsection.2.5.4.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.4.5}Regularization Techniques}{23}{subsubsection.2.5.4.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.5.5}Điều khiển PID}{23}{subsection.2.5.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.5.6}UKF Sensor Fusion}{24}{subsection.2.5.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {2.5.7}Cartographer và SLAM}{26}{subsection.2.5.7}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.1}Bài toán SLAM}{26}{subsubsection.2.5.7.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.2}Google Cartographer}{26}{subsubsection.2.5.7.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.3}Nguyên lý hoạt động}{26}{subsubsection.2.5.7.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.4}Kiến trúc hệ thống}{27}{subsubsection.2.5.7.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.5}Quy trình mapping}{27}{subsubsection.2.5.7.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {2.5.7.6}Các tham số quan trọng}{28}{subsubsection.2.5.7.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {3}PHƯƠNG PHÁP NGHIÊN CỨU}{30}{chapter.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.1}Môi trường mô phỏng}{30}{section.3.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.1.1}Không gian quan sát}{30}{subsection.3.1.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.1.2}Không gian hành động}{30}{subsection.3.1.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.2}Thiết kế hàm reward}{30}{section.3.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.2.1}Terminal rewards}{31}{subsection.3.2.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.2.2}Step rewards}{31}{subsection.3.2.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.2.3}Điểm khác biệt so với bài báo gốc}{32}{subsection.3.2.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.3}Kiến trúc mạng nơ-ron}{32}{section.3.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.3.1}Encoder chung - Xử lý LiDAR}{32}{subsection.3.3.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.3.2}Mạng Actor - Sinh policy}{32}{subsection.3.3.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.3.3}Mạng Critic - Ước lượng giá trị}{33}{subsection.3.3.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.3.4}Các kỹ thuật cải tiến}{33}{subsection.3.3.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.4}Quy trình huấn luyện}{33}{section.3.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.4.1}Chiến lược huấn luyện 2 giai đoạn}{33}{subsection.3.4.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.4.2}Thuật toán PPO với GAE}{34}{subsection.3.4.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.4.3}Hyperparameters chi tiết}{35}{subsection.3.4.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.4.4}Các kỹ thuật cải tiến được áp dụng}{35}{subsection.3.4.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {3.4.4.1}Adaptive Learning Rate Scheduler}{36}{subsubsection.3.4.4.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {3.4.4.2}Asymmetric Critic/Actor Training}{36}{subsubsection.3.4.4.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {3.4.4.3}Aggressive Exploration Strategy}{36}{subsubsection.3.4.4.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {3.4.4.4}Value Function Clipping}{36}{subsubsection.3.4.4.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsubsection}{\numberline {3.4.4.5}Aggressive KL Early Stopping}{37}{subsubsection.3.4.4.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.5}Xây dựng robot thực tế}{37}{section.3.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.5.1}Thông số kỹ thuật}{37}{subsection.3.5.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.5.2}Kiến trúc phần mềm}{37}{subsection.3.5.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.6}Thiết kế PID controller và chứng minh ổn định}{38}{section.3.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.6.1}Mô hình động học differential drive robot}{38}{subsection.3.6.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.6.2}Thiết kế PID controller}{38}{subsection.3.6.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.6.3}Phân tích ổn định}{38}{subsection.3.6.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.6.4}Kết quả thực nghiệm}{40}{subsection.3.6.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.7}Thiết kế sensor fusion với UKF}{40}{section.3.7}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.7.1}Ý tưởng chính của UKF}{40}{subsection.3.7.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.7.2}Mô hình state và measurements}{40}{subsection.3.7.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.7.3}Thuật toán UKF - Các bước chính}{41}{subsection.3.7.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.7.4}So sánh với EKF và raw odometry}{41}{subsection.3.7.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.8}Triển khai Cartographer SLAM}{42}{section.3.8}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.8.1}Quy trình Mapping}{42}{subsection.3.8.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.8.2}Quá trình Tinh chỉnh Tham số}{42}{subsection.3.8.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.8.3}Quy trình Navigation/Localization}{43}{subsection.3.8.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.8.4}Công cụ Debug và Tinh chỉnh}{44}{subsection.3.8.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {3.9}Triển khai hệ robot hoàn chỉnh}{44}{section.3.9}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.1}Kiến trúc tổng thể}{44}{subsection.3.9.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.2}Cấu hình phần cứng}{44}{subsection.3.9.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.3}Cấu hình mạng ROS}{45}{subsection.3.9.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.4}Phân bổ các ROS nodes}{45}{subsection.3.9.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.5}Thiết kế phi tập trung mặc dù inference tập trung}{47}{subsection.3.9.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {3.9.6}Tóm tắt deployment}{47}{subsection.3.9.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {4}KẾT QUẢ VÀ THẢO LUẬN}{49}{chapter.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {4.1}Kết quả mô phỏng}{49}{section.4.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.1.1}Kết quả Stage 1 - Môi trường đơn giản}{49}{subsection.4.1.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.1.2}Kết quả Stage 2 - Môi trường phức tạp}{51}{subsection.4.1.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.1.3}So sánh và phân tích}{53}{subsection.4.1.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {4.2}Kết quả thực nghiệm}{54}{section.4.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.2.1}Thiết lập thực nghiệm}{55}{subsection.4.2.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {4.2.2}Kết quả thực nghiệm}{55}{subsection.4.2.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {4.3}Hạn chế và thách thức}{55}{section.4.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {4.4}Thảo luận}{56}{section.4.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{\numberline {5}KẾT LUẬN VÀ KIẾN NGHỊ}{57}{chapter.5}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.1}Tóm tắt kết quả đạt được}{57}{section.5.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.2}Hạn chế của nghiên cứu}{57}{section.5.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.3}Hướng nghiên cứu tiếp theo}{57}{section.5.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.4}Lời kết}{57}{section.5.4}%
