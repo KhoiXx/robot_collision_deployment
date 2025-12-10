@@ -231,8 +231,6 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {section}{\numberline {5.1}Tóm tắt kết quả đạt được}{57}{section.5.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Hạn chế của nghiên cứu}{57}{section.5.2}%
+\contentsline {section}{\numberline {5.2}Hướng nghiên cứu tiếp theo}{57}{section.5.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Hướng nghiên cứu tiếp theo}{57}{section.5.3}%
-\defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Lời kết}{57}{section.5.4}%
+\contentsline {section}{\numberline {5.3}Lời kết}{57}{section.5.3}%
