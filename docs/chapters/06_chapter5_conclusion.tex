@@ -4,29 +4,107 @@
 \chapter{KẾT LUẬN VÀ KIẾN NGHỊ}
 \label{chap:conclusion}
 
-Chương này tóm tắt những đóng góp chính, hạn chế và hướng nghiên cứu tương lai.
+\section{Kết luận}
+\label{sec:conclusion}
 
-\section{Tóm tắt kết quả đạt được}
-\label{sec:summary}
+Luận văn đã nghiên cứu và triển khai thành công hệ thống điều khiển phân tán cho đa robot tránh va chạm sử dụng học tăng cường sâu. Các kết quả đạt được đáp ứng đầy đủ các mục tiêu đề ra ban đầu.
 
-Luận văn đã hoàn thành các mục tiêu đề ra:
-\begin{itemize}
-    \item Huấn luyện thành công mô hình điều khiển đa robot với 71\% training success và 88\% test success
-    \item Đề xuất 6 cải tiến chính so với bài báo gốc
-    \item Thiết kế prototype robot với LiDAR
+\subsection{Về thuật toán và huấn luyện}
+
+Luận văn đã triển khai thành công thuật toán PPO (Proximal Policy Optimization) kết hợp với GAE (Generalized Advantage Estimation) cho bài toán điều khiển phân tán đa robot. Phương pháp curriculum learning với 2 giai đoạn huấn luyện (Stage 1 và Stage 2) đã chứng minh hiệu quả rõ rệt:
+
+\begin{itemize}[nosep]
+\item \textbf{Stage 1:} Huấn luyện 24 robots trong môi trường đơn giản, đạt success rate \textbf{83.26\%} và collision rate \textbf{14.11\%} sau 1940 policy updates.
+\item \textbf{Stage 2:} Transfer learning từ Stage 1, tiếp tục huấn luyện 44 robots trong môi trường phức tạp hơn, đạt success rate \textbf{89.18\%} và collision rate \textbf{9.04\%} sau 4480 policy updates.
+\item \textbf{Circle Test:} Model đạt 100\% success rate với 4-8 robots và 81.5\% với 20 robots, vượt trội so với phương pháp NH-ORCA (65\% với 20 robots).
 \end{itemize}
 
+Các kỹ thuật cải tiến được áp dụng thành công bao gồm: Gradient Clipping để ổn định huấn luyện, Entropy Decay để cân bằng exploration-exploitation, và Learning Rate Scheduling để điều chỉnh tốc độ học theo tiến trình.
 
-% Placeholder
+\subsection{Về thiết kế và triển khai phần cứng}
 
-\section{Hướng nghiên cứu tiếp theo}
-\label{sec:future}
+Luận văn đã thiết kế và xây dựng thành công 2 robot prototype với chi phí thấp, bao gồm:
 
-% Placeholder
+\begin{itemize}[nosep]
+\item Jetson Nano làm bộ xử lý chính, kết nối với Master PC qua ROS network
+\item LiDAR LD19 (360°, 455 beams, 10Hz) cho quan sát môi trường
+\item Arduino điều khiển động cơ với PID controller đã được chứng minh ổn định
+\item IMU MPU6050 hỗ trợ sensor fusion với UKF
+\end{itemize}
+
+Bộ điều khiển PID cho động cơ DC đã được thiết kế và chứng minh ổn định bằng phương pháp Lyapunov, đảm bảo robot đáp ứng nhanh và chính xác với các lệnh vận tốc từ policy network.
+
+\subsection{Về sim-to-real transfer}
+
+Việc triển khai model từ mô phỏng sang robot thực tế đã thành công với sự hỗ trợ của:
+
+\begin{itemize}[nosep]
+\item \textbf{Cartographer SLAM:} Cung cấp localization trong môi trường thực, cho phép robot xác định vị trí và hướng chính xác.
+\item \textbf{UKF Sensor Fusion:} Kết hợp dữ liệu từ odometry và IMU để ước lượng state ổn định hơn.
+\item \textbf{Các cơ chế an toàn:} Velocity limiting (0.3 m/s), safety check, stuck detection và recovery đảm bảo robot hoạt động an toàn trong thực nghiệm.
+\end{itemize}
+
+Kiến trúc hệ thống được thiết kế phi tập trung về mặt thuật toán (mỗi robot quyết định độc lập dựa trên quan sát cục bộ), với inference tập trung trên Master PC do hạn chế phần cứng của Jetson Nano. Thiết kế này cho phép dễ dàng mở rộng sang fully decentralized khi nâng cấp phần cứng.
+
+\subsection{Đánh giá tổng thể}
+
+So với mục tiêu đề ra ban đầu (success rate $>$ 80\%), kết quả đạt được (89.18\% trong mô phỏng) đã vượt mục tiêu. Mặc dù success rate thấp hơn so với bài báo gốc CADRL (96.5-100\%), sự khác biệt này được giải thích bởi:
+
+\begin{itemize}[nosep]
+\item Số lượng robots trong training cao hơn (44 vs 4-20), tăng độ khó đáng kể
+\item Cấu hình sensor khác nhau (360° vs 180° LiDAR)
+\item Tốc độ robot thấp hơn (0.3 m/s vs 1.0 m/s) do hạn chế phần cứng
+\end{itemize}
+
+Quan trọng hơn, luận văn đã chứng minh tính khả thi của việc triển khai phương pháp deep RL trên phần cứng thực tế với chi phí thấp, mở ra hướng ứng dụng cho các hệ thống robot trong công nghiệp và logistics.
+
+\section{Kiến nghị}
+\label{sec:recommendations}
+
+\subsection{Cải tiến phần cứng}
+
+\begin{itemize}[nosep]
+\item \textbf{Nâng cấp bộ xử lý:} Thay Jetson Nano bằng Jetson Orin hoặc mini PC với GPU mạnh hơn để chạy inference local, giảm latency từ 50-100ms xuống dưới 20ms.
+\item \textbf{LiDAR tần số cao:} Sử dụng LiDAR 30-50Hz thay vì 10Hz hiện tại, cho phép tăng tốc độ di chuyển và phản ứng nhanh hơn với vật cản động.
+\item \textbf{Cải thiện localization:} Bổ sung camera depth hoặc stereo camera để nâng cao độ chính xác định vị, đặc biệt trong môi trường ít đặc trưng.
+\end{itemize}
+
+\subsection{Cải tiến thuật toán}
+
+\begin{itemize}[nosep]
+\item \textbf{Xử lý deadlock:} Nghiên cứu thêm cơ chế phát hiện và giải quyết deadlock khi nhiều robots cùng đi qua một điểm hẹp, có thể kết hợp simple communication protocol.
+\item \textbf{Domain randomization:} Áp dụng domain randomization trong training để cải thiện sim-to-real transfer, bao gồm randomize sensor noise, latency, và dynamics.
+\item \textbf{Hierarchical policy:} Nghiên cứu kiến trúc hierarchical với high-level planner và low-level controller để xử lý các tình huống phức tạp hơn.
+\end{itemize}
+
+\subsection{Mở rộng quy mô thực nghiệm}
+
+\begin{itemize}[nosep]
+\item Tăng số lượng robots thực nghiệm từ 2 lên 5-10 để đánh giá khả năng scale của hệ thống
+\item Thử nghiệm trong môi trường outdoor với điều kiện ánh sáng và địa hình đa dạng
+\item Đánh giá hiệu suất trong các kịch bản ứng dụng thực tế như kho hàng hoặc nhà máy
+\end{itemize}
+
+\section{Hướng phát triển}
+\label{sec:future_work}
+
+Dựa trên nền tảng của luận văn, các hướng nghiên cứu tiếp theo bao gồm:
+
+\begin{enumerate}[nosep]
+\item \textbf{Multi-task learning:} Mở rộng policy để xử lý nhiều task khác nhau (navigation, formation control, cooperative manipulation) với một model duy nhất.
+
+\item \textbf{Continuous learning:} Phát triển khả năng học tiếp tục (continual learning) để robot có thể thích nghi với môi trường mới mà không cần huấn luyện lại từ đầu.
+
+\item \textbf{Heterogeneous robots:} Nghiên cứu điều khiển hệ robot không đồng nhất (khác nhau về kích thước, tốc độ, sensor) hoạt động cùng nhau.
+
+\item \textbf{3D environment:} Mở rộng phương pháp cho môi trường 3D với các robots có khả năng bay hoặc di chuyển trên địa hình phức tạp.
+
+\item \textbf{Human-robot interaction:} Tích hợp khả năng tương tác an toàn với con người trong môi trường làm việc chung.
+\end{enumerate}
 
 \section{Lời kết}
 \label{sec:final}
 
-Luận văn đã đạt được mục tiêu nghiên cứu về ứng dụng học tăng cường trong điều khiển đa robot tránh va chạm.
+Luận văn đã đạt được mục tiêu nghiên cứu đề ra: xây dựng thành công hệ thống điều khiển phân tán cho đa robot tránh va chạm sử dụng học tăng cường sâu, từ thiết kế thuật toán, huấn luyện trong mô phỏng, đến triển khai trên robot thực tế. Kết quả cho thấy deep reinforcement learning là phương pháp khả thi và hiệu quả cho bài toán điều khiển đa robot, với tiềm năng ứng dụng rộng rãi trong công nghiệp 4.0.
 
-% Placeholder
+Mặc dù còn một số hạn chế về phần cứng và quy mô thực nghiệm, luận văn đã đặt nền móng vững chắc cho các nghiên cứu tiếp theo trong lĩnh vực điều khiển đa robot tự trị tại Việt Nam.

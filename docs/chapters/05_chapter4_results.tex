@@ -22,19 +22,19 @@ Quá trình huấn luyện được chia thành hai giai đoạn (stages) theo p
 
 \textbf{Thiết lập thí nghiệm:} Stage 1 sử dụng môi trường mô phỏng đơn giản với 24 robots, có 4 vật cản tĩnh (các robots như vật cản động). Quá trình huấn luyện kéo dài qua 1940 policy updates trong vòng 14 giờ (chạy không liên tục).
 
-\textbf{Tiến trình huấn luyện:} Hình \ref{fig:stage1_training} minh họa đường cong huấn luyện của Stage 1 qua các metrics chính: success rate, collision rate, và average reward, đã được làm mượt theo phương pháp trung bình.
+\textbf{Tiến trình huấn luyện:} Hình \ref{fig:stage1_training} biểu diễn kết quả huấn luyện ở Stage 1 qua các metrics chính: success rate, collision rate, và average reward, đã được làm mượt theo phương pháp trung bình và đặt chồng lên nhau để dễ so sánh. Hình \ref{fig:stage1_raw} biểu diễn lại dữ liệu training gốc của các metrics.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/stage1_training_curves.png}
-\caption{Đường cong huấn luyện Stage 1: (a) Success rate tăng từ 2.57\% lên 83.03\%, (b) Collision rate giảm từ 76.93\% xuống 14.11\%, (c) Average reward tăng từ -13.97 lên 46.87.}
+\caption{Stage 1: (a) Success rate tăng từ 2.57\% lên 83.03\%, (b) Collision rate giảm từ 76.93\% xuống 14.11\%, (c) Average reward tăng từ -13.97 lên 46.87.}
 \label{fig:stage1_training}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/stage1_raw_progress.png}
-\caption{Chi tiết metrics huấn luyện Stage 1: Episode rewards (0-100), success rate tăng từ 10\% lên 80\%, timeout rate giảm từ 60\% xuống gần 0\%, collision rate giảm từ 45\% xuống 15\%, average time to goal giảm từ 35s xuống 15s.}
+\caption{Dữ liệu metrics huấn luyện Stage 1 chưa qua xử lý}
 \label{fig:stage1_raw}
 \end{figure}
 
@@ -89,19 +89,19 @@ Bảng \ref{tab:stage1_metrics} tổng hợp các metrics quan trọng tại cá
 
 \textbf{Thiết lập thí nghiệm:} Stage 2 tiếp tục huấn luyện từ checkpoint tốt nhất của Stage 1, sử dụng môi trường phức tạp hơn với các scenarios như đã trình bày. Quá trình huấn luyện kéo dài qua 4480 updates trong vòng 30 giờ (thời gian có bị kéo dài hơn do có tăng timeout limit).
 
-\textbf{Tiến trình huấn luyện:} Hình \ref{fig:stage2_training} minh họa đường cong huấn luyện của Stage 2.
+\textbf{Tiến trình huấn luyện:} Hình \ref{fig:stage2_training} và hình \ref{fig:stage2_raw} biểu diễn kết quả huấn luyện ở Stage 2.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/stage2_training_curves.png}
-\caption{Đường cong huấn luyện Stage 2: (a) Success rate tăng từ 34.66\% lên 89.18\%, (b) Collision rate giảm từ 65.28\% xuống 9.04\%, (c) Average reward tăng từ -455.62 lên 2748.11.}
+\caption{Stage 2: (a) Success rate tăng từ 34.66\% lên 89.18\%, (b) Collision rate giảm từ 65.28\% xuống 9.04\%, (c) Average reward tăng từ -455.62 lên 2748.11.}
 \label{fig:stage2_training}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/stage2_raw_progress.png}
-\caption{Chi tiết metrics huấn luyện Stage 2: Episode rewards tăng từ -2000 lên 5000, success rate tăng từ 40\% lên 80\%, collision rate giảm từ 65\% xuống 20\%, average time to goal giảm từ 40s xuống 25s.}
+\caption{Dữ liệu metrics huấn luyện Stage 2 chưa qua xử lý}
 \label{fig:stage2_raw}
 \end{figure}
 
@@ -134,7 +134,11 @@ Bảng \ref{tab:stage2_metrics} tổng hợp các metrics quan trọng tại cá
 
 \item \textbf{Rapid improvement (1000-3000 updates):} Success rate tăng mạnh từ 55.87\% lên 82.45\%, collision rate giảm từ 43.68\% xuống 16.23\%. Policy đã học được cách kết hợp tránh vật cản tĩnh và động.
 
-\item \textbf{Fine-tuning (3000-4480 updates):} Success rate tiếp tục tăng lên 89.18\%, collision rate giảm xuống 9.04\%. Đây là giai đoạn tinh chỉnh behavior phức tạp.
+\item \textbf{Vấn đề và điều chỉnh timeout (sau 3000 updates):} Tại khoảng 3000 updates, kết quả training bắt đầu có dấu hiệu suy giảm - collision rate tăng dù success rate vẫn đang tăng. Nguyên nhân được xác định là robots đang phát triển hành vi ``rushing'' - cố gắng di chuyển nhanh và thẳng nhất do bị timeout penalty. Hành vi này phản ánh việc policy đang tối ưu hóa sai mục tiêu: thay vì tìm đường đi an toàn, robots học cách đi thẳng về goal để tránh penalty timeout.
+
+Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout limit được tăng từ 500 lên 700 steps, điều này giải thích cho biểu đồ thời gian bị giựt mạnh ở khoảng sau 3000.
+
+\item \textbf{Fine-tuning với timeout mới (3000-4480 updates):} Sau khi điều chỉnh timeout, training được tiếp tục từ checkpoint tốt nhất. Success rate tiếp tục tăng lên 89.18\%, collision rate giảm mạnh xuống 9.04\%. Robots thể hiện behavior thận trọng hơn: sẵn sàng đi đường vòng để tránh va chạm thay vì lao thẳng về goal. Đây là giai đoạn tinh chỉnh quan trọng giúp policy cân bằng tốt hơn giữa hiệu quả (đến goal nhanh) và an toàn (tránh va chạm).
 \end{itemize}
 
 \textbf{Kết quả đạt được:}
@@ -215,28 +219,30 @@ Bảng \ref{tab:circle_test} tổng hợp kết quả Circle Test với số lư
 
 \textbf{Nhận xét:} Model duy trì hiệu suất xuất sắc (100\%) khi khoảng cách giữa các robots > 3m. Khi mật độ tăng (khoảng cách < 2m), success rate bắt đầu giảm do tăng xác suất deadlock và va chạm liên hoàn.
 
-Bảng \ref{tab:paper_comparison} so sánh kết quả với bài báo gốc CADRL \cite{long2018towards}:
+Bảng \ref{tab:paper_comparison} so sánh kết quả với bài báo gốc CADRL và phương pháp NH-ORCA (Non-Holonomic Optimal Reciprocal Collision Avoidance) \cite{long2018towards}:
 
 \begin{table}[H]
 \centering
-\caption{So sánh kết quả với bài báo gốc CADRL}
+\caption{So sánh kết quả Circle Test với bài báo gốc CADRL và NH-ORCA}
 \label{tab:paper_comparison}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \hline
-\textbf{Số robots} & \textbf{Paper CADRL (\%)} & \textbf{Model này (\%)} & \textbf{Chênh lệch} \\
+\textbf{Số robots} & \textbf{NH-ORCA (\%)} & \textbf{Paper CADRL (\%)} & \textbf{Model này (\%)} \\
 \hline
-4 & $\sim$100 & 100.0 & 0\% \\
-8 & $\sim$100 & 100.0 & 0\% \\
-12 & $\sim$97 & 95.0 & -2\% \\
-20 & $\sim$90 & 81.5 & -8.5\% \\
+4 & $\sim$97 & $\sim$100 & 100.0 \\
+8 & $\sim$92 & $\sim$100 & 100.0 \\
+12 & $\sim$78 & $\sim$97 & 95.0 \\
+20 & $\sim$65 & $\sim$90 & 81.5 \\
 \hline
 \end{tabular}
 \end{table}
 
-\textbf{Phân tích sự khác biệt với bài báo gốc:}
+\textbf{Phân tích sự khác biệt:}
 
 \begin{enumerate}[nosep]
-\item \textbf{Kết quả tương đương ở mật độ thấp:} Với 4-8 robots, model đạt 100\% success rate, tương đương với bài báo gốc. Điều này xác nhận policy đã học được cách tránh va chạm đơn giản.
+\item \textbf{So sánh với NH-ORCA:} Model này vượt trội hơn NH-ORCA ở tất cả các mức độ mật độ. Sự chênh lệch rõ rệt nhất ở 20 robots (81.5\% vs 65\%), cho thấy deep RL xử lý tốt hơn các tình huống đông đúc so với phương pháp geometry-based.
+
+\item \textbf{Kết quả tương đương CADRL ở mật độ thấp:} Với 4-8 robots, model đạt 100\% success rate, tương đương với bài báo gốc CADRL. Điều này xác nhận policy đã học được cách tránh va chạm đơn giản.
 
 \item \textbf{Gap ở mật độ cao (12-20 robots):} Sự chênh lệch 2-8.5\% có thể được giải thích bởi:
 \begin{itemize}[nosep]
@@ -272,28 +278,27 @@ Phần này trình bày kết quả triển khai model đã huấn luyện trên
 \textbf{Phần cứng:}
 \begin{itemize}[nosep]
 \item 2 robots differential drive với Jetson Nano
-\item LiDAR LD19 (360°, 455 beams, 10Hz)
+\item LiDAR LD19 (360°, 455 beams)
 \item Master PC: Intel i7-11800H, 16GB RAM
-\item Giao tiếp: ROS network qua WiFi (20Hz control loop)
+\item Giao tiếp: ROS network qua mạng
 \end{itemize}
 
 \textbf{Môi trường test:}
 \begin{itemize}[nosep]
-\item Phòng lab kích thước khoảng 5m × 5m
-\item Có các vật cản tĩnh (bàn, ghế, tường)
-\item 2 robots di chuyển đồng thời với goals ngẫu nhiên
+\item Phòng kích thước khoảng 5m × 5m
+\item Có nhiều vật cản tĩnh (bàn, ghế, tường, giường)
 \end{itemize}
 
 \textbf{Metrics đánh giá:}
 \begin{itemize}[nosep]
 \item Success rate: Tỷ lệ robot đến được goal không va chạm
-\item Collision rate: Tỷ lệ episodes có va chạm (robot-robot hoặc robot-obstacle)
-\item Average time to goal: Thời gian trung bình hoàn thành task
+\item Collision rate: Tỷ lệ episodes có va chạm
+\item Average time to goal: Thời gian trung bình hoàn thành nhiệm vụ
 \item Path efficiency: Tỷ số giữa đường đi thực tế và đường đi tối ưu
 \end{itemize}
 
 % TODO: Chạy thực nghiệm và điền kết quả vào bảng dưới đây
-\subsection{Kết quả thực nghiệm}
+\subsection{Kết quả thực nghiệm với 1 robot}
 \label{subsec:exp_results}
 
 % PLACEHOLDER - Điền kết quả sau khi chạy thực nghiệm
@@ -322,50 +327,84 @@ Number of Episodes & 4480 & [TODO] \\
 \end{itemize}
 
 % ============================================================================
-% SECTION 4.3: HẠN CHẾ
-% ============================================================================
-\section{Hạn chế và thách thức}
-\label{sec:limitations}
-
-Trong quá trình thực hiện, nghiên cứu này gặp một số hạn chế và thách thức:
-
-\textbf{1. Hạn chế về môi trường mô phỏng:}
-\begin{itemize}[nosep]
-\item Môi trường mô phỏng Stage 2D không thể tái hiện hoàn toàn các yếu tố vật lý thực tế như trượt bánh, độ trễ sensor, nhiễu đo lường
-\item Khoảng cách sim-to-real (simulation-to-reality gap) vẫn tồn tại và ảnh hưởng đến hiệu suất khi deploy lên robot thực
-\end{itemize}
-
-\textbf{2. Hạn chế về phần cứng:}
-\begin{itemize}[nosep]
-\item Jetson Nano có tài nguyên hạn chế (4GB RAM), buộc phải chạy inference tập trung trên Master PC
-\item LiDAR LD19 có tần số quét thấp (10Hz) so với các LiDAR cao cấp, gây khó khăn trong tình huống di chuyển nhanh
-\item Latency trong ROS network (~50ms) có thể ảnh hưởng đến khả năng phản ứng real-time
-\end{itemize}
-
-\textbf{3. Hạn chế về thuật toán:}
-\begin{itemize}[nosep]
-\item Success rate chưa đạt mức của bài báo gốc (89\% vs 96.5-100\%) do độ khó môi trường cao hơn
-\item Policy chưa xử lý tốt các tình huống deadlock khi nhiều robots cùng đi qua một điểm hẹp
-\item Chưa có cơ chế communication giữa các robots (fully decentralized)
-\end{itemize}
-
-\textbf{4. Hạn chế về quy mô thực nghiệm:}
-\begin{itemize}[nosep]
-\item Chỉ có 2 robots thực tế (so với 44 trong simulation) do hạn chế về chi phí và không gian
-\item Môi trường test trong nhà có kích thước nhỏ (~5m × 5m)
-\item Số lượng episodes thực nghiệm hạn chế do thời gian setup và charging
-\end{itemize}
-
-% ============================================================================
-% SECTION 4.4: THẢO LUẬN
+% SECTION 4.3: THẢO LUẬN
 % ============================================================================
 \section{Thảo luận}
 \label{sec:discussion}
 
-\textbf{Về hiệu quả của curriculum learning:} Kết quả thực nghiệm cho thấy phương pháp curriculum learning (Stage 1 → Stage 2) mang lại hiệu quả rõ rệt. Policy được huấn luyện trong môi trường đơn giản trước (Stage 1) có khả năng transfer tốt sang môi trường phức tạp (Stage 2), đạt success rate 34.66\% ngay lập tức mà không cần huấn luyện lại từ đầu. Điều này khẳng định các kỹ năng cơ bản (navigation, simple avoidance) được học trong Stage 1 có tính tổng quát cao.
+\subsection{Hiệu quả của curriculum learning}
 
-\textbf{Về việc scale lên nhiều robots:} Implementation này sử dụng 44 robots, cao hơn đáng kể so với bài báo gốc (4-20 robots). Mặc dù success rate thấp hơn một phần do độ khó tăng, kết quả cho thấy phương pháp decentralized collision avoidance có khả năng scale lên số lượng robots lớn. Mỗi robot chỉ quan sát môi trường cục bộ và quyết định độc lập, không cần coordination tập trung.
+Phương pháp curriculum learning (Stage 1 $\rightarrow$ Stage 2) mang lại hiệu quả rõ rệt. Policy được huấn luyện trong môi trường đơn giản trước (Stage 1) có khả năng transfer tốt sang môi trường phức tạp (Stage 2), đạt success rate 34.66\% ngay lập tức mà không cần huấn luyện lại từ đầu. Điều này khẳng định các kỹ năng cơ bản (navigation, simple avoidance) được học trong Stage 1 có tính tổng quát cao.
 
-\textbf{Về sim-to-real transfer:} Việc triển khai thành công model từ simulation lên robot thực tế với Cartographer SLAM cho localization và UKF cho state estimation cho thấy pipeline sim-to-real hoạt động. Các thách thức chính bao gồm độ trễ ROS network và khác biệt về dynamics giữa simulation và thực tế.
+Vấn đề timeout được phát hiện trong Stage 2 (xem Mục \ref{subsec:stage2_results}) cho thấy tầm quan trọng của việc thiết kế reward function phù hợp với độ phức tạp của môi trường. Khi timeout limit không đủ, policy có xu hướng học hành vi "rushing" thay vì tìm đường đi an toàn.
 
-\textbf{Về ứng dụng thực tiễn:} Hệ thống đạt control frequency 20Hz, đủ cho các ứng dụng robot di chuyển trong nhà với tốc độ thấp đến trung bình (0.1-0.3 m/s). Tuy nhiên, để ứng dụng trong môi trường đòi hỏi phản ứng nhanh hơn hoặc tốc độ cao hơn, cần cải thiện latency và upgrade phần cứng inference.
+\subsection{Khả năng mở rộng số lượng robots}
+
+Nghiên cứu hiện tại sử dụng 44 robots trong Stage 2, mặc dù success rate thấp hơn một phần do độ khó tăng (89\% vs 96.5-100\%), kết quả cho thấy phương pháp decentralized collision avoidance có khả năng scale. Mỗi robot chỉ quan sát môi trường cục bộ và quyết định độc lập, không cần coordination tập trung - điều này cho phép hệ thống mở rộng về số lượng mà không tăng chi phí phần cứng trung tâm.
+
+So sánh với NH-ORCA (Bảng \ref{tab:paper_comparison}) cho thấy deep RL vượt trội hơn phương pháp geometry-based, đặc biệt ở mật độ cao. NH-ORCA giả định các robots khác sẽ phối hợp theo cùng một protocol, trong khi RL policy học được cách phản ứng với behavior thực tế của các agents xung quanh.
+
+\subsection{Từ mô phỏng đến thực tế (Sim-to-real) }
+
+Việc triển khai model từ simulation lên robot thực tế cho thấy sim-to-real khả thi với sự hỗ trợ các component chính:
+\begin{itemize}[nosep]
+\item Cartographer SLAM cung cấp localization chính xác trong môi trường thực
+\item UKF sensor fusion giúp ước lượng state ổn định hơn so với raw odometry
+\item Các cơ chế an toàn (velocity limiting, safety check, recovery) bù đắp cho sim-to-real gap
+\end{itemize}
+
+Tuy nhiên, tốc độ phải giảm từ 0.7 m/s (simulation) xuống 0.3 m/s (thực tế) do hạn chế phần cứng - đây là trade-off cần thiết để đảm bảo an toàn và độ tin cậy.
+
+\subsection{Hạn chế của nghiên cứu}
+
+\textbf{Về môi trường mô phỏng:}
+\begin{itemize}[nosep]
+\item Stage 2D không tái hiện hoàn toàn các yếu tố vật lý: trượt bánh, độ trễ sensor, nhiễu đo lường
+\item Sim-to-real gap vẫn tồn tại, đòi hỏi các biện pháp bổ sung khi deploy thực tế
+\end{itemize}
+
+\textbf{Về phần cứng:}
+\begin{itemize}[nosep]
+\item Jetson Nano (4GB RAM) buộc inference tập trung trên Master PC thay vì chạy local
+\item LiDAR LD19 tần số 10Hz gây khó khăn khi di chuyển nhanh, phải giới hạn tốc độ
+\item Latency ROS network (~50-100ms tổng) ảnh hưởng real-time response
+\end{itemize}
+
+\textbf{Về định vị (localization):}
+\begin{itemize}[nosep]
+\item \textbf{Vấn đề drift (trôi vị trí):} Hệ thống gặp hiện tượng vị trí ước lượng bị trôi dần theo thời gian do sai số tích lũy từ wheel odometry. Nguyên nhân chính bao gồm: bánh xe trượt trên bề mặt nhẵn, sai số encoder tích lũy, và IMU MPU6050 giá rẻ có bias drift đáng kể.
+
+\item \textbf{So sánh các phương pháp localization:}
+\begin{itemize}[nosep]
+\item \textit{Pure odometry:} Drift nhanh, không sử dụng được sau vài phút di chuyển
+\item \textit{UKF sensor fusion (odometry + IMU):} Cải thiện hơn nhưng vẫn drift do IMU bias
+\item \textit{Cartographer SLAM:} Ổn định hơn đáng kể nhờ loop closure và scan matching, tuy nhiên vẫn có thể drift trong môi trường ít đặc trưng (feature-poor) hoặc hành lang dài
+\end{itemize}
+
+\item \textbf{Giải pháp hiện tại:} Sử dụng Cartographer SLAM làm nguồn localization chính. Trong môi trường thực nghiệm (~5m × 5m) với nhiều vật cản, Cartographer hoạt động ổn định và đạt mức chấp nhận được cho collision avoidance.
+
+\item \textbf{Hạn chế còn tồn tại:} Việc cải thiện độ chính xác localization (ví dụ: sensor fusion với camera depth, IMU cao cấp hơn như BNO055, hoặc visual odometry) nằm ngoài phạm vi nghiên cứu hiện tại. Đây là hướng cải tiến quan trọng cho các nghiên cứu tiếp theo.
+\end{itemize}
+
+\textbf{Về thuật toán:}
+\begin{itemize}[nosep]
+\item Policy chưa xử lý tốt deadlock khi nhiều robots cùng đi qua một điểm hẹp
+\item Thiếu cơ chế communication giữa robots (fully decentralized có ưu và nhược điểm)
+\end{itemize}
+
+\textbf{Về quy mô thực nghiệm:}
+\begin{itemize}[nosep]
+\item Chỉ 2 robots thực tế (so với 44 trong simulation) do hạn chế chi phí và không gian
+\item Môi trường test nhỏ (~5m × 5m), số episodes hạn chế do thời gian setup và charging
+\end{itemize}
+
+\subsection{Hướng cải tiến}
+
+Dựa trên các hạn chế đã phân tích, các hướng cải tiến tiềm năng bao gồm:
+\begin{itemize}[nosep]
+\item Nâng cấp Jetson Nano lên Jetson Orin để chạy inference local, giảm latency
+\item Sử dụng LiDAR tần số cao hơn (30-50Hz) để cho phép tốc độ di chuyển nhanh hơn
+\item Thêm cơ chế phát hiện và giải quyết deadlock (có thể kết hợp với simple communication)
+\item Mở rộng thực nghiệm với nhiều robots hơn và môi trường outdoor
+\item Áp dụng domain randomization trong training để cải thiện sim-to-real transfer
+\end{itemize}

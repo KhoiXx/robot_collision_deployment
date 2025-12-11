@@ -15,30 +15,30 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters Stage 1 (20 robots - 74\% success)\relax }}{35}{table.caption.19}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters Stage 1 (24 robots - 83\% success)\relax }}{38}{table.caption.19}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameters Stage 2 (58 robots - 88\% test success)\relax }}{35}{table.caption.20}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameters Stage 2 (44 robots - 89\% success)\relax }}{38}{table.caption.20}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.3}{\ignorespaces Bảng Routh-Hurwitz cho hệ PID bậc 3\relax }}{39}{table.caption.22}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Bảng Routh-Hurwitz cho hệ PID bậc 3\relax }}{42}{table.caption.22}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{43}{table.caption.23}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{45}{table.caption.23}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{46}{table.caption.25}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{49}{table.caption.25}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{46}{table.caption.26}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{49}{table.caption.26}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.1}{\ignorespaces Metrics huấn luyện Stage 1 qua các mốc chính\relax }}{50}{table.caption.29}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Metrics huấn luyện Stage 1 qua các mốc chính\relax }}{52}{table.caption.29}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.2}{\ignorespaces Metrics huấn luyện Stage 2 qua các mốc chính\relax }}{52}{table.caption.32}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Metrics huấn luyện Stage 2 qua các mốc chính\relax }}{54}{table.caption.32}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.3}{\ignorespaces Kết quả Circle Test theo số lượng robots\relax }}{54}{table.caption.35}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Kết quả Circle Test theo số lượng robots\relax }}{56}{table.caption.35}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.4}{\ignorespaces Mối quan hệ giữa khoảng cách inter-robot và success rate\relax }}{54}{table.caption.36}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Mối quan hệ giữa khoảng cách inter-robot và success rate\relax }}{56}{table.caption.36}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả với bài báo gốc CADRL\relax }}{54}{table.caption.37}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả Circle Test với bài báo gốc CADRL và NH-ORCA\relax }}{56}{table.caption.37}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.6}{\ignorespaces Kết quả thực nghiệm trên robot thực tế (TODO: Điền sau)\relax }}{55}{table.caption.38}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Kết quả thực nghiệm trên robot thực tế (TODO: Điền sau)\relax }}{58}{table.caption.38}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }

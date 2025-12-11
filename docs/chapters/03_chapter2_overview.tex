@@ -651,7 +651,7 @@ Hành động $a_t$ tệ hơn trung bình $\rightarrow$ muốn giảm $\pi_\thet
 \item Nếu action xấu ($A < 0$), cho phép giảm xác suất nhưng không dưới $1-\epsilon$ lần
 \end{itemize}
 
-\textbf{Visualization:} Objective function có dạng "flat plateau" sau khi ra khỏi trust region $[1-\epsilon, 1+\epsilon]$, tạo ra "natural constraint" mà không cần giải bài toán tối ưu có constraint.
+\textbf{Trực quan hóa:} Hàm mục tiêu có dạng phẳng (plateau) khi tỷ số xác suất nằm ngoài vùng tin cậy $[1-\epsilon, 1+\epsilon]$, tạo ra ràng buộc tự nhiên mà không cần giải bài toán tối ưu có ràng buộc tường minh.
 
 \begin{figure}[htbp]
     \centering
@@ -768,11 +768,11 @@ Các hyperparameters quan trọng của PPO:
 \subsection{Kiến trúc mạng nơ-ron}
 \label{subsec:neural_networks}
 
-Mạng nơ-ron nhân tạo (Artificial Neural Networks - ANN) là mô hình tính toán lấy cảm hứng từ hệ thần kinh sinh học. Trong phần này, chúng ta sẽ phân tích chi tiết về kiến trúc, quá trình huấn luyện, và các kỹ thuật tối ưu hóa mạng nơ-ron.
+Mạng nơ-ron nhân tạo (Artificial Neural Networks - ANN) là mô hình tính toán thiết kế mô phỏng cấu trúc và cách não bộ con người hoạt động. Trong phần này, chúng ta sẽ phân tích chi tiết về kiến trúc, quá trình huấn luyện, và các kỹ thuật tối ưu hóa mạng nơ-ron.
 
 \subsubsection{Fully Connected Neural Networks}
 
-\textbf{Kiến trúc cơ bản:} Mạng nơ-ron fully connected (dense) bao gồm nhiều lớp (layers), mỗi lớp có nhiều neurons (nodes). Mỗi neuron trong lớp $l$ kết nối với tất cả neurons trong lớp $l+1$.
+\textbf{Kiến trúc cơ bản:} Mạng nơ-ron fully connected (dense) bao gồm nhiều lớp (layers), mỗi lớp có nhiều nơ-ron (nodes). Mỗi neuron trong lớp $l$ kết nối với tất cả nơ-ron trong lớp $l+1$.
 
 \textbf{Forward propagation:} Tính toán output từ input qua các lớp:
 
@@ -804,9 +804,9 @@ trong đó:
 0 & \text{if } x \leq 0
 \end{cases}
 \]
-Phổ biến nhất do tính toán nhanh và không bị vanishing gradient. Nhược điểm: "Dying ReLU" khi neurons có $z < 0$ không được update.
+Phổ biến nhất do tính toán nhanh và không bị triệt tiêu gradient. Nhược điểm: hiện tượng "ReLU chết" khi nơ-ron có $z < 0$ không được cập nhật.
 
-\item \textbf{Sigmoid và Tanh:} $\sigma(x) = \frac{1}{1 + e^{-x}}$ và $\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$. Sigmoid output trong $(0, 1)$, dùng cho binary classification và normalize velocity trong RL. Tanh output trong $(-1, 1)$, zero-centered, phù hợp cho symmetric control (ví dụ: angular velocity). Trong luận văn này: Sigmoid cho linear velocity, Tanh cho angular velocity.
+\item \textbf{Sigmoid và Tanh:} $\sigma(x) = \frac{1}{1 + e^{-x}}$ và $\tanh(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$. Sigmoid có đầu ra trong $(0, 1)$, dùng cho phân loại nhị phân và chuẩn hóa vận tốc trong học tăng cường. Tanh có đầu ra trong $(-1, 1)$, có tâm tại 0, phù hợp cho điều khiển đối xứng (ví dụ: vận tốc góc). Trong luận văn này: Sigmoid cho vận tốc tuyến tính, Tanh cho vận tốc góc.
 \end{itemize}
 
 \subsubsection{Convolutional Neural Networks (CNN)}
@@ -855,25 +855,25 @@ Input: LiDAR 360 points (sau downsample)
 \text{Conv1D}(32, k=5, s=2) \rightarrow \text{ReLU} \rightarrow \text{Conv1D}(32, k=3, s=2) \rightarrow \text{ReLU}
 \end{equation}
 
-Output feature map được flatten và concatenate với goal position và velocity.
+Bản đồ đặc trưng đầu ra được làm phẳng và nối với vị trí đích và vận tốc.
 
 \textbf{Ưu điểm của CNN:}
 \begin{itemize}
-\item Parameter sharing: Cùng filter áp dụng khắp input $\rightarrow$ ít parameters
-\item Translation invariance: Detect pattern ở mọi vị trí
-\item Hierarchical features: Lớp sâu học abstract patterns từ low-level features
-\item Hiệu quả với spatial/temporal data
+\item Chia sẻ tham số: Cùng bộ lọc áp dụng khắp đầu vào, giảm số lượng tham số
+\item Bất biến với dịch chuyển: Phát hiện mẫu ở mọi vị trí
+\item Đặc trưng phân cấp: Các lớp sâu học các mẫu trừu tượng từ đặc trưng cấp thấp
+\item Hiệu quả với dữ liệu không gian và thời gian
 \end{itemize}
 
 \subsubsection{Loss Functions}
 
-Loss function (hay cost function) đóng vai trò đo lường sự khác biệt giữa dự đoán của mạng và giá trị thực tế. Mục tiêu của quá trình training là tìm tập parameters làm minimize loss này.
+hàm loss đóng vai trò đo lường sự khác biệt giữa dự đoán của mạng và giá trị thực tế. Mục tiêu của quá trình huấn luyện là tìm tập tham số làm cực tiểu hóa hàm loss này.
 
 \textbf{Mean Squared Error (MSE):} Thường dùng cho bài toán regression:
 \begin{equation}
 L_{MSE} = \frac{1}{N} \sum_{i=1}^N (y_i - \hat{y}_i)^2
 \end{equation}
-trong đó $y_i$ là giá trị thực, $\hat{y}_i$ là giá trị dự đoán. MSE penalize lỗi lớn mạnh hơn do bình phương. Trong RL, MSE train value function:
+trong đó $y_i$ là giá trị thực, $\hat{y}_i$ là giá trị dự đoán. MSE phạt lỗi lớn mạnh hơn do bình phương. Trong học tăng cường, MSE huấn luyện hàm giá trị:
 \begin{equation}
 L_V(\phi) = \mathbb{E}[(V_\phi(s) - V_{target})^2]
 \end{equation}
@@ -886,65 +886,65 @@ Categorical Cross-Entropy cho multi-class:
 \begin{equation}
 L_{CCE} = -\frac{1}{N} \sum_{i=1}^N \sum_{c=1}^C y_{i,c} \log(\hat{y}_{i,c})
 \end{equation}
-Cross-entropy đo "khoảng cách" giữa true distribution và predicted distribution.
+Cross-entropy đo "khoảng cách" giữa phân phối thực và phân phối dự đoán.
 
 \subsubsection{Backpropagation}
 
-Backpropagation là thuật toán cốt lõi để training neural networks. Nhiệm vụ của nó là tính gradient của loss function đối với tất cả parameters (weights và biases) trong mạng, để sau đó có thể update parameters theo hướng giảm loss. Thuật toán sử dụng chain rule của calculus và hoạt động theo hai pha:
+Lan truyền ngược là thuật toán cốt lõi để huấn luyện mạng nơ-ron. Nhiệm vụ của nó là tính gradient của hàm loss đối với tất cả tham số (trọng số và bias) trong mạng, để sau đó có thể cập nhật tham số theo hướng giảm hàm loss. Thuật toán sử dụng quy tắc chuỗi của giải tích và hoạt động theo hai pha:
 
-\textbf{Forward pass:} Dữ liệu đi từ input layer qua các hidden layers đến output layer. Tại mỗi layer $l$, ta tính:
+\textbf{Lan truyền xuôi:} Dữ liệu đi từ lớp đầu vào qua các lớp ẩn đến lớp đầu ra. Tại mỗi lớp $l$, ta tính:
 \begin{equation}
 \mathbf{z}^{[l]} = \mathbf{W}^{[l]} \mathbf{a}^{[l-1]} + \mathbf{b}^{[l]}, \quad \mathbf{a}^{[l]} = g^{[l]}(\mathbf{z}^{[l]}) \quad \text{for } l=1,...,L
 \end{equation}
-trong đó $\mathbf{z}^{[l]}$ là pre-activation (weighted sum), $\mathbf{a}^{[l]}$ là activation (output sau activation function $g^{[l]}$). Cuối cùng tính loss $L$ bằng cách so sánh output $\mathbf{a}^{[L]}$ với true labels. Pha này cho ta biết mạng đang dự đoán như thế nào và loss hiện tại là bao nhiêu.
+trong đó $\mathbf{z}^{[l]}$ là giá trị trước kích hoạt (tổng có trọng số), $\mathbf{a}^{[l]}$ là giá trị kích hoạt (đầu ra sau hàm kích hoạt $g^{[l]}$). Cuối cùng tính hàm loss $L$ bằng cách so sánh đầu ra $\mathbf{a}^{[L]}$ với nhãn thực. Pha này cho ta biết mạng đang dự đoán như thế nào và hàm loss hiện tại là bao nhiêu.
 
-\textbf{Backward pass:} Đây là phần quan trọng - ta tính gradient của loss theo từng parameter bằng cách "lan truyền ngược" (backpropagate) từ output về input. Định nghĩa $\delta^{[l]} = \frac{\partial L}{\partial \mathbf{z}^{[l]}}$ là gradient của loss theo pre-activation tại layer $l$.
+\textbf{Lan truyền ngược:} Đây là phần quan trọng - ta tính gradient của hàm loss theo từng tham số bằng cách lan truyền ngược từ đầu ra về đầu vào. Định nghĩa $\delta^{[l]} = \frac{\partial L}{\partial \mathbf{z}^{[l]}}$ là gradient của hàm loss theo giá trị trước kích hoạt tại lớp $l$.
 
-Tại output layer $L$, gradient được tính trực tiếp:
+Tại lớp đầu ra $L$, gradient được tính trực tiếp:
 \begin{equation}
 \delta^{[L]} = \nabla_{\mathbf{a}^{[L]}} L \odot g'^{[L]}(\mathbf{z}^{[L]})
 \end{equation}
-trong đó $\odot$ là element-wise multiplication, $g'^{[L]}$ là derivative của activation function.
+trong đó $\odot$ là phép nhân từng phần tử, $g'^{[L]}$ là đạo hàm của hàm kích hoạt.
 
-Lan truyền ngược qua các layers $l = L-1, L-2, ..., 1$:
+Lan truyền ngược qua các lớp $l = L-1, L-2, ..., 1$:
 \begin{equation}
 \delta^{[l]} = (\mathbf{W}^{[l+1]})^T \delta^{[l+1]} \odot g'^{[l]}(\mathbf{z}^{[l]})
 \end{equation}
-Công thức này thể hiện chain rule: gradient tại layer $l$ phụ thuộc vào (1) gradient từ layer sau $\delta^{[l+1]}$ truyền về qua weights $\mathbf{W}^{[l+1]}$, và (2) derivative của activation function tại layer đó $g'^{[l]}$.
+Công thức này thể hiện quy tắc chuỗi: gradient tại lớp $l$ phụ thuộc vào (1) gradient từ lớp sau $\delta^{[l+1]}$ truyền về qua trọng số $\mathbf{W}^{[l+1]}$, và (2) đạo hàm của hàm kích hoạt tại lớp đó $g'^{[l]}$.
 
-Sau khi có $\delta^{[l]}$ cho tất cả layers, ta tính gradient của loss theo weights và biases:
+Sau khi có $\delta^{[l]}$ cho tất cả các lớp, ta tính gradient của hàm loss theo trọng số và bias:
 \begin{equation}
 \frac{\partial L}{\partial \mathbf{W}^{[l]}} = \delta^{[l]} (\mathbf{a}^{[l-1]})^T, \quad \frac{\partial L}{\partial \mathbf{b}^{[l]}} = \delta^{[l]}
 \end{equation}
-Gradient của weights phụ thuộc vào activations từ layer trước $\mathbf{a}^{[l-1]}$ - đây là lý do tại sao backpropagation cần lưu lại activations từ forward pass.
+Gradient của trọng số phụ thuộc vào giá trị kích hoạt từ lớp trước $\mathbf{a}^{[l-1]}$ - đây là lý do tại sao lan truyền ngược cần lưu lại giá trị kích hoạt từ pha lan truyền xuôi.
 
-\textbf{Vấn đề vanishing và exploding gradients:} Khi mạng có nhiều layers, gradient có thể trở nên cực nhỏ (vanishing) hoặc cực lớn (exploding) khi nhân qua nhiều layers. Vanishing gradient xảy ra với sigmoid/tanh vì derivatives của chúng nhỏ hơn 1 ($\sigma'(x) \leq 0.25$, $\tanh'(x) \leq 1$), nhân nhiều lần sẽ tiến về 0 - khiến các layer đầu không học được. Exploding gradient xảy ra khi weights quá lớn hoặc learning rate không phù hợp. Các giải pháp phổ biến: dùng ReLU activation (không bị vanishing vì $\text{ReLU}'(x) = 1$ khi $x > 0$), gradient clipping (chặn gradient lớn), batch normalization (ổn định activations), và weight initialization phù hợp.
+\textbf{Vấn đề vanishing và exploding gradient:} Khi mạng có nhiều lớp, gradient có thể trở nên cực nhỏ (triệt tiêu) hoặc cực lớn (bùng nổ) khi nhân qua nhiều lớp. Triệt tiêu gradient xảy ra với sigmoid/tanh vì đạo hàm của chúng nhỏ hơn 1 ($\sigma'(x) \leq 0.25$, $\tanh'(x) \leq 1$), nhân nhiều lần sẽ tiến về 0 - khiến các lớp đầu không học được. Bùng nổ gradient xảy ra khi trọng số quá lớn hoặc tốc độ học không phù hợp. Các giải pháp phổ biến: dùng hàm kích hoạt ReLU (không bị triệt tiêu vì $\text{ReLU}'(x) = 1$ khi $x > 0$), cắt gradient (chặn gradient lớn), chuẩn hóa batch (ổn định giá trị kích hoạt), và khởi tạo trọng số phù hợp.
 
 \subsubsection{Regularization Techniques}
 
-Regularization là các kỹ thuật giúp mạng nơ-ron tránh overfitting (học quá khớp với training data) và generalize tốt hơn cho data chưa thấy.
+Regularizationlà các kỹ thuật giúp mạng nơ-ron tránh overfitting (học quá sát với dữ liệu huấn luyện) và tổng quát hóa tốt hơn cho dữ liệu chưa thấy.
 
-\textbf{L2 Regularization (Weight Decay):} Thêm một penalty term vào loss function, tỷ lệ với tổng bình phương của tất cả weights:
+\textbf{RegularizationL2 (suy giảm trọng số):} Thêm một số hạng phạt vào hàm loss, tỷ lệ với tổng bình phương của tất cả trọng số:
 \begin{equation}
 L_{total} = L_{data} + \lambda \sum_{l} \|\mathbf{W}^{[l]}\|_2^2
 \end{equation}
-trong đó $\lambda$ là regularization strength. Penalty này làm cho mạng "không thích" weights lớn - khuyến khích weights nhỏ hơn, smoother. Khi update weights:
+trong đó $\lambda$ là cường độ điều chuẩn. Số hạng phạt này làm cho mạng "không thích" trọng số lớn - khuyến khích trọng số nhỏ hơn, mượt hơn. Khi cập nhật trọng số:
 \begin{equation}
 \mathbf{W} \leftarrow \mathbf{W} - \alpha \left(\frac{\partial L_{data}}{\partial \mathbf{W}} + 2\lambda \mathbf{W}\right) = (1 - 2\alpha\lambda)\mathbf{W} - \alpha \frac{\partial L_{data}}{\partial \mathbf{W}}
 \end{equation}
-mỗi weight sẽ bị "decay" một chút về phía 0 (nhân với số nhỏ hơn 1). Models với weights nhỏ thường đơn giản hơn, ít overfitting hơn.
+mỗi trọng số sẽ bị suy giảm một chút về phía 0 (nhân với số nhỏ hơn 1). Mô hình với trọng số nhỏ thường đơn giản hơn, ít overfitting hơn.
 
-\textbf{Dropout:} Trong training, randomly "tắt" (set output = 0) một số neurons với probability $p$ (thường 0.5):
+\textbf{Dropout:} Trong quá trình huấn luyện, ngẫu nhiên "tắt" (đặt đầu ra = 0) một số nơ-ron với xác suất $p$ (thường 0.5):
 \begin{equation}
 \mathbf{a}^{[l]} = \mathbf{m}^{[l]} \odot g^{[l]}(\mathbf{z}^{[l]}), \quad m_i^{[l]} \sim \text{Bernoulli}(1-p)
 \end{equation}
-Mỗi training iteration, mạng dùng một "subnetwork" khác nhau. Điều này ngăn neurons phụ thuộc lẫn nhau quá mức (co-adaptation) - buộc mỗi neuron học features hữu ích độc lập. Khi testing, dùng tất cả neurons nhưng scale outputs xuống để match với expectation trong training.
+Mỗi vòng lặp huấn luyện, mạng dùng một "mạng con" (subnetwork) khác nhau. Điều này ngăn các nơ-ron phụ thuộc lẫn nhau quá mức - buộc mỗi nơ-ron học các đặc trưng hữu ích một cách độc lập. Khi kiểm thử, dùng tất cả nơ-ron nhưng thu nhỏ đầu ra để phù hợp với kỳ vọng trong huấn luyện.
 
-\textbf{Batch Normalization:} Normalize activations của mỗi layer về mean = 0 và variance = 1, tính trên từng mini-batch:
+\textbf{Batch Normalization:} Chuẩn hóa giá trị kích hoạt của mỗi lớp về trung bình = 0 và phương sai = 1, tính trên từng mini-batch:
 \begin{equation}
 \hat{\mathbf{z}} = \frac{\mathbf{z} - \mu_{\mathcal{B}}}{\sqrt{\sigma_{\mathcal{B}}^2 + \epsilon}}, \quad \mathbf{z}_{BN} = \gamma \hat{\mathbf{z}} + \beta
 \end{equation}
-trong đó $\mu_{\mathcal{B}}, \sigma_{\mathcal{B}}^2$ là mean/variance của batch, $\gamma, \beta$ là learnable parameters để mạng có thể "undo" normalization nếu cần. Lợi ích chính là ổn định quá trình training - cho phép dùng learning rate lớn hơn, giảm nhạy cảm với weight initialization. Batch normalization cũng có tác dụng regularization nhẹ vì việc normalize trên mini-batch tạo một chút noise.
+trong đó $\mu_{\mathcal{B}}, \sigma_{\mathcal{B}}^2$ là trung bình và phương sai của batch, $\gamma, \beta$ là các tham số học được cho phép mạng tự điều chỉnh mức độ chuẩn hóa phù hợp với từng lớp. Lợi ích chính là ổn định quá trình huấn luyện - cho phép dùng tốc độ học lớn hơn, giảm độ nhạy với việc khởi tạo trọng số.
 
 \subsection{Điều khiển PID}
 \label{subsec:pid_control}
@@ -982,17 +982,17 @@ với $e_\omega = \omega_{des} - \omega_{current}$.
 \begin{itemize}
 \item Tăng $K_p$: Phản ứng nhanh hơn nhưng có thể overshoot và oscillation
 \item Tăng $K_i$: Khử steady-state error nhưng có thể gây chậm và overshoot
-\item Tăng $K_d$: Giảm overshoot và oscillation nhưng nhạy cảm với noise
+\item Tăng $K_d$: Giảm overshoot và oscillation nhưng nhạy cảm với nhiễu
 \end{itemize}
 
 \textbf{Ưu điểm:} Đơn giản, không cần mô hình chính xác, dễ triển khai, ổn định với hệ tuyến tính.
 
-\textbf{Hạn chế:} Khó tuning cho hệ phi tuyến, không tối ưu cho hệ đa biến (MIMO), nhạy cảm với noise (thành phần D), không thích nghi với thay đổi môi trường.
+\textbf{Hạn chế:} Khó tuning cho hệ phi tuyến, không tối ưu cho hệ đa biến, nhạy cảm với nhiễu (thành phần D), không thích nghi với thay đổi môi trường.
 
 \subsection{UKF Sensor Fusion}
 \label{subsec:ukf_sensor_fusion}
 
-Unscented Kalman Filter (UKF) \cite{julier2004ukf} là phương pháp ước lượng trạng thái cho hệ thống phi tuyến. UKF cải tiến Extended Kalman Filter (EKF) bằng cách sử dụng unscented transform thay vì linearization, cho kết quả chính xác hơn và không cần tính Jacobian.
+Unscented Kalman Filter (UKF) \cite{julier2004ukf} là phương pháp ước lượng trạng thái cho hệ thống phi tuyến. Khác với Extended Kalman Filter (EKF) phải xấp xỉ tuyến tính hóa và tính ma trận Jacobian, UKF sử dụng tập hợp các điểm đại diện (sigma points) để truyền qua hàm phi tuyến trực tiếp, cho kết quả chính xác hơn với cách triển khai đơn giản hơn.
 
 \textbf{Bài toán sensor fusion:} Robot sử dụng nhiều cảm biến để ước lượng pose $(x, y, \theta)$:
 \begin{itemize}

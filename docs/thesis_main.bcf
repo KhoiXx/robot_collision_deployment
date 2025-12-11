@@ -2213,10 +2213,8 @@
     <bcf:citekey order="27">long2018towards</bcf:citekey>
     <bcf:citekey order="28">long2018towards</bcf:citekey>
     <bcf:citekey order="29">long2018towards</bcf:citekey>
-    <bcf:citekey order="30">long2018towards</bcf:citekey>
-    <bcf:citekey order="31">cartographer_tuning</bcf:citekey>
-    <bcf:citekey order="32">long2018towards</bcf:citekey>
-    <bcf:citekey order="33">long2018towards</bcf:citekey>
+    <bcf:citekey order="30">cartographer_tuning</bcf:citekey>
+    <bcf:citekey order="31">long2018towards</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">
