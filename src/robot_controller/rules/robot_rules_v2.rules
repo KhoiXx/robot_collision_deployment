@@ -1,0 +1,11 @@
+# Robot USB Device Rules v2
+# Using serial number to distinguish CP210x devices
+
+# ESP - CP210x with serial ESP001
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="ESP001", MODE:="0777", SYMLINK+="esp"
+
+# LiDAR - CP210x with serial 0001 (default)
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="0001", MODE:="0777", SYMLINK+="lidar"
+
+# IMU - CH340 chip (1a86:7523)
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", MODE:="0777", SYMLINK+="imu"
