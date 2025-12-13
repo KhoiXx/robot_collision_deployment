@@ -37,13 +37,25 @@ Là học viên thạc sĩ, tôi cần hoàn thành chương Tổng quan để t
 
 **Acceptance Scenarios**:
 
-1. **Given** bài báo gốc 1709.10082.pdf, **When** viết phần tổng quan về phương pháp gốc, **Then** nội dung phải trình bày: (a) kiến trúc CNN với 2 lớp conv1D, (b) thuật toán PPO với clipping, (c) huấn luyện 2 giai đoạn, (d) kết quả 96.5-100% với 4-20 robots
+1. **Given** tài liệu về multi-robot systems, **When** viết phần giới thiệu về hệ đa robot, **Then** nội dung phải trình bày: (a) định nghĩa và phân loại multi-robot systems, (b) ứng dụng thực tế (kho hàng, nhà máy, logistics), (c) thách thức chính trong điều khiển đa robot, (d) tầm quan trọng của collision avoidance
 
-2. **Given** tài liệu về các phương pháp collision avoidance khác, **When** viết phần so sánh các phương pháp, **Then** nội dung phải so sánh: (a) ORCA vs RL, (b) phương pháp tập trung vs phân tán, (c) sensor-level vs high-level planning, (d) ưu nhược điểm từng phương pháp
+2. **Given** tài liệu về các phương pháp truyền thống, **When** viết phần các phương pháp tránh va chạm truyền thống, **Then** nội dung phải so sánh: (a) ORCA (Optimal Reciprocal Collision Avoidance), (b) Artificial Potential Field, (c) RRT/RRT*, (d) Model Predictive Control (MPC), (e) ưu nhược điểm từng phương pháp, (f) hạn chế với số lượng robot lớn
 
-3. **Given** lý thuyết từ đề cương (Neural Network, RL, PPO, Optimizer), **When** viết phần cơ sở lý thuyết, **Then** nội dung phải giải thích: (a) kiến trúc mạng nơ-ron, (b) Reinforcement Learning cơ bản, (c) thuật toán PPO với clipping, (d) Adam optimizer
+3. **Given** tài liệu về deep learning approaches, **When** viết phần các phương pháp dựa trên học sâu, **Then** nội dung phải trình bày: (a) Deep Reinforcement Learning cho navigation, (b) Imitation Learning và Inverse RL, (c) End-to-end learning từ sensors, (d) Xu hướng hiện tại và các nghiên cứu tiêu biểu, (e) So sánh centralized vs decentralized approaches
 
-4. **Given** các công trình trong nước và quốc tế, **When** viết phần đánh giá tình hình nghiên cứu, **Then** nội dung phải phân tích: (a) xu hướng sử dụng Deep RL, (b) hạn chế của các nghiên cứu trước, (c) khoảng trống cần nghiên cứu (scalability, sim-to-real)
+4. **Given** bài báo gốc 1709.10082.pdf, **When** viết phần phương pháp của Long et al. 2018, **Then** nội dung phải trình bày chi tiết: (a) POMDP formulation cho multi-robot problem, (b) kiến trúc CNN với 2 lớp Conv1D (32 filters, kernel 5 và 3), (c) thuật toán PPO với clipping, (d) chiến lược huấn luyện 2 giai đoạn với curriculum learning, (e) kết quả 96.5-100% success rate với 4-20 robots, (f) đóng góp chính của nghiên cứu
+
+5. **Given** lý thuyết từ đề cương, **When** viết phần cơ sở lý thuyết về Reinforcement Learning, **Then** nội dung phải giải thích: (a) Markov Decision Process (MDP) và Partially Observable MDP, (b) Policy, Value function, Q-function, (c) Policy gradient methods, (d) Actor-Critic architecture, (e) Advantage function và Generalized Advantage Estimation (GAE)
+
+6. **Given** paper PPO của Schulman 2017, **When** viết phần cơ sở lý thuyết về PPO, **Then** nội dung phải giải thích: (a) Vấn đề của policy gradient truyền thống (high variance, instability), (b) Trust Region Policy Optimization (TRPO) background, (c) PPO clipping objective function, (d) Tại sao PPO hiệu quả (sample efficiency, stability), (e) Hyperparameters chính (clip ratio, epochs, batch size)
+
+7. **Given** lý thuyết neural networks, **When** viết phần cơ sở lý thuyết về kiến trúc mạng, **Then** nội dung phải trình bày: (a) Convolutional Neural Networks (CNN) cho sequential data, (b) Fully Connected layers, (c) Activation functions (ReLU, Sigmoid, Tanh), (d) Adam optimizer và learning rate, (e) Batch normalization và regularization techniques
+
+8. **Given** lý thuyết về điều khiển PID, **When** viết phần cơ sở lý thuyết về PID Control, **Then** nội dung phải trình bày: (a) PID controller cho differential drive robot, (b) công thức điều khiển P, I, D components, (c) tuning PID parameters (Kp, Ki, Kd), (d) ứng dụng PID cho linear và angular velocity control, (e) ưu điểm và hạn chế của PID
+
+9. **Given** tài liệu về sensor fusion, **When** viết phần cơ sở lý thuyết về UKF Sensor Fusion, **Then** nội dung phải giải thích: (a) Unscented Kalman Filter (UKF) cho nonlinear systems, (b) fusion giữa IMU (gyroscope, accelerometer) và wheel odometry, (c) cách UKF ước lượng pose (x, y, θ) của robot, (d) xử lý noise và uncertainty trong sensors, (e) so sánh UKF vs EKF (Extended Kalman Filter)
+
+10. **Given** tài liệu về SLAM và mapping, **When** viết phần cơ sở lý thuyết về GMapping, **Then** nội dung phải trình bày: (a) Simultaneous Localization and Mapping (SLAM) problem, (b) GMapping algorithm (Rao-Blackwellized Particle Filter), (c) cách tạo occupancy grid map từ LiDAR data, (d) ứng dụng trong navigation và path planning, (e) integration với ROS (Robot Operating System)
 
 ---
 
@@ -65,7 +77,15 @@ Là học viên thạc sĩ, tôi cần hoàn thành chương Phương pháp đ�
 
 4. **Given** đề cương phần 4.3 về huấn luyện, **When** viết về training procedure, **Then** nội dung phải mô tả: (a) 7 tình huống huấn luyện (Figure 8), (b) 2 giai đoạn (Stage 1: 20 robots, Stage 2: 58 robots), (c) thuật toán PPO với GAE, (d) hyperparameters từ Table 2
 
-5. **Given** đề cương phần 4.5 về robot thực tế, **When** viết về hardware design, **Then** nội dung phải mô tả: (a) kích thước 20cm × 15.7cm, (b) RPLidar A1 360°, (c) Raspberry Pi với Ubuntu, (d) 2 động cơ stepper
+5. **Given** đề cương phần 4.5 về robot thực tế, **When** viết về xây dựng robot thực tế, **Then** nội dung phải mô tả: (a) kích thước 20cm × 15.7cm, (b) RPLidar A1 360°, (c) Raspberry Pi với Ubuntu, (d) 2 động cơ stepper, (e) IMU sensor (gyroscope, accelerometer), (f) nguồn điện và mạch điều khiển
+
+6. **Given** lý thuyết PID và yêu cầu điều khiển, **When** viết về thiết kế PID controller và chứng minh ổn định, **Then** nội dung phải trình bày: (a) mô hình động học differential drive robot, (b) thiết kế PID controller cho linear và angular velocity, (c) chứng minh ổn định Lyapunov cho closed-loop system, (d) phương pháp tuning Kp, Ki, Kd, (e) kết quả simulation và thực nghiệm
+
+7. **Given** yêu cầu về localization chính xác, **When** viết về sensor fusion với UKF, **Then** nội dung phải mô tả: (a) mô hình state space cho robot (x, y, θ, vx, vy, ω), (b) measurement models cho IMU và wheel odometry, (c) thuật toán UKF để fusion sensors, (d) xử lý noise covariance matrices Q và R, (e) so sánh với EKF và raw odometry
+
+8. **Given** yêu cầu về mapping và navigation, **When** viết về triển khai GMapping và navigation stack, **Then** nội dung phải trình bày: (a) cấu hình GMapping parameters (particles, resolution), (b) tạo occupancy grid map từ LiDAR, (c) integration với ROS navigation stack, (d) path planning với move_base, (e) obstacle avoidance với costmap
+
+9. **Given** mô hình đã train và robot thực tế, **When** viết về triển khai hệ robot, **Then** nội dung phải mô tả: (a) kiến trúc hệ thống ROS nodes (sensor, control, RL policy), (b) deployment model lên Raspberry Pi, (c) real-time inference latency, (d) communication protocol giữa các robots, (e) testing procedure và safety mechanisms
 
 ---
 

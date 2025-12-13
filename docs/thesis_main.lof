@@ -5,8 +5,44 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {2.1}{\ignorespaces 7 scenarios trong huấn luyện\relax }}{7}{figure.caption.6}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.2}{\ignorespaces Minh họa Gradient Descent: Tham số di chuyển theo hướng ngược gradient để giảm loss\relax }}{8}{figure.caption.7}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.3}{\ignorespaces So sánh Stochastic Gradient Descent và Gradient Descent: SGD có noise nhưng hội tụ nhanh hơn\relax }}{10}{figure.caption.8}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.4}{\ignorespaces Tương tác giữa Agent và Environment trong Reinforcement Learning\relax }}{14}{figure.caption.10}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.5}{\ignorespaces Kiến trúc Actor-Critic: Actor quyết định hành động, Critic đánh giá giá trị trạng thái\relax }}{15}{figure.caption.11}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.6}{\ignorespaces PPO Clipping: Objective bị chặn ngoài khoảng $[1-\epsilon , 1+\epsilon ]$ để ngăn policy thay đổi quá nhanh\relax }}{18}{figure.caption.12}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {2.7}{\ignorespaces Kiến trúc thuật toán Cartographer SLAM với hai hệ thống con: Local SLAM (frontend) xử lý real-time và Global SLAM (backend) tối ưu hóa toàn cục\relax }}{27}{figure.caption.15}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.1}{\ignorespaces Kiến trúc mạng Actor-Critic với encoder chung. LiDAR data được xử lý qua 2 lớp Conv1D và FC layer tạo thành encoder chung, sau đó kết hợp với goal và velocity để tạo ra Actor (policy network) và Critic (value network) với các FC layers riêng biệt.\relax }}{33}{figure.caption.16}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.2}{\ignorespaces Stage 1: môi trường đơn giản cho 24 robots\relax }}{35}{figure.caption.17}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.3}{\ignorespaces Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)\relax }}{36}{figure.caption.18}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.4}{\ignorespaces Xác định tham số động cơ từ thực nghiệm. (a) Đáp ứng step để xác định time constant $\tau = 0.05$s: các điểm đo (xanh) có nhiễu nhẹ nhưng fit tốt với mô hình lý thuyết (đường xanh đậm); tại $t = \tau $, vận tốc đạt 63.2\% giá trị ổn định. (b) Quan hệ tuyến tính PWM-vận tốc để xác định motor gain: 9 điểm đo (đỏ) cho fitting $K_m \approx 0.81$, làm tròn thành $K_m = 0.8$ cho mô hình.\relax }}{41}{figure.caption.21}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Kiến trúc hệ thống đa robot hoàn chỉnh\relax }}{48}{figure.caption.24}%
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.1}{\ignorespaces Stage 1: (a) Success rate tăng từ 2.57\% lên 83.03\%, (b) Collision rate giảm từ 76.93\% xuống 14.11\%, (c) Average reward tăng từ -13.97 lên 46.87.\relax }}{51}{figure.caption.27}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.2}{\ignorespaces Dữ liệu metrics huấn luyện Stage 1 chưa qua xử lý\relax }}{52}{figure.caption.28}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.3}{\ignorespaces Stage 2: (a) Success rate tăng từ 34.66\% lên 89.18\%, (b) Collision rate giảm từ 65.28\% xuống 9.04\%, (c) Average reward tăng từ -455.62 lên 2748.11.\relax }}{53}{figure.caption.30}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Dữ liệu metrics huấn luyện Stage 2 chưa qua xử lý\relax }}{54}{figure.caption.31}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.5}{\ignorespaces Circle Test với 5 robots: Các robots (chấm màu) di chuyển từ vị trí ban đầu đến goal đối diện. Đường màu thể hiện quỹ đạo di chuyển, vùng tròn màu xanh là phạm vi quan sát của mỗi robot. Thời gian hoàn thành: 1m03s.\relax }}{55}{figure.caption.33}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.6}{\ignorespaces Circle Test với24 robots: (a) Robots bắt đầu di chuyển từ vòng tròn bán kính 10m, tạo thành pattern xoắn để tránh va chạm tại tâm; (b) Robots hoàn thành di chuyển đến vị trí đối diện với quỹ đạo xoắn ốc đặc trưng của thuật toán collision avoidance.\relax }}{56}{figure.caption.34}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }

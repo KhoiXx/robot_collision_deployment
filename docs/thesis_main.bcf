@@ -2183,8 +2183,38 @@
     <bcf:datasource type="file" datatype="bibtex">references.bib</bcf:datasource>
   </bcf:bibdata>
   <bcf:section number="0">
-    <bcf:citekey order="1">long2018towards</bcf:citekey>
-    <bcf:citekey order="2">schulman2017proximal</bcf:citekey>
+    <bcf:citekey order="1">khatib1986real</bcf:citekey>
+    <bcf:citekey order="2">lavalle1998rrt</bcf:citekey>
+    <bcf:citekey order="3">karaman2011rrtstar</bcf:citekey>
+    <bcf:citekey order="4">vandenberg2011orca</bcf:citekey>
+    <bcf:citekey order="5">khatib1986real</bcf:citekey>
+    <bcf:citekey order="6">lavalle1998rrt</bcf:citekey>
+    <bcf:citekey order="6">karaman2011rrtstar</bcf:citekey>
+    <bcf:citekey order="7">vandenberg2011orca</bcf:citekey>
+    <bcf:citekey order="8">lecun2015deep</bcf:citekey>
+    <bcf:citekey order="9">mnih2015dqn</bcf:citekey>
+    <bcf:citekey order="10">mnih2016asynchronous</bcf:citekey>
+    <bcf:citekey order="11">tai2017collision</bcf:citekey>
+    <bcf:citekey order="12">chen2017decentralized</bcf:citekey>
+    <bcf:citekey order="13">long2018towards</bcf:citekey>
+    <bcf:citekey order="14">bengio2009curriculum</bcf:citekey>
+    <bcf:citekey order="15">kingma2014adam</bcf:citekey>
+    <bcf:citekey order="16">schulman2015gae</bcf:citekey>
+    <bcf:citekey order="17">schulman2017proximal</bcf:citekey>
+    <bcf:citekey order="18">lecun2015deep</bcf:citekey>
+    <bcf:citekey order="19">astrom2006feedback</bcf:citekey>
+    <bcf:citekey order="20">siegwart2011mobile</bcf:citekey>
+    <bcf:citekey order="21">julier2004ukf</bcf:citekey>
+    <bcf:citekey order="22">thrun2005probabilistic</bcf:citekey>
+    <bcf:citekey order="23">hess2016cartographer</bcf:citekey>
+    <bcf:citekey order="24">hess2016cartographer</bcf:citekey>
+    <bcf:citekey order="25">long2018towards</bcf:citekey>
+    <bcf:citekey order="26">long2018towards</bcf:citekey>
+    <bcf:citekey order="27">long2018towards</bcf:citekey>
+    <bcf:citekey order="28">long2018towards</bcf:citekey>
+    <bcf:citekey order="29">long2018towards</bcf:citekey>
+    <bcf:citekey order="30">cartographer_tuning</bcf:citekey>
+    <bcf:citekey order="31">long2018towards</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="none">

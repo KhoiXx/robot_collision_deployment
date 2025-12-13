@@ -8,6 +8,23 @@
 %% ============================================================================
 
 \begin{titlepage}
+
+% Double border around cover page (HCMUT requirement)
+% Note: TikZ borders require 2 compilation passes to position correctly
+\begin{tikzpicture}[remember picture,overlay]
+  % Outer border (2pt thick) - inset 2cm from page edges
+  \draw[line width=2pt]
+    ([xshift=2cm,yshift=-2cm]current page.north west)
+    rectangle
+    ([xshift=-1cm,yshift=2cm]current page.south east);
+
+  % Inner border (1pt thick, 3mm inside outer)
+  \draw[line width=1pt]
+    ([xshift=2.3cm,yshift=-2.3cm]current page.north west)
+    rectangle
+    ([xshift=-1.3cm,yshift=2.3cm]current page.south east);
+\end{tikzpicture}
+
 \begin{center}
 
 % University name (Font 14, Bold)
@@ -16,15 +33,12 @@
 TRƯỜNG ĐẠI HỌC BÁCH KHOA\\
 }
 
-\vspace{0.5cm}
+\vspace{1cm}
 
-% Department
-{\fontsize{13}{15}\selectfont
-KHOA ĐIỆN - ĐIỆN TỬ\\
-BỘ MÔN TỰ ĐỘNG HÓA\\
-}
+% University logo (HCMUT logo)
+\includegraphics[width=3cm]{images/bk-logo.png}
 
-\vspace{2cm}
+\vspace{1.5cm}
 
 % Thesis title in Vietnamese (Font 16, Bold, Uppercase)
 {\fontsize{16}{19}\selectfont\bfseries
@@ -40,8 +54,8 @@ BỘ MÔN TỰ ĐỘNG HÓA\\
 
 \vspace{2cm}
 
-% Degree
-{\fontsize{13}{15}\selectfont
+% Degree (Font 14 as per HCMUT requirement)
+{\fontsize{14}{16}\selectfont
 LUẬN VĂN THẠC SĨ\\
 }
 
@@ -61,8 +75,8 @@ LUẬN VĂN THẠC SĨ\\
 
 \vfill
 
-% Submission date
-{\fontsize{13}{15}\selectfont
+% Submission date (Font 12 as per HCMUT requirement)
+{\fontsize{12}{14}\selectfont
 TP. Hồ Chí Minh, \submissiondate\\
 }
 

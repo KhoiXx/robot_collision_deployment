@@ -16,7 +16,7 @@
 %
 % Or simply use: make
 
-\documentclass[a4paper,13pt]{book}
+\documentclass[a4paper,13pt,oneside,openany]{book}
 
 %% ============================================================================
 %% Load Preamble (all packages and configurations)
@@ -34,37 +34,39 @@
 %% FRONT MATTER
 %% ============================================================================
 
-% Cover page and title page (no page numbers)
+% Main cover page (Bìa chính - no page numbers)
+\pagenumbering{gobble}
 \input{chapters/00_cover}
 
-% Roman numeral page numbering for front matter
-\frontmatter
+% Secondary cover page (Bìa phụ - no page numbers)
+\input{chapters/00_cover_secondary}
 
-% Front matter sections: acknowledgments, abstracts, declaration
+% Front matter sections: acknowledgments, abstracts, declaration (NO page numbers)
 \input{chapters/01_frontmatter}
 
-% Table of contents
+% Table of contents (NO page numbers)
 \tableofcontents
-\newpage
+\clearpage
 
-% List of figures
+% List of figures (NO page numbers)
 \listoffigures
-\newpage
+\clearpage
 
-% List of tables
+% List of tables (NO page numbers)
 \listoftables
-\newpage
+\clearpage
 
-% List of symbols and abbreviations
+% List of symbols and abbreviations (NO page numbers)
 \input{symbols}
-\newpage
+\clearpage
 
 %% ============================================================================
-%% MAIN CONTENT
+%% MAIN CONTENT - Page numbering starts here
 %% ============================================================================
 
-% Arabic numeral page numbering starting from 1
-\mainmatter
+% Start Arabic numeral page numbering from page 1
+\pagenumbering{arabic}
+\setcounter{page}{1}
 
 % Chapter 1: Mở Đầu (Introduction)
 \input{chapters/02_chapter1_intro}
