@@ -23,7 +23,7 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{45}{table.caption.23}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{49}{table.caption.25}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{48}{table.caption.25}%
 \defcounter {refsection}{0}\relax 
 \contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{49}{table.caption.26}%
 \defcounter {refsection}{0}\relax 
@@ -39,6 +39,16 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả Circle Test với bài báo gốc CADRL và NH-ORCA\relax }}{56}{table.caption.37}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.6}{\ignorespaces Kết quả thực nghiệm trên 1 robot thực tế (TODO: Điền sau)\relax }}{58}{table.caption.38}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Tổng hợp kết quả thực nghiệm theo nhóm các trường hợp\relax }}{58}{table.caption.39}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.7}{\ignorespaces Chi tiết kết quả test không có vật cản\relax }}{58}{table.caption.40}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.8}{\ignorespaces Chi tiết kết quả test với vật cản tĩnh\relax }}{59}{table.caption.41}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.9}{\ignorespaces Chi tiết kết quả test với vật cản động (người)\relax }}{60}{table.caption.43}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.10}{\ignorespaces So sánh kết quả thực nghiệm với mô phỏng\relax }}{60}{table.caption.45}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {5.1}{\ignorespaces Dữ liệu chi tiết toàn bộ kết quả thực nghiệm\relax }}{69}{table.caption.49}%

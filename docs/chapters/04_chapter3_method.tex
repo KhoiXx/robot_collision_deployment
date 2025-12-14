@@ -348,10 +348,10 @@ Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng 
 % \includegraphics[width=0.85\textwidth]{figures/stage1_circle_training.png}
 \includegraphics[width=0.3\textwidth]{figures/obstacle.png}
 \caption{Stage 1: môi trường đơn giản cho 24 robots}
-\label{fig:stage1_training}
+\label{fig:stage1_env}
 \end{figure}
 
-\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_training} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), giảm learning rates (critic 1e-3, actor 4e-4), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
+\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_env} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), giảm learning rates (critic 1e-3, actor 4e-4), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
 
 \textit{Vấn đề timeout trong Stage 2:} Trong quá trình huấn luyện Stage 2, sau khoảng 3000 updates, kết quả bắt đầu suy giảm dù đã đạt success rate khá cao. Phân tích behavior của robots cho thấy chúng đang học cách di chuyển nhanh và thẳng nhất có thể - hành vi này có thể phản ánh việc reward phạt do timeout'. Do timeout limit ban đầu (500 steps) không đủ cho môi trường phức tạp hơn với 44 robots, policy học được rằng cách tốt nhất để tránh phạt timeout là lao thẳng về goal bất chấp obstacles, dẫn đến collision rate tăng.
 
@@ -361,7 +361,7 @@ Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng 
 \centering
 \includegraphics[width=0.65\textwidth]{figures/04_Fig8_training_scenarios.jpg}
 \caption{Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)}
-\label{fig:stage2_training}
+\label{fig:stage2_env}
 \end{figure}
 
 \subsection{Thuật toán PPO với GAE}
@@ -860,20 +860,21 @@ Khi triển khai model từ mô phỏng sang robot thực tế, an toàn là y�
 
 \subsection{Giới hạn tốc độ tối đa}
 
-Model được huấn luyện với tốc độ tối đa 0.7 m/s trong mô phỏng, nhưng khi triển khai thực tế, tốc độ được giới hạn xuống \textbf{0.3 m/s}. Có hai lý do chính:
+Model được huấn luyện với tốc độ tối đa giới hạn xuống \textbf{0.3 m/s} mặc dù tối đa robot có thể chạy được với 1m/s (~3.6km). Có hai lý do chính:
 
 \textbf{1. Hạn chế phần cứng:}
 \begin{itemize}[nosep]
-\item LiDAR LD19 hoạt động ở tần số 10Hz, nghĩa là mỗi 100ms mới có một scan mới. Với tốc độ 0.7 m/s, robot di chuyển 7cm giữa hai lần quét - khoảng cách đáng kể có thể bỏ lỡ vật cản nhỏ.
+\item LiDAR LD19 được cập nhật với tần số thực tế 10Hz do vấn đề về ROS communication và phải ưu tiên tần số cập nhật ESP vì Jetson không xử lý kịp cả 2 ở tần số cao. Với tốc độ 1.0 m/s, robot di chuyển 10cm giữa hai lần quét - khoảng cách đáng kể miss dữ liệu scan dẫn đến sai matching map
 \item Hệ thống ước lượng vị trí (Cartographer/UKF) không đáp ứng kịp khi robot di chuyển nhanh, gây sai lệch vị trí tương đối trong môi trường và ảnh hưởng đến local goal calculation.
 \item ROS network có độ trễ khoảng 50ms, cộng thêm thời gian inference (~10ms) và PID response, tổng latency có thể lên đến 80-100ms.
 \end{itemize}
 
 \textbf{2. An toàn trong môi trường thực nghiệm:}
 \begin{itemize}[nosep]
-\item Không gian thực nghiệm nhỏ (khoảng 5m × 5m) so với môi trường mô phỏng (20m × 20m).
+\item Không gian thực nghiệm nhỏ (khoảng 4m x 3m) so với môi trường mô phỏng (20m × 20m).
 \item Có nhiều vật cản hơn mô phỏng: bàn, ghế, cáp điện, thiết bị thí nghiệm.
-\item Cần thời gian phản ứng đủ để dừng an toàn khi phát hiện chướng ngại vật bất ngờ.
+\item Cần thời gian phản ứng đủ để dừng an toàn khi phát hiện chướng ngại vật bất ngờ
+\item Robot có thể mắc kẹt nhưng bánh vẫn quay trong môi trường hẹp, nên cần giảm tốc độ quay bánh.
 \end{itemize}
 
 \subsection{Velocity ramping trên Arduino}

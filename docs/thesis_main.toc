@@ -203,13 +203,13 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.9.3}Safety check và recovery}{47}{subsection.3.9.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {3.10}Triển khai hệ robot hoàn chỉnh}{47}{section.3.10}%
+\contentsline {section}{\numberline {3.10}Triển khai hệ robot hoàn chỉnh}{48}{section.3.10}%
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.10.1}Kiến trúc tổng thể}{48}{subsection.3.10.1}%
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.10.2}Cấu hình phần cứng}{48}{subsection.3.10.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {3.10.3}Cấu hình mạng ROS}{48}{subsection.3.10.3}%
+\contentsline {subsection}{\numberline {3.10.3}Cấu hình mạng ROS}{49}{subsection.3.10.3}%
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {3.10.4}Phân bổ các ROS nodes}{49}{subsection.3.10.4}%
 \defcounter {refsection}{0}\relax 
@@ -231,40 +231,52 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {subsection}{\numberline {4.2.1}Thiết lập thực nghiệm}{57}{subsection.4.2.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.2.2}Kết quả thực nghiệm với 1 robot}{58}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.2}Kết quả thực nghiệm}{58}{subsection.4.2.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {4.3}Thảo luận}{58}{section.4.3}%
+\contentsline {subsubsection}{\numberline {4.2.2.1}Kết quả không có vật cản}{58}{subsubsection.4.2.2.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.3.1}Hiệu quả của curriculum learning}{58}{subsection.4.3.1}%
+\contentsline {subsubsection}{\numberline {4.2.2.2}Kết quả với vật cản tĩnh}{59}{subsubsection.4.2.2.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.3.2}Khả năng mở rộng số lượng robots}{58}{subsection.4.3.2}%
+\contentsline {subsubsection}{\numberline {4.2.2.3}Kết quả với vật cản động (người)}{59}{subsubsection.4.2.2.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.3.3}Từ mô phỏng đến thực tế (Sim-to-real) }{58}{subsection.4.3.3}%
+\contentsline {subsubsection}{\numberline {4.2.2.4}So sánh với kết quả mô phỏng}{60}{subsubsection.4.2.2.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.3.4}Hạn chế của nghiên cứu}{59}{subsection.4.3.4}%
+\contentsline {section}{\numberline {4.3}Thảo luận}{61}{section.4.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {4.3.5}Hướng cải tiến}{59}{subsection.4.3.5}%
+\contentsline {subsection}{\numberline {4.3.1}Hiệu quả của curriculum learning}{61}{subsection.4.3.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {chapter}{\numberline {5}KẾT LUẬN VÀ KIẾN NGHỊ}{60}{chapter.5}%
+\contentsline {subsection}{\numberline {4.3.2}Khả năng mở rộng số lượng robots}{61}{subsection.4.3.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.1}Kết luận}{60}{section.5.1}%
+\contentsline {subsection}{\numberline {4.3.3}Từ mô phỏng đến thực tế (Sim-to-real) }{61}{subsection.4.3.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.1}Về thuật toán và huấn luyện}{60}{subsection.5.1.1}%
+\contentsline {subsection}{\numberline {4.3.4}Hạn chế của nghiên cứu}{62}{subsection.4.3.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.2}Về thiết kế và triển khai phần cứng}{60}{subsection.5.1.2}%
+\contentsline {subsection}{\numberline {4.3.5}Hướng cải tiến}{62}{subsection.4.3.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.3}Về sim-to-real transfer}{60}{subsection.5.1.3}%
+\contentsline {chapter}{\numberline {5}KẾT LUẬN VÀ KIẾN NGHỊ}{64}{chapter.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.1.4}Đánh giá tổng thể}{61}{subsection.5.1.4}%
+\contentsline {section}{\numberline {5.1}Kết luận}{64}{section.5.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.2}Kiến nghị}{61}{section.5.2}%
+\contentsline {subsection}{\numberline {5.1.1}Về thuật toán và huấn luyện}{64}{subsection.5.1.1}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.1}Cải tiến phần cứng}{61}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.1.2}Về thiết kế và triển khai phần cứng}{64}{subsection.5.1.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.2}Cải tiến thuật toán}{61}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.1.3}Về triển khai từ mô phỏng vào thực tế}{64}{subsection.5.1.3}%
 \defcounter {refsection}{0}\relax 
-\contentsline {subsection}{\numberline {5.2.3}Mở rộng quy mô thực nghiệm}{61}{subsection.5.2.3}%
+\contentsline {subsection}{\numberline {5.1.4}Đánh giá tổng thể}{65}{subsection.5.1.4}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.3}Hướng phát triển}{61}{section.5.3}%
+\contentsline {section}{\numberline {5.2}Kiến nghị}{65}{section.5.2}%
 \defcounter {refsection}{0}\relax 
-\contentsline {section}{\numberline {5.4}Lời kết}{62}{section.5.4}%
+\contentsline {subsection}{\numberline {5.2.1}Cải tiến phần cứng}{65}{subsection.5.2.1}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {5.2.2}Cải tiến thuật toán}{65}{subsection.5.2.2}%
+\defcounter {refsection}{0}\relax 
+\contentsline {subsection}{\numberline {5.2.3}Mở rộng quy mô thực nghiệm}{65}{subsection.5.2.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.3}Hướng phát triển}{66}{section.5.3}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{\numberline {5.4}Lời kết}{66}{section.5.4}%
+\defcounter {refsection}{0}\relax 
+\contentsline {chapter}{PHỤ LỤC}{69}{chapter*.47}%
+\defcounter {refsection}{0}\relax 
+\contentsline {section}{A. Dữ liệu chi tiết kết quả thực nghiệm}{69}{section*.48}%

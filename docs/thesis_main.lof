@@ -29,7 +29,7 @@
 \defcounter {refsection}{0}\relax 
 \contentsline {figure}{\numberline {3.4}{\ignorespaces Xác định tham số động cơ từ thực nghiệm. (a) Đáp ứng step để xác định time constant $\tau = 0.05$s: các điểm đo (xanh) có nhiễu nhẹ nhưng fit tốt với mô hình lý thuyết (đường xanh đậm); tại $t = \tau $, vận tốc đạt 63.2\% giá trị ổn định. (b) Quan hệ tuyến tính PWM-vận tốc để xác định motor gain: 9 điểm đo (đỏ) cho fitting $K_m \approx 0.81$, làm tròn thành $K_m = 0.8$ cho mô hình.\relax }}{41}{figure.caption.21}%
 \defcounter {refsection}{0}\relax 
-\contentsline {figure}{\numberline {3.5}{\ignorespaces Kiến trúc hệ thống đa robot hoàn chỉnh\relax }}{48}{figure.caption.24}%
+\contentsline {figure}{\numberline {3.5}{\ignorespaces Kiến trúc hệ thống robot hoàn chỉnh\relax }}{48}{figure.caption.24}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
@@ -44,5 +44,11 @@
 \contentsline {figure}{\numberline {4.5}{\ignorespaces Circle Test với 5 robots: Các robots (chấm màu) di chuyển từ vị trí ban đầu đến goal đối diện. Đường màu thể hiện quỹ đạo di chuyển, vùng tròn màu xanh là phạm vi quan sát của mỗi robot. Thời gian hoàn thành: 1m03s.\relax }}{55}{figure.caption.33}%
 \defcounter {refsection}{0}\relax 
 \contentsline {figure}{\numberline {4.6}{\ignorespaces Circle Test với24 robots: (a) Robots bắt đầu di chuyển từ vòng tròn bán kính 10m, tạo thành pattern xoắn để tránh va chạm tại tâm; (b) Robots hoàn thành di chuyển đến vị trí đối diện với quỹ đạo xoắn ốc đặc trưng của thuật toán collision avoidance.\relax }}{56}{figure.caption.34}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.7}{\ignorespaces Môi trường thực nghiệm trong nhà (~4m x 3m)\relax }}{58}{figure.caption.38}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.8}{\ignorespaces Robot tránh vật cản tĩnh: trajectory màu xanh lá cho thấy robot đi vòng qua vật cản để đến goal\relax }}{59}{figure.caption.42}%
+\defcounter {refsection}{0}\relax 
+\contentsline {figure}{\numberline {4.9}{\ignorespaces Robot tránh vật cản động (người): đường xanh dương là trajectory mapping, đường xanh lá là trajectory hiện tại. Hai hình chữ V là chân người được LiDAR phát hiện.\relax }}{60}{figure.caption.44}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
