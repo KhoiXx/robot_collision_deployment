@@ -94,7 +94,7 @@ Bảng \ref{tab:stage1_metrics} tổng hợp các metrics quan trọng tại cá
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/stage2_training_curves.png}
-\caption{Stage 2: (a) Success rate tăng từ 34.66\% lên 89.18\%, (b) Collision rate giảm từ 65.28\% xuống 9.04\%, (c) Average reward tăng từ -455.62 lên 2748.11.}
+\caption{Stage 2: (a) Success rate tăng từ 34.66\% lên 89.18\%, (b) Collision rate giảm từ 65.28\% xuống 9.04\%, (c) Average reward tăng từ -10.36 lên 62.46.}
 \label{fig:stage2_training}
 \end{figure}
 
@@ -115,13 +115,13 @@ Bảng \ref{tab:stage2_metrics} tổng hợp các metrics quan trọng tại cá
 \hline
 \textbf{Update} & \textbf{Success Rate (\%)} & \textbf{Collision Rate (\%)} & \textbf{Avg Reward} & \textbf{Timeout (\%)} \\
 \hline
-20 (Initial) & 34.66 & 65.28 & -455.62 & 0.07 \\
-500 & 42.15 & 57.43 & -289.34 & 0.42 \\
-1000 & 55.87 & 43.68 & 125.67 & 0.45 \\
-2000 & 72.34 & 26.89 & 1245.78 & 0.77 \\
-3000 & 82.45 & 16.23 & 2012.34 & 1.32 \\
-4000 & 87.92 & 10.56 & 2589.67 & 1.52 \\
-4480 (Final) & \textbf{89.18} & \textbf{9.04} & \textbf{2748.11} & 1.78 \\
+20 (Initial) & 34.66 & 65.28 & -10.36 & 0.07 \\
+500 & 47.84 & 52.06 & 1.54 & 0.10 \\
+1000 & 40.09 & 59.83 & -5.00 & 0.08 \\
+2000 & 53.12 & 46.82 & 4.75 & 0.06 \\
+3000 & 59.87 & 40.07 & 9.67 & 0.06 \\
+4000 & 81.56 & 16.82 & 37.75 & 1.62 \\
+4480 (Final) & \textbf{89.18} & \textbf{9.04} & \textbf{62.46} & 1.78 \\
 \hline
 \end{tabular}
 \end{table}
@@ -130,23 +130,23 @@ Bảng \ref{tab:stage2_metrics} tổng hợp các metrics quan trọng tại cá
 \begin{itemize}[nosep]
 \item \textbf{Transfer learning hiệu quả:} Mặc dù môi trường Stage 2 phức tạp hơn đáng kể, policy chuyển giao từ Stage 1 vẫn đạt success rate 34.66\% ngay từ đầu, cho thấy các kỹ năng cơ bản đã được học tốt.
 
-\item \textbf{Adaptation period (0-1000 updates):} Success rate tăng từ 34.66\% lên 55.87\% khi policy thích nghi với vật cản tĩnh và môi trường mới.
+\item \textbf{Giai đoạn thích nghi (0-1000 updates):} Giai đoạn đầu có biến động lớn do policy đang thích nghi với môi trường phức tạp hơn. Success rate dao động quanh 40-48\%, collision rate vẫn cao (52-60\%). Average reward tăng nhẹ từ -10.36 lên khoảng 1.54 rồi giảm xuống -5.00, phản ánh sự bất ổn trong quá trình học.
 
-\item \textbf{Rapid improvement (1000-3000 updates):} Success rate tăng mạnh từ 55.87\% lên 82.45\%, collision rate giảm từ 43.68\% xuống 16.23\%. Policy đã học được cách kết hợp tránh vật cản tĩnh và động.
+\item \textbf{Giai đoạn cải thiện (1000-3000 updates):} Success rate tăng dần từ 40\% lên 60\%, collision rate giảm từ 60\% xuống 40\%. Average reward tăng từ -5.00 lên 9.67. Policy đã bắt đầu học được cách kết hợp tránh vật cản tĩnh và động.
 
 \item \textbf{Vấn đề và điều chỉnh timeout (sau 3000 updates):} Tại khoảng 3000 updates, kết quả training bắt đầu có dấu hiệu suy giảm - collision rate tăng dù success rate vẫn đang tăng. Nguyên nhân được xác định là robots đang phát triển hành vi ``rushing'' - cố gắng di chuyển nhanh và thẳng nhất do bị timeout penalty. Hành vi này phản ánh việc policy đang tối ưu hóa sai mục tiêu: thay vì tìm đường đi an toàn, robots học cách đi thẳng về goal để tránh penalty timeout.
 
 Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout limit được tăng từ 500 lên 700 steps, điều này giải thích cho biểu đồ thời gian bị giựt mạnh ở khoảng sau 3000.
 
-\item \textbf{Fine-tuning với timeout mới (3000-4480 updates):} Sau khi điều chỉnh timeout, training được tiếp tục từ checkpoint tốt nhất. Success rate tiếp tục tăng lên 89.18\%, collision rate giảm mạnh xuống 9.04\%. Robots thể hiện behavior thận trọng hơn: sẵn sàng đi đường vòng để tránh va chạm thay vì lao thẳng về goal. Đây là giai đoạn tinh chỉnh quan trọng giúp policy cân bằng tốt hơn giữa hiệu quả (đến goal nhanh) và an toàn (tránh va chạm).
+\item \textbf{Giai đoạn tăng tốc (3000-4480 updates):} Sau khi điều chỉnh timeout, training được tiếp tục từ checkpoint tốt nhất. Đây là giai đoạn cải thiện mạnh mẽ nhất: success rate tăng vọt từ 60\% lên 89.18\%, collision rate giảm mạnh từ 40\% xuống 9.04\%. Average reward tăng đáng kể từ 9.67 lên 62.46. Robot thể hiện hành vi thận trọng hơn: sẵn sàng đi đường vòng để tránh va chạm thay vì lao thẳng về goal. Đây là giai đoạn tinh chỉnh quan trọng giúp policy cân bằng tốt hơn giữa hiệu quả (đến đích nhanh) và an toàn (tránh va chạm).
 \end{itemize}
 
 \textbf{Kết quả đạt được:}
 \begin{itemize}[nosep]
-\item Success rate tối đa: \textbf{89.18\%}
-\item Collision rate tối thiểu: \textbf{8.72\%}
-\item Average reward tối đa: \textbf{2748.11}
-\item Cải thiện so với Stage 1: Success rate tăng \textbf{+6.15\%}, Collision rate giảm \textbf{-5.07\%}
+\item Success rate tối đa: \textbf{89.72\%} (cuối cùng: 89.18\%)
+\item Collision rate tối thiểu: \textbf{8.72\%} (cuối cùng: 9.04\%)
+\item Average reward tối đa: \textbf{62.46}
+\item Cải thiện so với Stage 1: Success rate tăng \textbf{+5.92\%}, Collision rate giảm \textbf{-5.39\%}
 \end{itemize}
 
 % ----------------------------------------------------------------------------
@@ -177,7 +177,7 @@ Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout 
 \includegraphics[width=\textwidth]{figures/circle_20robots_end.png}
 \caption*{(b) Giai đoạn cuối (2m38s)}
 \end{minipage}
-\caption{Circle Test với24 robots: (a) Robots bắt đầu di chuyển từ vòng tròn bán kính 10m, tạo thành pattern xoắn để tránh va chạm tại tâm; (b) Robots hoàn thành di chuyển đến vị trí đối diện với quỹ đạo xoắn ốc đặc trưng của thuật toán collision avoidance.}
+\caption{Circle Test với 24 robots: (a) Robots bắt đầu di chuyển từ vòng tròn bán kính 10m, tạo thành pattern xoắn để tránh va chạm tại tâm; (b) Robots hoàn thành di chuyển đến vị trí đối diện với quỹ đạo xoắn ốc đặc trưng của thuật toán tránh va chạm.}
 \label{fig:circle_20robots}
 \end{figure}
 
@@ -256,7 +256,7 @@ Bảng \ref{tab:paper_comparison} so sánh kết quả với bài báo gốc CAD
 
 \item \textbf{Curriculum learning hiệu quả:} Việc chuyển từ Stage 1 sang Stage 2 cho thấy hiệu quả của curriculum learning:
 \begin{itemize}[nosep]
-\item Stage 1 giúp học các kỹ năng cơ bản (navigation, simple collision avoidance)
+\item Stage 1 giúp học các kỹ năng cơ bản (navigation, tránh va chạm cơ bản)
 \item Stage 2 tinh chỉnh cho môi trường phức tạp với static obstacles
 \item Transfer learning hoạt động tốt: policy Stage 1 đạt 34.66\% ngay lập tức trong Stage 2
 \end{itemize}
@@ -320,7 +320,7 @@ Phần này trình bày kết quả triển khai model đã huấn luyện trên
 \subsection{Kết quả thực nghiệm}
 \label{subsec:exp_results}
 
-Thực nghiệm được thực hiện với 17 test cases, chia thành 4 nhóm scenarios với độ khó tăng dần: (1) không có vật cản, (2) vật cản tĩnh, (3) 1 người động, và (4) 2 người động. Bảng \ref{tab:real_robot_summary} tổng hợp kết quả theo từng nhóm.
+Thực nghiệm được thực hiện với 17 test cases, chia thành 4 nhóm tình huống với độ khó tăng dần: (1) không có vật cản, (2) vật cản tĩnh, (3) 1 người động, và (4) 2 người động. Bảng \ref{tab:real_robot_summary} tổng hợp kết quả theo từng nhóm.
 
 \begin{table}[H]
 \centering
@@ -402,7 +402,7 @@ Robot đạt \textbf{83.3\% success rate} (5/6 tests) với vật cản tĩnh. C
 
 \subsubsection{Kết quả với vật cản động (người)}
 
-Đây là nhóm test quan trọng nhất để đánh giá khả năng collision avoidance trong môi trường thực tế. Robot đạt \textbf{75\% success rate} (3/4 tests) với 1 người và \textbf{50\%} (1/2 tests) với 2 người.
+Đây là nhóm test quan trọng nhất để đánh giá khả năng tránh va chạm trong môi trường thực tế. Robot đạt \textbf{75\% success rate} (3/4 tests) với 1 người và \textbf{50\%} (1/2 tests) với 2 người.
 
 \begin{table}[H]
 \centering
@@ -435,7 +435,7 @@ Robot đạt \textbf{83.3\% success rate} (5/6 tests) với vật cản tĩnh. C
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{result/experiment/screenshots/take5.png}
-\caption{Robot tránh vật cản động (người): đường xanh dương là trajectory mapping, đường xanh lá là trajectory hiện tại. Hai hình chữ V là chân người được LiDAR phát hiện.}
+\caption{Robot tránh vật cản động (người): đường xanh dương là quỹ đạo khi dựng map, đường xanh lá là quỹ đạo hiện tại. Hai hình chữ V là chân người được LiDAR phát hiện.}
 \label{fig:dynamic_obstacle_avoidance}
 \end{figure}
 
@@ -447,13 +447,13 @@ Robot đạt \textbf{83.3\% success rate} (5/6 tests) với vật cản tĩnh. C
 \label{tab:sim_vs_real}
 \begin{tabular}{lcc}
 \hline
-\textbf{Metric} & \textbf{Simulation (Stage 2)} & \textbf{Real Robot} \\
+\textbf{Metric} & \textbf{Mô phỏng (Stage 2)} & \textbf{Robot thực tế} \\
 \hline
 Success Rate (\%) & 89.18 & 82.4 \\
 Timeout Rate (\%) & 1.78 & 17.6 \\
 Collision Rate (\%) & 9.04 & 0 \\
-Number of Tests & 4480 & 17 \\
-Max Velocity (m/s) & 0.7 & 0.3 \\
+Số lượng test & 4480 & 17 \\
+Tốc độ tối đa (m/s) & 0.7 & 0.3 \\
 \hline
 \end{tabular}
 \end{table}
@@ -480,7 +480,7 @@ Vấn đề timeout được phát hiện trong Stage 2 (xem Mục \ref{subsec:s
 
 \subsection{Khả năng mở rộng số lượng robots}
 
-Nghiên cứu hiện tại sử dụng 44 robots trong Stage 2, mặc dù success rate thấp hơn một phần do độ khó tăng (89\% vs 96.5-100\%), kết quả cho thấy phương pháp decentralized collision avoidance có khả năng scale. Mỗi robot chỉ quan sát môi trường cục bộ và quyết định độc lập, không cần coordination tập trung - điều này cho phép hệ thống mở rộng về số lượng mà không tăng chi phí phần cứng trung tâm.
+Nghiên cứu hiện tại sử dụng 44 robots trong Stage 2, mặc dù success rate thấp hơn một phần do độ khó tăng (89\% vs 96.5-100\%), kết quả cho thấy phương pháp tránh va chạm phi tập trung có khả năng scale. Mỗi robot chỉ quan sát môi trường cục bộ và quyết định độc lập, không cần coordination tập trung - điều này cho phép hệ thống mở rộng về số lượng mà không tăng chi phí phần cứng trung tâm.
 
 So sánh với NH-ORCA (Bảng \ref{tab:paper_comparison}) cho thấy deep RL vượt trội hơn phương pháp geometry-based, đặc biệt ở mật độ cao. NH-ORCA giả định các robots khác sẽ phối hợp theo cùng một protocol, trong khi RL policy học được cách phản ứng với behavior thực tế của các agents xung quanh.
 
@@ -495,25 +495,25 @@ Việc triển khai model từ simulation lên robot thực tế cho thấy sim-
 \item \textit{Velocity limiting:} Giới hạn vận tốc tối đa 0.3 m/s để robot có đủ thời gian phản ứng với độ trễ của hệ thống
 \item \textit{Safety check:} Kiểm tra khoảng cách tối thiểu đến vật cản trước khi thực hiện lệnh di chuyển, tự động dừng nếu thấy robot đã chạm vật cản (khoảng cách an toàn = bán kính robot / 2)
 \item \textit{Stuck detection:} Phát hiện robot bị kẹt khi vận tốc thực tế thấp hơn nhiều so với lệnh trong một khoảng thời gian (trường hợp bánh xe vẫn quay nhưng vị trí robot không đổi) - cần dừng khẩn cấp
-\item \textit{Recovery behavior:} Khi phát hiện stuck, và trong giới hạn an toàn robot tự động lùi lại một đoạn ngắn và thử hướng di chuyển khác
+\item \textit{Recovery behavior:} Khi phát hiện bị kẹt, và trong giới hạn an toàn robot tự động lùi lại một đoạn ngắn và thử hướng di chuyển khác
 \end{itemize}
 \end{itemize}
 
-Tốc độ giảm là trade-off cần thiết để đảm bảo an toàn, bù đắp cho độ trễ mạng và tần số LiDAR thấp (10Hz).
+Tốc độ giảm là đánh đổi cần thiết để đảm bảo an toàn, bù đắp cho độ trễ mạng và tần số LiDAR thấp (10Hz).
 
 \subsection{Hạn chế của nghiên cứu}
 
 \textbf{Về môi trường mô phỏng:}
 \begin{itemize}[nosep]
 \item Stage 2D không tái hiện hoàn toàn các yếu tố vật lý: trượt bánh, độ trễ sensor, nhiễu đo lường
-\item Sim-to-real gap vẫn tồn tại, đòi hỏi các biện pháp bổ sung khi deploy thực tế
+\item Khác biệt giữa mô phỏng và thực tế, đòi hỏi các biện pháp bổ sung khi triển khai thực tế
 \end{itemize}
 
 \textbf{Về phần cứng:}
 \begin{itemize}[nosep]
 \item Jetson Nano (4GB RAM) buộc inference tập trung trên Master PC thay vì chạy local
-\item LiDAR LD19 tần số 10Hz gây khó khăn khi di chuyển nhanh, phải giới hạn tốc độ
-\item Latency ROS network (~50-100ms tổng) ảnh hưởng real-time response
+\item Thông tin từ lidar không được đọc với tần số cao do vấn đề về độ trễ trong giao tiếp và phần cứng Jetson
+\item Độ trễ giao tiếp ROS (~50-100ms tổng) ảnh hưởng phản hồi  real-time
 \item Gầm xe thấp và bánh xe thiếu độ bám khiến robot không di chuyển được trên một số bề mặt (thảm, sàn trơn) do bị trượt bánh
 \end{itemize}
 
@@ -528,7 +528,7 @@ Tốc độ giảm là trade-off cần thiết để đảm bảo an toàn, bù 
 \item \textit{Cartographer SLAM:} Ổn định hơn đáng kể nhờ loop closure và scan matching, tuy nhiên vẫn có thể drift trong môi trường ít đặc trưng (feature-poor) hoặc hành lang dài
 \end{itemize}
 
-\item \textbf{Giải pháp hiện tại:} Sử dụng Cartographer SLAM làm nguồn localization chính. Trong môi trường thực nghiệm (~4m x 3m) với nhiều vật cản, Cartographer hoạt động ổn định và đạt mức chấp nhận được cho collision avoidance.
+\item \textbf{Giải pháp hiện tại:} Sử dụng Cartographer SLAM làm nguồn localization chính. Trong môi trường thực nghiệm (~4m x 3m) với nhiều vật cản, Cartographer hoạt động ổn định và đạt mức chấp nhận được cho việc tránh va chạm.
 
 \item \textbf{Hạn chế còn tồn tại:} Việc cải thiện độ chính xác localization (ví dụ: sensor fusion với camera depth, IMU cao cấp hơn, hoặc visual odometry) nằm ngoài phạm vi nghiên cứu hiện tại. Đây là hướng cải tiến quan trọng cho các nghiên cứu tiếp theo.
 \end{itemize}
@@ -537,7 +537,7 @@ Tốc độ giảm là trade-off cần thiết để đảm bảo an toàn, bù 
 \begin{itemize}[nosep]
 \item Policy chưa xử lý tốt trường hợp vật cản đứng yên chắn đường - robot có xu hướng dao động qua lại thay vì tìm đường né. Đây là hạn chế do policy được train chủ yếu với vật cản di động trong simulation.
 \item Robot gặp khó khăn với cấu hình vật cản phức tạp (hành lang hẹp, 2 vật cản lệch nhau) - cần thêm training data cho các scenarios này.
-\item Thiếu cơ chế communication giữa robots (fully decentralized có ưu và nhược điểm).
+\item Thiếu cơ chế giao tiếp giữa robots (fully decentralized có ưu và nhược điểm).
 \item Policy hiện tại là offline learning - không có khả năng học thêm từ các tình huống mới gặp trong thực tế.
 \end{itemize}
 
@@ -554,7 +554,7 @@ Dựa trên kết quả thực nghiệm và các hạn chế đã phân tích, c
 
 \textbf{Về phần cứng:}
 \begin{itemize}[nosep]
-\item Nâng cấp Jetson Nano lên Jetson Orin để chạy inference local, giảm latency mạng và tăng tính độc lập của robot.
+\item Nâng cấp Jetson Nano lên Jetson Orin hoặc mini PC để chạy inference local, giảm độ trễ do mạng và tăng tính độc lập của robot.
 \item Sử dụng LiDAR tốt hơn (hoặc camera depth) để cho phép tốc độ di chuyển nhanh hơn.
 \item Bổ sung thêm cảm biến (camera depth, ultrasonic) để phát hiện vật cản ở vùng mù của LiDAR (bàn chân người, vật thấp).
 \item Thiết kế lại khung xe với gầm cao hơn và bánh xe có độ bám tốt hơn để hoạt động trên nhiều loại bề mặt.
@@ -562,7 +562,7 @@ Dựa trên kết quả thực nghiệm và các hạn chế đã phân tích, c
 
 \textbf{Về thuật toán:}
 \begin{itemize}[nosep]
-\item \textbf{Online learning / Continual learning:} Cho phép robot học thêm từ các tình huống thực tế mà không cần retrain từ đầu. Đây là hướng quan trọng để thu hẹp khoảng cách từ mô phỏng tới thực tế - robot có thể fine-tune policy dựa trên kinh nghiệm thực tế, đặc biệt với các scenarios hiếm gặp trong mô phỏng (người xuất hiện đột ngột, đứng chắn đường, hành lang hẹp). Tuy nhiên, việc triển khai online learning đòi hỏi phần cứng mạnh hơn để chạy cả inference và training trên robot.
+\item \textbf{Online learning / Continual learning:} Cho phép robot học thêm từ các tình huống thực tế mà không cần retrain từ đầu. Đây là hướng quan trọng để thu hẹp khác biệt từ mô phỏng tới thực tế - robot có thể fine-tune policy dựa trên kinh nghiệm thực tế, đặc biệt với các scenarios hiếm gặp trong mô phỏng (người xuất hiện đột ngột, đứng chắn đường, hành lang hẹp). Tuy nhiên, việc triển khai online learning đòi hỏi phần cứng mạnh hơn để chạy cả inference và training trên robot.
 \item Thêm cơ chế phát hiện và giải quyết deadlock (một số luật recovery phù hợp).
 \item Áp dụng domain randomization trong training để cải thiện sim-to-real transfer.
 \item Bổ sung training data cho các scenarios khó (vật cản đứng yên, hành lang hẹp) trước khi deploy.
