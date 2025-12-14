@@ -285,9 +285,29 @@ Phần này trình bày kết quả triển khai model đã huấn luyện trên
 
 \textbf{Môi trường test:}
 \begin{itemize}[nosep]
-\item Phòng kích thước khoảng 5m × 5m
+\item Phòng kích thước khoảng 4m x 3m
 \item Có nhiều vật cản tĩnh (bàn, ghế, tường, giường)
 \end{itemize}
+
+\begin{figure}[H]
+\centering
+
+\begin{subfigure}[b]{0.49\textwidth}
+    \centering
+    \includegraphics[height=5cm, keepaspectratio]{result/experiment/screenshots/env.jpeg}
+    \caption{Môi trường thực nghiệm}
+\end{subfigure}
+\hspace{0.0cm}
+\begin{subfigure}[b]{0.49\textwidth}
+    \centering
+    \includegraphics[height=5cm, keepaspectratio]{result/experiment/screenshots/env_obstacles.jpeg}
+    \caption{Môi trường với vật cản}
+\end{subfigure}
+
+\caption{Môi trường thực nghiệm trong nhà (~4m x 3m)}
+\label{fig:experiment_environment}
+\end{figure}
+
 
 \textbf{Metrics đánh giá:}
 \begin{itemize}[nosep]
@@ -297,31 +317,153 @@ Phần này trình bày kết quả triển khai model đã huấn luyện trên
 \item Path efficiency: Tỷ số giữa khoảng cách Euclidean đến đích và đường đi thực tế
 \end{itemize}
 
-% TODO: Chạy thực nghiệm và điền kết quả vào bảng dưới đây
-\subsection{Kết quả thực nghiệm với 1 robot}
+\subsection{Kết quả thực nghiệm}
 \label{subsec:exp_results}
 
-% PLACEHOLDER - Điền kết quả sau khi chạy thực nghiệm
+Thực nghiệm được thực hiện với 17 test cases, chia thành 4 nhóm scenarios với độ khó tăng dần: (1) không có vật cản, (2) vật cản tĩnh, (3) 1 người động, và (4) 2 người động. Bảng \ref{tab:real_robot_summary} tổng hợp kết quả theo từng nhóm.
+
 \begin{table}[H]
 \centering
-\caption{Kết quả thực nghiệm trên 1 robot thực tế (TODO: Điền sau)}
-\label{tab:real_robot_results}
-\begin{tabular}{lcc}
+\caption{Tổng hợp kết quả thực nghiệm theo nhóm các trường hợp}
+\label{tab:real_robot_summary}
+\begin{tabular}{lccccc}
 \hline
-\textbf{Metric} & \textbf{Simulation} & \textbf{Real Robot} \\
+\textbf{Nhóm scenarios} & \textbf{Số test} & \textbf{Success} & \textbf{Timeout} & \textbf{Success Rate} & \textbf{Avg Distance Error (m)} \\
 \hline
-Success Rate (\%) & 89.18 & [TODO] \\
-Collision Rate (\%) & 9.04 & [TODO] \\
-Avg Time to Goal (s) & 14.93 & [TODO] \\
-Number of Episodes & 4480 & [TODO] \\
+0 obstacles (không vật cản) & 5 & 5 & 0 & 100\% & 0.08 \\
+1-2 vật tĩnh & 6 & 5 & 1 & 83.3\% & 0.11 \\
+1 người động & 4 & 3 & 1 & 75\% & 0.25 \\
+2 người động & 2 & 1 & 1 & 50\% & 0.29 \\
+\hline
+\textbf{Tổng cộng} & \textbf{17} & \textbf{14} & \textbf{3} & \textbf{82.4\%} & \textbf{0.14} \\
 \hline
 \end{tabular}
 \end{table}
 
-\textbf{Nhận xét sơ bộ:}
-% TODO: Bổ sung nhận xét sau khi có kết quả thực nghiệm
+\subsubsection{Kết quả không có vật cản}
+
+Robot đạt \textbf{100\% success rate} (5/5 tests) khi di chuyển đến goal mà không có vật cản. Khoảng cách goal trung bình là 2.03m với sai số vị trí cuối trung bình 0.08m. Kết quả này xác nhận policy hoạt động tốt cho bài toán navigation cơ bản và hệ thống localization (Cartographer SLAM + UKF) cung cấp vị trí đủ chính xác.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết kết quả test không có vật cản}
+\label{tab:no_obstacle_results}
+{
+\begin{tabular}{c|cc|cc|c|c|c|c}
+\hline
+\textbf{Test} & \textbf{$x_g$} & \textbf{$y_g$} & \textbf{$x_r$} & \textbf{$y_r$} & \textbf{Goal Dist (m)} & \textbf{Steps} & \textbf{Reward} & \textbf{Error (m)} \\
+\hline
+1 & 0.96 & 0 & 0.96 & 0.01 & 0.96 & 110 & 44.4 & 0.01 \\
+2 & 1.99 & 0.33 & 2.05 & 0.25 & 1.08 & 100 & 41.6 & 0.10 \\
+3 & 2.41 & 0.4 & 2.38 & 0.34 & 2.44 & 250 & 46.2 & 0.07 \\
+4 & 1.98 & -0.38 & 2.08 & -0.35 & 2.02 & 215 & 48.7 & 0.10 \\
+5 & 2.56 & -0.74 & 2.45 & -0.77 & 2.66 & 203 & 50.65 & 0.11 \\
+\hline
+\multicolumn{5}{c|}{\textbf{Trung bình}} & \textbf{1.83} & \textbf{176} & \textbf{46.3} & \textbf{0.08} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textit{Chú thích: $(x_g, y_g)$ là tọa độ goal, $(x_r, y_r)$ là tọa độ thực tế robot đạt được (đơn vị: m)}
+
+\subsubsection{Kết quả với vật cản tĩnh}
+
+Robot đạt \textbf{83.3\% success rate} (5/6 tests) với vật cản tĩnh. Các trường hợp thành công cho thấy robot có khả năng tránh vật cản với đường đi mượt mà không bị chuyển hướng đột ngột, đặc biệt khi vật cản đặt ở vị trí dễ quan sát.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết kết quả test với vật cản tĩnh}
+\label{tab:static_obstacle_results}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{c|l|cc|cc|c|c|c|c|l}
+\hline
+\textbf{\#} & \textbf{Scenario} & \textbf{$x_g$} & \textbf{$y_g$} & \textbf{$x_r$} & \textbf{$y_r$} & \textbf{Dist} & \textbf{Steps} & \textbf{Reward} & \textbf{Error} & \textbf{Status} \\
+\hline
+6 & 1 vật cản trung điểm & 2.29 & 0.35 & 2.24 & 0.43 & 2.32 & 190 & 45.4 & 0.09 & reach goal \\
+7 & 1 vật cản gần robot & 1.98 & -0.02 & 2.01 & 0.05 & 1.98 & 176 & 44.37 & 0.08 & reach goal \\
+8 & 1 vật cản, goal gần & 1.35 & 0.45 & 1.37 & 0.45 & 0.77 & 144 & 42.8 & 0.02 & reach goal \\
+9 & 2 vật thẳng hàng, lệch phải & 0.04 & -0.22 & 0.03 & -0.11 & 1.52 & 457 & 55.39 & 0.11 & reach goal \\
+10 & 2 vật thẳng hàng & 0.11 & 0.05 & 0.11 & 0.03 & 0.12 & 230 & 48.5 & 0.02 & reach goal \\
+11 & 2 vật lệch nhau & 0.36 & -0.04 & 1.25 & 0.22 & 1.57 & 500 & 5.71 & 0.36 & \textcolor{red}{timeout} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Nhận xét:} Test 11 thất bại do robot bị dừng và dao động trước vật cản thứ 2 và không tìm được đường tránh. Đây là hạn chế của policy khi gặp cấu hình vật cản phức tạp (2 vật cản lệch nhau tạo thành hành lang hẹp).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{result/experiment/screenshots/take7.png}
+\caption{Robot tránh vật cản tĩnh: trajectory màu xanh lá cho thấy robot đi vòng qua vật cản để đến goal}
+\label{fig:static_obstacle_avoidance}
+\end{figure}
+
+\subsubsection{Kết quả với vật cản động (người)}
+
+Đây là nhóm test quan trọng nhất để đánh giá khả năng collision avoidance trong môi trường thực tế. Robot đạt \textbf{75\% success rate} (3/4 tests) với 1 người và \textbf{50\%} (1/2 tests) với 2 người.
+
+\begin{table}[H]
+\centering
+\caption{Chi tiết kết quả test với vật cản động (người)}
+\label{tab:dynamic_obstacle_results}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{c|l|cc|cc|c|c|c|c|l}
+\hline
+\textbf{\#} & \textbf{Scenario} & \textbf{$x_g$} & \textbf{$y_g$} & \textbf{$x_r$} & \textbf{$y_r$} & \textbf{Dist} & \textbf{Steps} & \textbf{Reward} & \textbf{Error} & \textbf{Status} \\
+\hline
+12 & 1 người đi chậm ngang qua & 1.95 & 0 & 1.87 & 0.02 & 1.95 & 208 & 42.8 & 0.08 & reach goal \\
+13 & 1 người đi rồi đứng lại & 1.97 & 0 & 1.88 & 0.01 & 1.97 & 310 & 50.8 & 0.09 & reach goal \\
+14 & 1 người đi nhanh qua & 2.04 & -0.02 & 1.96 & 0.02 & 2.04 & 270 & 45.2 & 0.09 & reach goal \\
+15 & 1 người đứng chắn đường & 1.98 & 0 & 1.24 & 0.05 & 1.98 & 500 & 6.6 & 0.74 & \textcolor{red}{timeout} \\
+\hline
+16 & 2 người đi từng người & 2.25 & 0 & 2.16 & 0.03 & 2.25 & 280 & 51.78 & 0.10 & reach goal \\
+17 & 2 người, 1 đứng lại & 2.17 & 0 & 1.7 & 0.08 & 2.17 & 500 & 12.8 & 0.47 & \textcolor{red}{timeout} \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Phân tích hành vi robot:}
 \begin{itemize}[nosep]
-\item
+\item \textbf{Người di chuyển:} Robot giảm tốc và chờ người đi qua, sau đó tiếp tục (Tests 12, 14, 16). Hành vi này hợp lý và an toàn.
+\item \textbf{Người đứng yên chắn đường:} Robot gặp khó khăn, dao động qua lại nhưng không tìm được đường tránh (Tests 15, 17). Đây là hạn chế của policy và gap giữa việc huấn luyện trên mô phỏng và thực tế.
+\item \textbf{Va chạm nhẹ:} Test 13 ghi nhận bánh xe có đụng nhẹ vào ngón chân người - mức va chạm này không gây nguy hiểm. Điều này có thể lí giải được, do lidar đặt trên cao và bàn chân nằm dưới khả năng phát hiện của nó, nên thông tin robot tiếp nhận hoàn toàn không có nên policy không phản ánh việc xử lý.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{result/experiment/screenshots/take5.png}
+\caption{Robot tránh vật cản động (người): đường xanh dương là trajectory mapping, đường xanh lá là trajectory hiện tại. Hai hình chữ V là chân người được LiDAR phát hiện.}
+\label{fig:dynamic_obstacle_avoidance}
+\end{figure}
+
+\subsubsection{So sánh với kết quả mô phỏng}
+
+\begin{table}[H]
+\centering
+\caption{So sánh kết quả thực nghiệm với mô phỏng}
+\label{tab:sim_vs_real}
+\begin{tabular}{lcc}
+\hline
+\textbf{Metric} & \textbf{Simulation (Stage 2)} & \textbf{Real Robot} \\
+\hline
+Success Rate (\%) & 89.18 & 82.4 \\
+Timeout Rate (\%) & 1.78 & 17.6 \\
+Collision Rate (\%) & 9.04 & 0 \\
+Number of Tests & 4480 & 17 \\
+Max Velocity (m/s) & 0.7 & 0.3 \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Nhận xét:}
+\begin{itemize}[nosep]
+\item Success rate thực tế (82.4\%) thấp hơn mô phỏng (89.18\%), chủ yếu do timeout với vật cản đứng yên.
+\item Không có collision trong 17 tests thực nghiệm (0\% collision rate) so với 9.04\% trong mô phỏng. Robot có xu hướng dừng lại thay vì đâm vào vật cản, hành vi này an toàn trong môi trường thực tế.
+\item Timeout rate cao đối với những trường hợp phức tạp và hành lang hẹp
+\item Robot có hành vi dao động rõ rệt khi gặp những trường hợp khó
 \end{itemize}
 
 % ============================================================================
@@ -348,10 +490,16 @@ Việc triển khai model từ simulation lên robot thực tế cho thấy sim-
 \begin{itemize}[nosep]
 \item Cartographer SLAM cung cấp localization chính xác trong môi trường thực
 \item UKF sensor fusion giúp ước lượng state ổn định hơn so với raw odometry
-\item Các cơ chế an toàn (velocity limiting, safety check, recovery) bù đắp cho sim-to-real gap
+\item Các cơ chế an toàn bù đắp cho việc sai khác giữa thực nghiệm và mô phỏng:
+\begin{itemize}[nosep]
+\item \textit{Velocity limiting:} Giới hạn vận tốc tối đa 0.3 m/s để robot có đủ thời gian phản ứng với độ trễ của hệ thống
+\item \textit{Safety check:} Kiểm tra khoảng cách tối thiểu đến vật cản trước khi thực hiện lệnh di chuyển, tự động dừng nếu thấy robot đã chạm vật cản (khoảng cách an toàn = bán kính robot / 2)
+\item \textit{Stuck detection:} Phát hiện robot bị kẹt khi vận tốc thực tế thấp hơn nhiều so với lệnh trong một khoảng thời gian (trường hợp bánh xe vẫn quay nhưng vị trí robot không đổi) - cần dừng khẩn cấp
+\item \textit{Recovery behavior:} Khi phát hiện stuck, và trong giới hạn an toàn robot tự động lùi lại một đoạn ngắn và thử hướng di chuyển khác
+\end{itemize}
 \end{itemize}
 
-Tuy nhiên, tốc độ phải giảm từ 0.7 m/s (simulation) xuống 0.3 m/s (thực tế) do hạn chế phần cứng - đây là trade-off cần thiết để đảm bảo an toàn và độ tin cậy.
+Tốc độ giảm là trade-off cần thiết để đảm bảo an toàn, bù đắp cho độ trễ mạng và tần số LiDAR thấp (10Hz).
 
 \subsection{Hạn chế của nghiên cứu}
 
@@ -366,6 +514,7 @@ Tuy nhiên, tốc độ phải giảm từ 0.7 m/s (simulation) xuống 0.3 m/s 
 \item Jetson Nano (4GB RAM) buộc inference tập trung trên Master PC thay vì chạy local
 \item LiDAR LD19 tần số 10Hz gây khó khăn khi di chuyển nhanh, phải giới hạn tốc độ
 \item Latency ROS network (~50-100ms tổng) ảnh hưởng real-time response
+\item Gầm xe thấp và bánh xe thiếu độ bám khiến robot không di chuyển được trên một số bề mặt (thảm, sàn trơn) do bị trượt bánh
 \end{itemize}
 
 \textbf{Về định vị (localization):}
@@ -379,30 +528,48 @@ Tuy nhiên, tốc độ phải giảm từ 0.7 m/s (simulation) xuống 0.3 m/s 
 \item \textit{Cartographer SLAM:} Ổn định hơn đáng kể nhờ loop closure và scan matching, tuy nhiên vẫn có thể drift trong môi trường ít đặc trưng (feature-poor) hoặc hành lang dài
 \end{itemize}
 
-\item \textbf{Giải pháp hiện tại:} Sử dụng Cartographer SLAM làm nguồn localization chính. Trong môi trường thực nghiệm (~5m × 5m) với nhiều vật cản, Cartographer hoạt động ổn định và đạt mức chấp nhận được cho collision avoidance.
+\item \textbf{Giải pháp hiện tại:} Sử dụng Cartographer SLAM làm nguồn localization chính. Trong môi trường thực nghiệm (~4m x 3m) với nhiều vật cản, Cartographer hoạt động ổn định và đạt mức chấp nhận được cho collision avoidance.
 
-\item \textbf{Hạn chế còn tồn tại:} Việc cải thiện độ chính xác localization (ví dụ: sensor fusion với camera depth, IMU cao cấp hơn như BNO055, hoặc visual odometry) nằm ngoài phạm vi nghiên cứu hiện tại. Đây là hướng cải tiến quan trọng cho các nghiên cứu tiếp theo.
+\item \textbf{Hạn chế còn tồn tại:} Việc cải thiện độ chính xác localization (ví dụ: sensor fusion với camera depth, IMU cao cấp hơn, hoặc visual odometry) nằm ngoài phạm vi nghiên cứu hiện tại. Đây là hướng cải tiến quan trọng cho các nghiên cứu tiếp theo.
 \end{itemize}
 
 \textbf{Về thuật toán:}
 \begin{itemize}[nosep]
-\item Policy chưa xử lý tốt deadlock khi nhiều robots cùng đi qua một điểm hẹp
-\item Thiếu cơ chế communication giữa robots (fully decentralized có ưu và nhược điểm)
+\item Policy chưa xử lý tốt trường hợp vật cản đứng yên chắn đường - robot có xu hướng dao động qua lại thay vì tìm đường né. Đây là hạn chế do policy được train chủ yếu với vật cản di động trong simulation.
+\item Robot gặp khó khăn với cấu hình vật cản phức tạp (hành lang hẹp, 2 vật cản lệch nhau) - cần thêm training data cho các scenarios này.
+\item Thiếu cơ chế communication giữa robots (fully decentralized có ưu và nhược điểm).
+\item Policy hiện tại là offline learning - không có khả năng học thêm từ các tình huống mới gặp trong thực tế.
 \end{itemize}
 
 \textbf{Về quy mô thực nghiệm:}
 \begin{itemize}[nosep]
-\item Chỉ 1 robot thực tế (so với 44 trong simulation) do hạn chế chi phí và không gian
-\item Môi trường test nhỏ (~5m × 5m), số episodes hạn chế do thời gian setup và charging
+\item Chỉ 1 robot thực tế (so với 44 trong simulation) do hạn chế phần cứng (đã triển khai robot thứ 2 nhưng gặp trục trặc Jetson Nano thứ 2 bị hỏng nguồn).
+\item Môi trường test nhỏ (~4m x 3m), số episodes hạn chế do thời gian setup và charging.
+\item Chưa thử nghiệm trong môi trường outdoor hoặc với nhiều người di chuyển cùng lúc.
 \end{itemize}
 
 \subsection{Hướng cải tiến}
 
-Dựa trên các hạn chế đã phân tích, các hướng cải tiến tiềm năng bao gồm:
+Dựa trên kết quả thực nghiệm và các hạn chế đã phân tích, các hướng cải tiến tiềm năng bao gồm:
+
+\textbf{Về phần cứng:}
 \begin{itemize}[nosep]
-\item Nâng cấp Jetson Nano lên Jetson Orin để chạy inference local, giảm latency
-\item Sử dụng LiDAR tần số cao hơn (30-50Hz) để cho phép tốc độ di chuyển nhanh hơn
-\item Thêm cơ chế phát hiện và giải quyết deadlock (có thể kết hợp với simple communication)
-\item Mở rộng thực nghiệm với nhiều robots hơn và môi trường outdoor
-\item Áp dụng domain randomization trong training để cải thiện sim-to-real transfer
+\item Nâng cấp Jetson Nano lên Jetson Orin để chạy inference local, giảm latency mạng và tăng tính độc lập của robot.
+\item Sử dụng LiDAR tốt hơn (hoặc camera depth) để cho phép tốc độ di chuyển nhanh hơn.
+\item Bổ sung thêm cảm biến (camera depth, ultrasonic) để phát hiện vật cản ở vùng mù của LiDAR (bàn chân người, vật thấp).
+\item Thiết kế lại khung xe với gầm cao hơn và bánh xe có độ bám tốt hơn để hoạt động trên nhiều loại bề mặt.
+\end{itemize}
+
+\textbf{Về thuật toán:}
+\begin{itemize}[nosep]
+\item \textbf{Online learning / Continual learning:} Cho phép robot học thêm từ các tình huống thực tế mà không cần retrain từ đầu. Đây là hướng quan trọng để thu hẹp khoảng cách từ mô phỏng tới thực tế - robot có thể fine-tune policy dựa trên kinh nghiệm thực tế, đặc biệt với các scenarios hiếm gặp trong mô phỏng (người xuất hiện đột ngột, đứng chắn đường, hành lang hẹp). Tuy nhiên, việc triển khai online learning đòi hỏi phần cứng mạnh hơn để chạy cả inference và training trên robot.
+\item Thêm cơ chế phát hiện và giải quyết deadlock (một số luật recovery phù hợp).
+\item Áp dụng domain randomization trong training để cải thiện sim-to-real transfer.
+\item Bổ sung training data cho các scenarios khó (vật cản đứng yên, hành lang hẹp) trước khi deploy.
+\end{itemize}
+
+\textbf{Về thực nghiệm:}
+\begin{itemize}[nosep]
+\item Mở rộng thực nghiệm với nhiều robots (sau khi sửa phần cứng) để validate khả năng multi-robot.
+\item Thử nghiệm trong môi trường outdoor và với nhiều người di chuyển để đánh giá robustness.
 \end{itemize}
