@@ -270,14 +270,14 @@ Bảng \ref{tab:paper_comparison} so sánh kết quả với bài báo gốc CAD
 \section{Kết quả thực nghiệm}
 \label{sec:experimental_results}
 
-Phần này trình bày kết quả triển khai model đã huấn luyện trên hệ thống robot thực tế (hardware deployment). Các thí nghiệm được thực hiện với 2 robots hoạt động trong môi trường trong nhà.
+Phần này trình bày kết quả triển khai model đã huấn luyện trên hệ thống robot thực tế (hardware deployment). Các thí nghiệm được thực hiện với 1 robot hoạt động trong môi trường trong nhà.
 
 \subsection{Thiết lập thực nghiệm}
 \label{subsec:exp_setup}
 
 \textbf{Phần cứng:}
 \begin{itemize}[nosep]
-\item 2 robots differential drive với Jetson Nano
+\item 1 robot differential drive với Jetson Nano
 \item LiDAR LD19 (360°, 455 beams)
 \item Master PC: Intel i7-11800H, 16GB RAM
 \item Giao tiếp: ROS network qua mạng
@@ -392,7 +392,7 @@ Tuy nhiên, tốc độ phải giảm từ 0.7 m/s (simulation) xuống 0.3 m/s 
 
 \textbf{Về quy mô thực nghiệm:}
 \begin{itemize}[nosep]
-\item Chỉ 2 robots thực tế (so với 44 trong simulation) do hạn chế chi phí và không gian
+\item Chỉ 1 robot thực tế (so với 44 trong simulation) do hạn chế chi phí và không gian
 \item Môi trường test nhỏ (~5m × 5m), số episodes hạn chế do thời gian setup và charging
 \end{itemize}
 

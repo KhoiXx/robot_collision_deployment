@@ -948,65 +948,45 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
     dasharrow/.style={->, >=stealth, thick, dashed, blue!60}
 ]
 
-% Master PC
-\node[master, minimum width=6cm, minimum height=3cm] (master) at (0,0) {};
+% Master PC (bên trái)
+\node[master, minimum width=4.5cm, minimum height=4cm] (master) at (-5,0) {};
 \node[above=0.1cm of master.north, font=\small\bfseries] {Master PC};
-\node[font=\scriptsize] at (master.north) [yshift=-0.4cm] {i7-11800H, 16GB RAM, GTX-3050};
+\node[font=\scriptsize] at (master.north) [yshift=-0.5cm] {i7-11800H, 16GB RAM};
 
-\node[box, fill=blue!10, minimum width=2.2cm] (carto) at (-1.5, 0.3) {Cartographer\\SLAM};
-\node[box, fill=blue!10, minimum width=2.2cm] (model) at (-1.5, -0.5) {Model\\Inference};
-\node[box, fill=blue!10, minimum width=2.2cm] (rviz) at (1.2, -0.1) {RViz\\Monitoring};
+\node[box, fill=blue!10, minimum width=3.5cm] (carto) at (-5, 0.5) {Cartographer SLAM};
+\node[box, fill=blue!10, minimum width=3.5cm] (model) at (-5, -0.3) {Model Inference};
+\node[box, fill=blue!10, minimum width=3.5cm] (rviz) at (-5, -1.1) {RViz Monitoring};
 
-% Robot 1 - Jetson Nano
-\node[jetson, fill=gray!10, minimum width=3.5cm, minimum height=5cm] (jetson1) at (-5, -5) {};
-\node[above=0.1cm of jetson1.north, font=\small\bfseries] {Robot 1 - Jetson Nano};
-\node[font=\scriptsize] at (jetson1.north) [yshift=-0.4cm] {4GB RAM, 128 CUDA cores};
+\node[below=0.3cm of master, font=\scriptsize, align=center] {Static IP: 192.168.1.100\\ROS\_MASTER\_URI};
 
-\node[sensor, minimum width=2.8cm] (lidar1) at (-5, -3.5) {LiDAR 360°\\455 beams};
-\node[sensor, minimum width=2.8cm] (imu1) at (-5, -4.3) {IMU\\MPU6050};
-\node[jetson, minimum width=2.8cm] (ukf1) at (-5, -5.1) {UKF\\Serial};
+% Robot - Jetson Nano (bên phải)
+\node[jetson, fill=gray!10, minimum width=4.5cm, minimum height=4cm] (jetson) at (5, 0) {};
+\node[above=0.1cm of jetson.north, font=\small\bfseries] {Robot - Jetson Nano};
+\node[font=\scriptsize] at (jetson.north) [yshift=-0.5cm] {4GB RAM, 128 CUDA cores};
 
-% Robot 1 - Arduino
-\node[arduino, minimum width=2.5cm, minimum height=1.2cm] (arduino1) at (-5, -6.7) {Arduino};
-\node[box, fill=orange!10, minimum width=2.2cm, font=\scriptsize] (pid1) at (-5, -6.8) {PID\\Motor};
+\node[sensor, minimum width=3.5cm] (lidar) at (5, 0.5) {LiDAR 360° (455 beams)};
+\node[sensor, minimum width=3.5cm] (imu) at (5, -0.3) {IMU MPU6050};
+\node[jetson, minimum width=3.5cm] (ukf) at (5, -1.1) {UKF + Serial Comm};
 
-% Robot 2 - Jetson Nano
-\node[jetson, fill=gray!10,, minimum width=3.5cm, minimum height=5cm] (jetson2) at (5, -5) {};
-\node[above=0.1cm of jetson2.north, font=\small\bfseries] {Robot 2 - Jetson Nano};
-\node[font=\scriptsize] at (jetson2.north) [yshift=-0.4cm] {4GB RAM, 128 CUDA cores};
+\node[below=0.3cm of jetson, font=\scriptsize, align=center] {Static IP: 192.168.1.101};
 
-\node[sensor, minimum width=2.8cm] (lidar2) at (5, -3.5) {LiDAR 360°\\455 beams};
-\node[sensor, minimum width=2.8cm] (imu2) at (5, -4.3) {IMU\\MPU6050};
-\node[jetson, minimum width=2.8cm] (ukf2) at (5, -5.1) {UKF\\Serial};
+% Arduino (dưới Robot)
+\node[arduino, minimum width=3.5cm, minimum height=1.5cm] (arduino) at (5, -3.2) {};
+\node[font=\small\bfseries] at (arduino.north) [yshift=-0.3cm] {Arduino};
+\node[box, fill=orange!10, minimum width=3cm, font=\scriptsize] (pid) at (5, -3.3) {PID Motor Control};
 
-% Robot 2 - Arduino
-\node[arduino, minimum width=2.5cm, minimum height=1.2cm] (arduino2) at (5, -6.7) {Arduino};
-\node[box, fill=orange!10, minimum width=2.2cm, font=\scriptsize] (pid2) at (5, -6.8) {PID\\Motor};
-
-% ROS Network connection
-\draw[dasharrow, <-] (master.south) -- ++(0,-0.8) node[midway, right, font=\tiny] {WiFi} -- ++(-5,0) |- (jetson1.north);
-\draw[dasharrow, <-] (master.south) -- ++(0,-0.8) -- ++(5,0) |- (jetson2.north);
-
-% Robot 1 data flow
-\draw[arrow, red!70, thick] (master) -- ++(-3.0,-5) node[midway, left, font=\tiny] {cmd\_vel} |- (jetson1.east);
-\draw[arrow] (ukf1) -- (arduino1) node[midway, right, font=\tiny] {serial};
-
-% Robot 2 data flow
-\draw[arrow, red!70, thick] (master) -- ++(3,-5) node[midway, right, font=\tiny] {cmd\_vel} |- (jetson2.west);
-\draw[arrow] (ukf2) -- (arduino2) node[midway, left, font=\tiny] {serial};
-
-% Notes
-\node[below=1.0cm of master, font=\scriptsize, text width=6cm, align=center] {Static IP: 192.168.1.100\\ROS\_MASTER\_URI};
-\node[below=0.1cm of jetson1, font=\scriptsize, text width=3cm, align=center] {Static IP:\\192.168.1.101};
-\node[below=0.1cm of jetson2, font=\scriptsize, text width=3cm, align=center] {Static IP:\\192.168.1.102};
+% Connections
+\draw[dasharrow, <->] (master.east) -- (jetson.west) node[midway, above, font=\scriptsize] {WiFi / ROS Network};
+\draw[arrow, red!70, thick] (master.east) ++(0,-0.5) -- ++(2,0) node[midway, below, font=\scriptsize] {cmd\_vel} -- (jetson.west |- 0,-0.5);
+\draw[arrow] (jetson.south) -- (arduino.north) node[midway, right, font=\scriptsize] {Serial};
 
 \end{tikzpicture}
 }
-\caption{Kiến trúc hệ thống đa robot hoàn chỉnh}
+\caption{Kiến trúc hệ thống robot hoàn chỉnh}
 \label{fig:system_architecture}
 \end{figure}
 
-Hệ thống bao gồm 1 Master PC và 2 robot tự hành (mỗi robot có 1 Jetson Nano làm bộ xử lý chính). Kiến trúc được thiết kế theo nguyên tắc \textbf{decentralized} về mặt algorithm, trong đó mỗi robot đưa ra quyết định độc lập dựa trên quan sát cục bộ của chính nó, không có inter-robot communication.
+Hệ thống bao gồm 1 Master PC và 1 robot tự hành (robot có 1 Jetson Nano làm bộ xử lý chính). Kiến trúc được thiết kế theo nguyên tắc \textbf{decentralized} về mặt algorithm, trong đó mỗi robot đưa ra quyết định độc lập dựa trên quan sát cục bộ của chính nó, không có inter-robot communication.
 
 \subsection{Cấu hình phần cứng}
 
@@ -1130,7 +1110,7 @@ Hệ thống triển khai hoàn chỉnh bao gồm:
 \begin{itemize}[nosep]
 \item Kiến trúc Master-Slave với ROS network qua WiFi (static IP)
 \item Master PC (i7-11800H, 15GB RAM) chạy Cartographer SLAM và model inference
-\item 2 robots với Jetson Nano xử lý sensors, UKF fusion, và serial communication
+\item 1 robot với Jetson Nano xử lý sensors, UKF fusion, và serial communication
 \item Arduino chạy PID controllers tầng thấp cho motor control
 \item Control loop 20 Hz đảm bảo real-time collision avoidance
 \item Thiết kế decentralized algorithm với centralized inference (implementation choice)
