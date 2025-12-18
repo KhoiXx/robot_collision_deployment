@@ -1,0 +1,72 @@
+% appendix.tex
+% Phụ lục
+
+\chapter*{PHỤ LỤC}
+\addcontentsline{toc}{chapter}{PHỤ LỤC}
+
+\section*{A. Dữ liệu chi tiết kết quả thực nghiệm}
+\addcontentsline{toc}{section}{A. Dữ liệu chi tiết kết quả thực nghiệm}
+
+Bảng \ref{tab:full_experiment_data} trình bày toàn bộ dữ liệu thực nghiệm với 17 test cases, bao gồm tọa độ xuất phát, tọa độ đích, tọa độ thực tế đạt được, và các metrics đánh giá.
+
+\begin{table}[H]
+\centering
+\caption{Dữ liệu chi tiết toàn bộ kết quả thực nghiệm}
+\label{tab:full_experiment_data}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{c|l|l|cc|cc|c|cc|c|c|c|l}
+\hline
+\textbf{\#} & \textbf{Category} & \textbf{Scenario} & \textbf{$x_s$} & \textbf{$y_s$} & \textbf{$x_g$} & \textbf{$y_g$} & \textbf{$d_g$} & \textbf{$x_r$} & \textbf{$y_r$} & \textbf{Steps} & \textbf{Reward} & \textbf{Error} & \textbf{Status} \\
+\hline
+1 & 0 obstacles & -- & 0 & 0 & 0.96 & 0 & 0.96 & 0.96 & 0.01 & 110 & 44.4 & 0.01 & reach goal \\
+2 & 0 obstacles & -- & 0.96 & 0.01 & 1.99 & 0.33 & 1.08 & 2.05 & 0.25 & 100 & 41.6 & 0.10 & reach goal \\
+3 & 0 obstacles & -- & 0 & 0 & 2.41 & 0.4 & 2.44 & 2.38 & 0.34 & 250 & 46.2 & 0.07 & reach goal \\
+4 & 0 obstacles & -- & 0 & 0 & 1.98 & -0.38 & 2.02 & 2.08 & -0.35 & 215 & 48.7 & 0.10 & reach goal \\
+5 & 0 obstacles & -- & 0 & 0 & 2.56 & -0.74 & 2.66 & 2.45 & -0.77 & 203 & 50.65 & 0.11 & reach goal \\
+\hline
+6 & 1 vật tĩnh & trung điểm & 0 & 0 & 2.29 & 0.35 & 2.32 & 2.24 & 0.43 & 190 & 45.4 & 0.09 & reach goal \\
+7 & 1 vật tĩnh & gần robot & 0 & 0 & 1.98 & -0.02 & 1.98 & 2.01 & 0.05 & 176 & 44.37 & 0.08 & reach goal \\
+8 & 1 vật tĩnh & goal gần & 2.01 & 0.05 & 1.35 & 0.45 & 0.77 & 1.37 & 0.45 & 144 & 42.8 & 0.02 & reach goal \\
+9 & 2 vật tĩnh & thẳng hàng, lệch phải & 1.37 & 0.45 & 0.04 & -0.22 & 1.52 & 0.03 & -0.11 & 457 & 55.39 & 0.11 & reach goal \\
+10 & 2 vật tĩnh & thẳng hàng & 0 & 0 & 0.11 & 0.05 & 0.12 & 0.11 & 0.03 & 230 & 48.5 & 0.02 & reach goal \\
+11 & 2 vật tĩnh & 2 vật lệch nhau & 1.92 & -0.21 & 0.36 & -0.04 & 1.57 & 1.25 & 0.22 & 500 & 5.71 & 0.36 & timeout \\
+\hline
+12 & 1 người & đi chậm ngang qua & 0 & 0 & 1.95 & 0 & 1.95 & 1.87 & 0.02 & 208 & 42.8 & 0.08 & reach goal \\
+13 & 1 người & đi rồi đứng lại & 0 & 0 & 1.97 & 0 & 1.97 & 1.88 & 0.01 & 310 & 50.8 & 0.09 & reach goal \\
+14 & 1 người & đi nhanh qua & 0 & 0 & 2.04 & -0.02 & 2.04 & 1.96 & 0.02 & 270 & 45.2 & 0.09 & reach goal \\
+15 & 1 người & đứng chắn đường & 0 & 0 & 1.98 & 0 & 1.98 & 1.24 & 0.05 & 500 & 6.6 & 0.74 & timeout \\
+\hline
+16 & 2 người & đi từng người & 0 & 0 & 2.25 & 0 & 2.25 & 2.16 & 0.03 & 280 & 51.78 & 0.10 & reach goal \\
+17 & 2 người & 1 đứng lại & 0 & 0 & 2.17 & 0 & 2.17 & 1.7 & 0.08 & 500 & 12.8 & 0.47 & timeout \\
+\hline
+\end{tabular}
+}
+\end{table}
+
+\textbf{Chú thích:}
+\begin{itemize}[nosep]
+\item $x_s, y_s$: Tọa độ xuất phát (m)
+\item $x_g, y_g$: Tọa độ đích (m)
+\item $d_g$: Khoảng cách Euclidean từ xuất phát đến đích (m)
+\item $x_r, y_r$: Tọa độ thực tế robot đạt được (m)
+\item Steps: Số bước điều khiển (control steps tại 20Hz)
+\item Reward: Tổng reward tích lũy trong episode
+\item Error: Khoảng cách từ vị trí cuối đến goal (m)
+\end{itemize}
+
+\textbf{Ghi chú thực nghiệm:}
+\begin{itemize}[nosep]
+\item Test 3: Robot bị khựng nhẹ do map cập nhật chậm
+\item Test 8: Robot hơi dao động qua lại ngay vị trí vật cản
+\item Test 9: Robot né sang trái và đi thẳng mượt
+\item Test 10: Robot khựng khá lâu ở vật cản 1
+\item Test 11: Robot bị dừng trước vật cản 2
+\item Test 12: Robot giảm tốc nhẹ và tiến chậm qua trái
+\item Test 13: Robot dừng khi gần va chạm, khựng lại rồi né trái đi tiếp (bánh xe có đụng nhẹ vào ngón chân)
+\item Test 14: Robot giảm tốc nhanh, người đi qua robot tiếp tục di chuyển
+\item Test 15: Robot giảm tốc mạnh và dừng lại, dao động qua lại nhưng không né để đi tiếp
+\item Test 16: Robot giữ tốc độ chậm để người đi qua, có dao động nhẹ
+\item Test 17: Robot giảm tốc né được người 1, đến người 2 đứng thì dao động và bị timeout
+\end{itemize}
+
+File dữ liệu gốc được lưu tại: \texttt{docs/result/experiment/Real\_test\_result.csv}

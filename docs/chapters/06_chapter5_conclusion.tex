@@ -23,7 +23,7 @@ Các kỹ thuật cải tiến được áp dụng thành công bao gồm: Gradi
 
 \subsection{Về thiết kế và triển khai phần cứng}
 
-Luận văn đã thiết kế và xây dựng thành công 2 robot prototype với chi phí thấp, bao gồm:
+Luận văn đã thiết kế và xây dựng thành công 1 robot prototype với chi phí thấp, bao gồm:
 
 \begin{itemize}[nosep]
 \item Jetson Nano làm bộ xử lý chính, kết nối với Master PC qua ROS network
@@ -34,14 +34,14 @@ Luận văn đã thiết kế và xây dựng thành công 2 robot prototype v�
 
 Bộ điều khiển PID cho động cơ DC đã được thiết kế và chứng minh ổn định bằng phương pháp Lyapunov, đảm bảo robot đáp ứng nhanh và chính xác với các lệnh vận tốc từ policy network.
 
-\subsection{Về sim-to-real transfer}
+\subsection{Về triển khai từ mô phỏng vào thực tế}
 
 Việc triển khai model từ mô phỏng sang robot thực tế đã thành công với sự hỗ trợ của:
 
 \begin{itemize}[nosep]
 \item \textbf{Cartographer SLAM:} Cung cấp localization trong môi trường thực, cho phép robot xác định vị trí và hướng chính xác.
 \item \textbf{UKF Sensor Fusion:} Kết hợp dữ liệu từ odometry và IMU để ước lượng state ổn định hơn.
-\item \textbf{Các cơ chế an toàn:} Velocity limiting (0.3 m/s), safety check, stuck detection và recovery đảm bảo robot hoạt động an toàn trong thực nghiệm.
+\item \textbf{Các cơ chế an toàn:} Giới hạn vận tốc (0.3 m/s), safety check, stuck detection và recovery đảm bảo robot hoạt động an toàn trong thực nghiệm.
 \end{itemize}
 
 Kiến trúc hệ thống được thiết kế phi tập trung về mặt thuật toán (mỗi robot quyết định độc lập dựa trên quan sát cục bộ), với inference tập trung trên Master PC do hạn chế phần cứng của Jetson Nano. Thiết kế này cho phép dễ dàng mở rộng sang fully decentralized khi nâng cấp phần cứng.
@@ -65,23 +65,23 @@ Quan trọng hơn, luận văn đã chứng minh tính khả thi của việc tr
 
 \begin{itemize}[nosep]
 \item \textbf{Nâng cấp bộ xử lý:} Thay Jetson Nano bằng Jetson Orin hoặc mini PC với GPU mạnh hơn để chạy inference local, giảm latency từ 50-100ms xuống dưới 20ms.
-\item \textbf{LiDAR tần số cao:} Sử dụng LiDAR 30-50Hz thay vì 10Hz hiện tại, cho phép tăng tốc độ di chuyển và phản ứng nhanh hơn với vật cản động.
+\item \textbf{LiDAR tần số cao:} Sử dụng LiDAR chất lượng tốt hơn, cho phép tăng tốc độ di chuyển và phản ứng nhanh hơn với vật cản động.
 \item \textbf{Cải thiện localization:} Bổ sung camera depth hoặc stereo camera để nâng cao độ chính xác định vị, đặc biệt trong môi trường ít đặc trưng.
 \end{itemize}
 
 \subsection{Cải tiến thuật toán}
 
 \begin{itemize}[nosep]
-\item \textbf{Xử lý deadlock:} Nghiên cứu thêm cơ chế phát hiện và giải quyết deadlock khi nhiều robots cùng đi qua một điểm hẹp, có thể kết hợp simple communication protocol.
-\item \textbf{Domain randomization:} Áp dụng domain randomization trong training để cải thiện sim-to-real transfer, bao gồm randomize sensor noise, latency, và dynamics.
-\item \textbf{Hierarchical policy:} Nghiên cứu kiến trúc hierarchical với high-level planner và low-level controller để xử lý các tình huống phức tạp hơn.
+\item \textbf{Xử lý deadlock:} Nghiên cứu thêm cơ chế phát hiện và giải quyết deadlock khi nhiều robots cùng đi qua một điểm hẹp, có thể kết hợp thêm một số rule định sẵn cho robot để tránh nhau, và cho nó học khi huấn luyện.
+\item \textbf{Domain randomization:} Trong quá trình huấn luyện, thay đổi ngẫu nhiên các thông số môi trường (nhiễu cảm biến, độ trễ, ma sát bánh xe) để policy học được cách thích nghi với nhiều điều kiện khác nhau. Điều này giúp model hoạt động tốt hơn khi chuyển từ mô phỏng sang thực tế.
+\item \textbf{Hierarchical policy:} Chia policy thành 2 tầng: tầng cao (high-level) quyết định hướng đi tổng thể và tầng thấp (low-level) điều khiển chi tiết để tránh va chạm. Kiến trúc này giúp robot xử lý tốt hơn các tình huống phức tạp như đi qua hành lang hẹp hoặc né nhiều vật cản liên tiếp.
 \end{itemize}
 
 \subsection{Mở rộng quy mô thực nghiệm}
 
 \begin{itemize}[nosep]
-\item Tăng số lượng robots thực nghiệm từ 2 lên 5-10 để đánh giá khả năng scale của hệ thống
-\item Thử nghiệm trong môi trường outdoor với điều kiện ánh sáng và địa hình đa dạng
+\item Tăng số lượng robots thực nghiệm lên 5-10 để đánh giá khả năng scale của hệ thống
+\item Thử nghiệm trong nhiều môi trường với điều kiện ánh sáng và địa hình đa dạng
 \item Đánh giá hiệu suất trong các kịch bản ứng dụng thực tế như kho hàng hoặc nhà máy
 \end{itemize}
 
@@ -91,13 +91,13 @@ Quan trọng hơn, luận văn đã chứng minh tính khả thi của việc tr
 Dựa trên nền tảng của luận văn, các hướng nghiên cứu tiếp theo bao gồm:
 
 \begin{enumerate}[nosep]
-\item \textbf{Multi-task learning:} Mở rộng policy để xử lý nhiều task khác nhau (navigation, formation control, cooperative manipulation) với một model duy nhất.
+\item \textbf{Triển khai trên nhiều bài toán khác:} Mở rộng policy để xử lý nhiều task khác nhau (điều hướng trong môi trường không xác định trước, điều khiển tác hợp trong cùng môi trường - cooperative manipulation).
 
 \item \textbf{Continuous learning:} Phát triển khả năng học tiếp tục (continual learning) để robot có thể thích nghi với môi trường mới mà không cần huấn luyện lại từ đầu.
 
 \item \textbf{Heterogeneous robots:} Nghiên cứu điều khiển hệ robot không đồng nhất (khác nhau về kích thước, tốc độ, sensor) hoạt động cùng nhau.
 
-\item \textbf{3D environment:} Mở rộng phương pháp cho môi trường 3D với các robots có khả năng bay hoặc di chuyển trên địa hình phức tạp.
+\item \textbf{3D environment:} Mở rộng phương pháp cho môi trường 3D với các robots có khả năng bay (drone) hoặc di chuyển trên địa hình phức tạp.
 
 \item \textbf{Human-robot interaction:} Tích hợp khả năng tương tác an toàn với con người trong môi trường làm việc chung.
 \end{enumerate}

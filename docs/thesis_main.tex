@@ -6,7 +6,7 @@
 % Advisor: TS. Phạm Việt Cường
 % Title: Ứng Dụng Reinforcement Learning Điều Khiển Phân Tán Hệ Đa Robot Tránh Va Chạm
 % Institution: ĐH Bách Khoa - ĐHQG TP.HCM
-% Date: 2025-11-12
+% Date: 2025-12-14
 %
 % Compilation commands:
 %   xelatex thesis_main.tex
@@ -31,32 +31,41 @@
 \begin{document}
 
 %% ============================================================================
-%% FRONT MATTER
+%% FRONT MATTER (Không đánh số trang)
 %% ============================================================================
 
-% Main cover page (Bìa chính - no page numbers)
 \pagenumbering{gobble}
+
+% Trang bìa (Bìa chính)
 \input{chapters/00_cover}
 
-% Secondary cover page (Bìa phụ - no page numbers)
+% Trang 1 (giống trang bìa)
 \input{chapters/00_cover_secondary}
 
-% Front matter sections: acknowledgments, abstracts, declaration (NO page numbers)
+% Trang 2: Công trình được hoàn thành tại
+\input{chapters/00_page2_completion}
+
+% Trang 3: Nhiệm vụ luận văn thạc sĩ
+\input{chapters/00_page3_assignment}
+
+% Trang 4: Lời cảm ơn
+% Trang 5: Tóm tắt (Tiếng Việt và Tiếng Anh)
+% Trang 6: Lời cam đoan
 \input{chapters/01_frontmatter}
 
-% Table of contents (NO page numbers)
+% Mục lục
 \tableofcontents
 \clearpage
 
-% List of figures (NO page numbers)
+% Danh mục hình
 \listoffigures
 \clearpage
 
-% List of tables (NO page numbers)
+% Danh mục bảng
 \listoftables
 \clearpage
 
-% List of symbols and abbreviations (NO page numbers)
+% Danh mục ký hiệu và viết tắt
 \input{symbols}
 \clearpage
 
@@ -89,14 +98,14 @@
 
 \backmatter
 
-% Bibliography (IEEE style, numbered citations)
+% Tài liệu tham khảo (IEEE style, numbered citations)
 \printbibliography[title={TÀI LIỆU THAM KHẢO}]
 
-% Appendices (if needed, uncomment below)
-% \begin{appendices}
-% \input{chapters/appendix_a}
-% \input{chapters/appendix_b}
-% \end{appendices}
+% Phụ lục
+\input{chapters/07_appendix}
+
+% Lý lịch trích ngang
+\input{chapters/08_biography}
 
 %% ============================================================================
 %% END DOCUMENT

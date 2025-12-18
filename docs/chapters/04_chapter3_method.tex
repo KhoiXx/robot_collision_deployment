@@ -49,9 +49,9 @@ Hàm reward đóng vai trò quyết định trong việc định hình hành vi 
 Reward được cấp khi episode kết thúc:
 
 \begin{itemize}[nosep]
-\item $r_{\text{arrival}} = +30$: Đến đích thành công (trong vòng 0.3m từ goal)
+\item $r_{\text{arrival}} = +30$: Đến đích thành công (trong bán kính 15cm từ goal)
 \item $r_{\text{collision}} = -25$: Va chạm với vật cản hoặc robot khác
-\item $r_{\text{timeout}} = -10$: Hết thời gian cho phép (180 giây)
+\item $r_{\text{timeout}} = -10$: Hết thời gian cho phép (chạm giới hạn timeout)
 \end{itemize}
 
 Các giá trị terminal rewards được thiết kế mạnh hơn so với bài báo gốc (30/-25 thay vì 15/-15 \cite{long2018towards}) để tạo tín hiệu rõ ràng hơn cho quá trình học.
@@ -156,7 +156,7 @@ Sau khi flatten, output của convolution có chiều khoảng 3600 dimensions �
 
 Hình \ref{fig:network_architecture} minh họa kiến trúc mạng Actor-Critic hoàn chỉnh với các thành phần chính và luồng dữ liệu.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{0.95\textwidth}{!}{
 \begin{tikzpicture}[
@@ -246,10 +246,10 @@ Critic sử dụng chung encoder với Actor nhưng có output head riêng:
 \begin{itemize}[nosep]
 \item Concatenate encoder output với goal và velocity
 \item Fully connected layer 128 nơ-ron + ReLU
-\item Output layer: 1 neuron (value estimate)
+\item Output layer: 1 nơ-ron (giá trị estimate)
 \end{itemize}
 
-\textbf{Ý nghĩa của output head riêng:} Việc tách riêng output head cho Actor và Critic trong khi chia sẻ encoder có 2 lợi ích: (1) Encoder học được feature representations chung hữu ích cho cả việc ra quyết định (policy) và đánh giá trạng thái (value), tăng hiệu quả học tập; (2) Output heads riêng cho phép mỗi network tối ưu cho mục tiêu khác nhau - Actor tối ưu cho action selection, Critic tối ưu cho value prediction - mà không xung đột gradient.
+\textbf{Ý nghĩa của output head riêng:} Việc tách riêng output head cho Actor và Critic trong khi chia sẻ encoder có 2 lợi ích: (1) Encoder học được đặc trưng đại diện chung hữu ích cho cả việc ra quyết định (policy) và đánh giá trạng thái (value), tăng hiệu quả học tập; (2) Output heads riêng cho phép mỗi network tối ưu cho mục tiêu khác nhau - Actor tối ưu cho action selection, Critic tối ưu cho value prediction - mà không xung đột gradient.
 
 Critic ước lượng value function:
 \begin{equation}
@@ -279,9 +279,9 @@ Trong implementation, orthogonal initialization được áp dụng với \texti
 \item Output layer của Critic (value): gain $= 1.0$
 \end{itemize}
 
-\subsubsection{Observation Normalization}
+\subsubsection{Chuẩn hóa Observation}
 
-Dữ liệu LiDAR scan có thể có scale rất khác nhau giữa các thời điểm (khi gần vật cản vs. khi không gian trống). Để giúp nơ-ron network học hiệu quả hơn, input được chuẩn hóa (normalize) về mean $\approx 0$ và standard deviation $\approx 1$.
+Dữ liệu LiDAR scan có thể có scale rất khác nhau giữa các thời điểm (khi gần vật cản vs. khi không gian trống). Để giúp mạng nơ-ron học hiệu quả hơn, input được chuẩn hóa (normalize) về mean $\approx 0$ và standard deviation $\approx 1$.
 
 Thay vì tính mean/std cố định từ dataset (không khả thi trong RL vì data sinh ra liên tục), phương pháp \textbf{running statistics} được sử dụng: mean và std được cập nhật liên tục theo từng batch data mới:
 \begin{equation}
@@ -290,7 +290,7 @@ Thay vì tính mean/std cố định từ dataset (không khả thi trong RL vì
 
 Công thức tương tự cho standard deviation. Điều này đảm bảo model luôn nhận input ở scale nhất quán, giúp quá trình học ổn định hơn.
 
-\subsubsection{Separate Optimizers cho Actor và Critic}
+\subsubsection{Dùng các optimizers riêng cho Actor và Critic}
 
 Trong Actor-Critic architecture, Actor (policy network) và Critic (value network) có vai trò khác nhau:
 \begin{itemize}[nosep]
@@ -306,7 +306,7 @@ Thay vì dùng chung một optimizer với một learning rate, hai Adam optimiz
 
 Critic learning rate cao hơn 15 lần giúp value network converge nhanh, cung cấp advantage estimate chính xác hơn cho policy gradient. Trong khi đó, Actor learning rate thấp hơn đảm bảo policy không ``nhảy'' quá xa trong mỗi update, duy trì tính ổn định theo nguyên lý của PPO.
 
-\subsubsection{Log-std Clamping}
+\subsubsection{Log-std Clamping - Giới hạn log-std}
 
 Trong Gaussian policy, mỗi action được sample từ phân phối chuẩn $a \sim \mathcal{N}(\mu, \sigma^2)$, trong đó:
 \begin{itemize}[nosep]
@@ -314,11 +314,11 @@ Trong Gaussian policy, mỗi action được sample từ phân phối chuẩn $a
 \item $\sigma$ (standard deviation): độ ``lan tỏa'' của phân phối, quyết định mức độ exploration
 \end{itemize}
 
-Thay vì predict $\sigma$ trực tiếp, network predict $\log(\sigma)$ (gọi là \textbf{log-std}). Lý do:
+Thay vì dự đoán $\sigma$ trực tiếp, mạng sẽ dự đoán $\log(\sigma)$ (gọi là \textbf{log-std}). Lý do:
 \begin{itemize}[nosep]
-\item $\sigma$ phải luôn dương, nhưng output của nơ-ron network có thể âm
+\item $\sigma$ phải luôn dương, nhưng đầu ra của mạng nơ-ron có thể âm
 \item $\log(\sigma)$ có thể nhận giá trị âm/dương, sau đó lấy $\sigma = e^{\log(\sigma)}$ luôn dương
-\item Việc học $\log(\sigma)$ ổn định hơn về mặt numerical
+\item Việc học $\log(\sigma)$ ổn định hơn về mặt giá trị
 \end{itemize}
 
 Log-std được \textbf{clamp} (giới hạn) trong khoảng $[-2.5, -0.8]$:
@@ -329,7 +329,7 @@ Log-std được \textbf{clamp} (giới hạn) trong khoảng $[-2.5, -0.8]$:
 Ý nghĩa của việc giới hạn này:
 \begin{itemize}[nosep]
 \item \textbf{Giới hạn dưới} $\sigma \geq 0.082$: ngăn policy trở nên quá \textit{deterministic}. Nếu $\sigma \to 0$, policy sẽ luôn chọn cùng một action với mọi observation, mất khả năng khám phá (exploration) các action tốt hơn.
-\item \textbf{Giới hạn trên} $\sigma \leq 0.449$: ngăn policy quá \textit{stochastic}. Nếu $\sigma$ quá lớn, action được sample sẽ quá random, robot di chuyển hỗn loạn và không học được gì.
+\item \textbf{Giới hạn trên} $\sigma \leq 0.449$: ngăn policy quá \textit{stochastic}. Nếu $\sigma$ quá lớn, action được sample sẽ quá ngẫu nhiên, robot di chuyển hỗn loạn và không học được gì.
 \end{itemize}
 
 Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng giữa exploration (khám phá) và exploitation (khai thác những gì đã biết).
@@ -343,25 +343,25 @@ Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng 
 
 \textbf{Stage 1 - Foundation learning:} Huấn luyện24 robots trên môi trường cơ bản có ít vật cản, học các hành vi cơ bản: tránh va chạm cục bộ, di chuyển về đích, điều chỉnh vận tốc. Hyperparameters ưu tiên exploration cao (entropy 8e-3) và learning rates mạnh (critic 6e-3, actor 4e-4) để khám phá không gian hành động nhanh.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 % \includegraphics[width=0.85\textwidth]{figures/stage1_circle_training.png}
 \includegraphics[width=0.3\textwidth]{figures/obstacle.png}
 \caption{Stage 1: môi trường đơn giản cho 24 robots}
-\label{fig:stage1_training}
+\label{fig:stage1_env}
 \end{figure}
 
-\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_training} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), giảm learning rates (critic 1e-3, actor 4e-4), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
+\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_env} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), giảm learning rates (critic 1e-3, actor 4e-4), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
 
-\textit{Vấn đề timeout trong Stage 2:} Trong quá trình huấn luyện Stage 2, sau khoảng 3000 updates, kết quả bắt đầu suy giảm dù đã đạt success rate khá cao. Phân tích behavior của robots cho thấy chúng đang học cách di chuyển nhanh và thẳng nhất có thể - hành vi này có thể phản ánh việc reward phạt do timeout'. Do timeout limit ban đầu (500 steps) không đủ cho môi trường phức tạp hơn với 44 robots, policy học được rằng cách tốt nhất để tránh phạt timeout là lao thẳng về goal bất chấp obstacles, dẫn đến collision rate tăng.
+\textit{Vấn đề timeout trong Stage 2:} Trong quá trình huấn luyện Stage 2, sau khoảng 3000 updates, kết quả bắt đầu suy giảm dù đã đạt success rate khá cao. Phân tích behavior của robots cho thấy chúng đang học cách di chuyển nhanh và thẳng nhất có thể - hành vi này có thể phản ánh việc reward phạt do timeout'. Do timeout limit ban đầu (500 steps) không đủ cho môi trường phức tạp hơn với 44 robots, policy học được rằng cách tốt nhất để tránh phạt timeout là lao thẳng về goal bất chấp có vật cản, dẫn đến tỉ lệ va chạm tăng.
 
-Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng timeout limit từ 500 lên 700 steps. Với giới hạn thời gian dài hơn, robots có thể chọn đường đi an toàn hơn. Kết quả được trình bày chi tiết ở Mục \ref{subsec:stage2_results}. 
+Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng giới hạn timeout từ 500 lên 700 steps. Với giới hạn thời gian dài hơn, robots có thể chọn đường đi an toàn hơn. Kết quả được trình bày chi tiết ở Mục \ref{subsec:stage2_results}. 
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.65\textwidth]{figures/04_Fig8_training_scenarios.jpg}
 \caption{Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)}
-\label{fig:stage2_training}
+\label{fig:stage2_env}
 \end{figure}
 
 \subsection{Thuật toán PPO với GAE}
@@ -445,7 +445,7 @@ với $c_{ent} = 0.01-0.02$ là hệ số entropy bonus.
 
 Bảng \ref{tab:stage1_hyperparams} và \ref{tab:stage2_hyperparams} liệt kê đầy đủ hyperparameters cho 2 giai đoạn huấn luyện.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Hyperparameters Stage 1 (24 robots - 83\% success)}
 \label{tab:stage1_hyperparams}
@@ -467,7 +467,7 @@ Timeout (max steps per episode) & 500 \\
 \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Hyperparameters Stage 2 (44 robots - 89\% success)}
 \label{tab:stage2_hyperparams}
@@ -488,18 +488,18 @@ Timeout (max steps per episode) & 700 \\
 \end{tabular}
 \end{table}
 
-\subsection{Các kỹ thuật cải tiến được áp dụng}
+\subsection{Các kỹ thuật cải tiến đượi performancec áp dụng}
 
 So với Long et al. (2018) \cite{long2018towards}, 3 kỹ thuật cải tiến chính được áp dụng để tăng tốc convergence và ổn định training:
 
 \subsubsection{Adaptive Learning Rate Scheduler}
 
-\textbf{Vấn đề:} Fixed learning rate trong paper gốc gặp 2 vấn đề: (1) nếu giảm LR quá sớm khi performance đang cải thiện, sẽ làm chậm momentum; (2) nếu giữ LR cao khi stuck ở plateau, không thể thoát khỏi local minimum.
+\textbf{Vấn đề:} Learning rate cố định trong bài báo gốc gặp 2 vấn đề: (1) nếu giảm LR quá sớm khi performance đang cải thiện, sẽ làm chậm momentum; (2) nếu giữ LR cao khi mắc kẹt ở plateau, không thể thoát khỏi cực trị địa phương.
 
 \textbf{Giải pháp:} Thiết kế adaptive LR scheduler với 2 nguyên tắc:
 \begin{itemize}[nosep]
-\item \textit{Maintain LR} khi performance window (20 updates gần nhất) đang cải thiện → không làm chậm momentum
-\item \textit{Tăng LR} khi detect plateau (thay đổi < 2\% trong 60 updates) → thoát khỏi stuck state
+\item \textit{Giữ LR} khi hiệu suất trong cửa sổ gần nhất (20 updates gần nhất) đang cải thiện → không làm gián đoạn momentum
+\item \textit{Tăng LR} khi detect plateau (thay đổi < 2\% trong 60 updates) → thoát khỏi trạng thái mắc kẹt
 \end{itemize}
 
 \textbf{Cách hoạt động:} LR cao giúp escape saddle points và local minima, nhưng chỉ áp dụng khi thực sự cần (plateau), còn khi đang học tốt thì giữ nguyên để exploit momentum. Kết quả: training ổn định 200 updates không bị degradation, so với fixed LR thường cần 1000+ updates.
@@ -536,11 +536,11 @@ Robot thực tế được thiết kế với mục tiêu deploy model đã hu�
 
 \textbf{Kích thước và cấu trúc:} Khung robot kích thước 20cm × 15.7cm được gia công từ tấm nhựa acrylic 3mm, thiết kế 2 tầng: tầng dưới chứa động cơ và mạch điều khiển, tầng trên đặt LiDAR và Jetson Nano. Khoảng cách giữa 2 bánh chủ động $L = 0.205$m.
 
-\textbf{Hệ thống cảm biến:} LiDAR 360° được gắn ở trung tâm tầng trên với 455 beams, scan range ~12m, frequency 5-10Hz. LiDAR này tương thích trực tiếp với mô phỏng (cùng 455 tia laser), giúp giảm sim-to-real gap. IMU MPU6050 (gyroscope + accelerometer) đo góc xoay và gia tốc, fusion với wheel odometry qua UKF để ước lượng pose chính xác.
+\textbf{Hệ thống cảm biến:} LiDAR 360° được gắn ở trung tâm tầng trên với 455 beams, scan range ~12m, frequency 5-10Hz. LiDAR này tương thích trực tiếp với mô phỏng (cùng 455 tia laser), giúp giảm khác biệt giữa mô phỏng và thực tế. IMU MPU6050 (gyroscope + accelerometer) đo góc xoay và gia tốc, kết hợp với wheel odometry qua UKF để ước lượng pose chính xác.
 
-\textbf{Hệ thống điều khiển:} Jetson Nano (4GB RAM) chạy Ubuntu 18.04 và ROS Melodic, xử lý sensor fusion và serial communication với Arduino. Hai động cơ DC giảm tốc (tỷ số truyền 1:20) với encoder 15000 pulses/revolution điều khiển vận tốc bánh xe. Arduino nhận commands qua serial và điều khiển động cơ qua driver L298N.
+\textbf{Hệ thống điều khiển:} Jetson Nano (4GB RAM) chạy Ubuntu 18.04 và ROS Melodic, xử lý sensor fusion và serial giao tiếp với Arduino. Hai động cơ DC giảm tốc (tỷ số truyền 1:20) với encoder 15000 pulses/revolution điều khiển vận tốc bánh xe. Arduino nhận commands qua serial và điều khiển động cơ qua driver L298N.
 
-\textbf{Nguồn điện:} Pin Li-Po 3S 11.1V 2200mAh cung cấp điện cho động cơ (qua voltage regulator 12V), và hạ áp 5V cho Jetson Nano. Thiết kế nguồn tách biệt tránh nhiễu điện từ động cơ ảnh hưởng đến tính toán.
+\textbf{Nguồn điện:} Pin Li-Po 3S 11.1V 2200mAh cung cấp điện cho động cơ (qua ổn áp 12V), và hạ áp 5V cho Jetson Nano. Thiết kế nguồn tách biệt tránh nhiễu điện từ động cơ ảnh hưởng đến tính toán.
 
 \subsection{Kiến trúc phần mềm}
 
@@ -552,7 +552,7 @@ Hệ thống ROS gồm 5 nodes chính chạy song song:
   \item (4) \texttt{policy\_node} load PyTorch model và inference action từ observations
   \item (5) \texttt{controller\_node} convert high-level actions $(v, \omega)$ sang PWM commands qua PID controllers.
 \end{itemize}
-Giao tiếp qua ROS topics đảm bảo tính đồng bộ: dễ thay thế policy mới hoặc upgrade sensors mà không ảnh hưởng toàn hệ thống.
+Giao tiếp qua ROS topics đảm bảo tính đồng bộ: dễ thay thế policy mới hoặc thay đổi sensors mà không ảnh hưởng toàn hệ thống.
 
 \section{Thiết kế PID controller và chứng minh ổn định}
 \label{sec:pid_stability}
@@ -611,9 +611,9 @@ với $\tau = 0.05$ s là time constant (đo từ thực nghiệm step response)
 
 \textit{Time constant $\tau$:} Để đo $\tau$, động cơ được cấp step input PWM và quan sát đáp ứng vận tốc. Theo lý thuyết hệ bậc nhất, $\tau$ là thời gian để vận tốc đạt 63.2\% giá trị ổn định. Hình \ref{fig:motor_params}(a) cho thấy đáp ứng step từ 0 → 100 pulses/s: tại thời điểm $t = 0.05$s, vận tốc đạt xấp xỉ 63.2 pulses/s (đúng 63.2\% của 100). Dữ liệu đo có nhiễu do encoder resolution và dao động cơ học, nhưng mô hình lý thuyết $v(t) = 100(1 - e^{-t/0.05})$ fit tốt với xu hướng chung. Giá trị $\tau = 0.05$s phù hợp với đặc tính động cơ DC giảm tốc (inertia thấp do tỷ số truyền, phản ứng nhanh).
 
-\textit{Motor gain $K_m$:} Tham số $K_m$ thể hiện độ nhạy của vận tốc theo PWM ở chế độ ổn định. Hình \ref{fig:motor_params}(b) biểu diễn quan hệ giữa PWM command và vận tốc đo được tại 9 điểm khác nhau (PWM từ 10 đến 200). Các điểm đo có phân tán nhẹ do nhiễu sensor và ma sát thay đổi. Fitting tuyến tính cho $K_m \approx 0.81$ pulses/PWM. Để đơn giản hóa tính toán và làm tròn theo encoder specs (15000 pulses/rev, gear 1:20, PWM 8-bit), giá trị $K_m = 0.8$ được sử dụng trong mô hình.
+\textit{Motor gain $K_m$:} Tham số $K_m$ thể hiện độ nhạy của vận tốc theo PWM ở chế độ ổn định. Hình \ref{fig:motor_params}(b) biểu diễn quan hệ giữa PWM command và vận tốc đo được tại 9 điểm khác nhau (PWM từ 10 đến 200). Các điểm đo có phân tán nhẹ do nhiễu sensor và ma sát thay đổi. Dùng fitting tuyến tính thu được hệ số $K_m \approx 0.81$ pulses/PWM. Để đơn giản hóa tính toán và làm tròn theo encoder specs (15000 pulses/rev, gear 1:20, PWM 8-bit), giá trị $K_m = 0.8$ được sử dụng trong mô hình.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{motor_parameter_identification.pdf}
 \caption{Xác định tham số động cơ từ thực nghiệm. (a) Đáp ứng step để xác định time constant $\tau = 0.05$s: các điểm đo (xanh) có nhiễu nhẹ nhưng fit tốt với mô hình lý thuyết (đường xanh đậm); tại $t = \tau$, vận tốc đạt 63.2\% giá trị ổn định. (b) Quan hệ tuyến tính PWM-vận tốc để xác định motor gain: 9 điểm đo (đỏ) cho fitting $K_m \approx 0.81$, làm tròn thành $K_m = 0.8$ cho mô hình.}
@@ -657,6 +657,15 @@ Tất cả phần tử cột đầu đều dương, do đó hệ thống ổn đ
 
 \subsection{Kết quả thực nghiệm}
 
+\textbf{Quy đổi vận tốc sang setpoint:} Bộ PID hoạt động trong không gian encoder units thay vì m/s để đảm bảo độ chính xác và đơn giản hóa việc đọc encoder. Vận tốc đích $v$ (m/s) được quy đổi sang setpoint $s$ (encoder units) thông qua ánh xạ tuyến tính:
+
+\begin{equation}
+s = \frac{v}{v_{\max}} \times 255
+\label{eq:vel_to_pulse}
+\end{equation}
+
+với $v_{\max} = 1.15$ m/s là vận tốc tối đa của robot. Ví dụ: $v = 0.4$ m/s $\rightarrow s = \frac{0.4}{1.15} \times 255 \approx 88$ units; $v = -0.3$ m/s $\rightarrow s \approx -66$ units.
+
 Thử nghiệm step response được tiến hành trên robot thực tế với 6 setpoints khác nhau: 0.2, 0.4, 0.6, -0.3, -0.5, và 0 m/s. Kết quả đo được:
 
 \textbf{Performance metrics:}
@@ -670,6 +679,13 @@ Thử nghiệm step response được tiến hành trên robot thực tế với
 \textbf{Phân tích:} Các setpoint có magnitude lớn (0.4, 0.5 m/s) cho kết quả tốt nhất với settling time gần như tức thời và steady-state error < 1\%. Ngược lại, các setpoint nhỏ (0.2, -0.3 m/s) có settling time chậm hơn và oscillation lớn hơn (std dev 1.9-2.0 pulses). Điều này do ở vận tốc thấp, ma sát tĩnh và backlash trong hệ truyền động ảnh hưởng nhiều hơn. Setpoint 0 m/s (dừng) đạt hiệu suất xuất sắc với error gần như bằng 0.
 
 \textbf{Kết luận:} Bộ PID đã thiết kế đạt mục tiêu điều khiển với steady-state error < 2\% và overshoot < 5\% ở hầu hết setpoints. Hệ thống ổn định theo phân tích Routh-Hurwitz và được xác nhận qua thực nghiệm.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/pid_step_response.png}
+\caption{Đáp ứng step response của bộ PID. Hàng trên: v = 0.4 m/s (88 units), hàng dưới: v = -0.5 m/s (-110 units). Cột trái: step response 0-1s, cột phải: zoom vào vùng steady-state (0.3-2s) để thấy dao động quanh setpoint.}
+\label{fig:pid_step_response}
+\end{figure}
 
 \textbf{Lưu ý thực tế:} Khi bánh xe quay không tải (robot được nâng lên), có xuất hiện jittering nhẹ do chất lượng encoder và độ rơ (backlash) của hộp số. Đã thử nghiệm thêm bộ lọc thông thấp (low-pass filter) nhưng gây ảnh hưởng tiêu cực đến đáp ứng PID (tăng settling time và giảm khả năng tracking). Tuy nhiên, khi chạy có tải (robot trên mặt đất), hiện tượng jittering hoàn toàn biến mất do tải cơ học làm ổn định hệ truyền động. Do đó, kết quả được xem là chấp nhận được cho ứng dụng thực tế.
 
@@ -760,7 +776,7 @@ Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson 
 
 \textbf{Iteration 3 - Vấn đề loop closure:} Khi gọi \texttt{finish\_trajectory}, optimization làm biến dạng bản đồ. Giải pháp: tắt hoàn toàn pose graph optimization bằng \texttt{optimize\_every\_n\_nodes = 0} và \texttt{sampling\_ratio = 0.0}.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19}
 \label{tab:carto_params}
@@ -800,7 +816,7 @@ Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson 
 
 Sau khi có bản đồ (\texttt{.pbstream}), chuyển sang chế độ \textit{pure localization} để robot định vị trong bản đồ có sẵn mà không tạo submap mới.
 
-\textbf{File cấu hình localization:} File \texttt{robot\_2d\_localization.lua} kế thừa từ \texttt{robot\_2d.lua} với các thay đổi:
+\textbf{File cấu hình localization:} File \texttt{robot\_2d\_localization.lua} kế thừa từ \texttt{robot\_2d.lua} với:
 \begin{lstlisting}[basicstyle=\small\ttfamily, caption={Cấu hình Cartographer cho localization}, label={lst:carto_localization}]
 include "robot_2d.lua"
 
@@ -860,20 +876,21 @@ Khi triển khai model từ mô phỏng sang robot thực tế, an toàn là y�
 
 \subsection{Giới hạn tốc độ tối đa}
 
-Model được huấn luyện với tốc độ tối đa 0.7 m/s trong mô phỏng, nhưng khi triển khai thực tế, tốc độ được giới hạn xuống \textbf{0.3 m/s}. Có hai lý do chính:
+Model được huấn luyện với tốc độ tối đa giới hạn xuống \textbf{0.3 m/s} mặc dù tối đa robot có thể chạy được với 1m/s (~3.6km). Có hai lý do chính:
 
 \textbf{1. Hạn chế phần cứng:}
 \begin{itemize}[nosep]
-\item LiDAR LD19 hoạt động ở tần số 10Hz, nghĩa là mỗi 100ms mới có một scan mới. Với tốc độ 0.7 m/s, robot di chuyển 7cm giữa hai lần quét - khoảng cách đáng kể có thể bỏ lỡ vật cản nhỏ.
+\item LiDAR LD19 được cập nhật với tần số thực tế 10Hz do vấn đề về giao tiếp với ROS và phải ưu tiên tần số cập nhật ESP vì Jetson không xử lý kịp cả 2 ở tần số cao. Với tốc độ 1.0 m/s, robot di chuyển 10cm giữa hai lần quét - khoảng cách đáng kể miss dữ liệu scan dẫn đến sai matching map
 \item Hệ thống ước lượng vị trí (Cartographer/UKF) không đáp ứng kịp khi robot di chuyển nhanh, gây sai lệch vị trí tương đối trong môi trường và ảnh hưởng đến local goal calculation.
 \item ROS network có độ trễ khoảng 50ms, cộng thêm thời gian inference (~10ms) và PID response, tổng latency có thể lên đến 80-100ms.
 \end{itemize}
 
 \textbf{2. An toàn trong môi trường thực nghiệm:}
 \begin{itemize}[nosep]
-\item Không gian thực nghiệm nhỏ (khoảng 5m × 5m) so với môi trường mô phỏng (20m × 20m).
+\item Không gian thực nghiệm nhỏ (khoảng 4m x 3m) so với môi trường mô phỏng (20m × 20m).
 \item Có nhiều vật cản hơn mô phỏng: bàn, ghế, cáp điện, thiết bị thí nghiệm.
-\item Cần thời gian phản ứng đủ để dừng an toàn khi phát hiện chướng ngại vật bất ngờ.
+\item Cần thời gian phản ứng đủ để dừng an toàn khi phát hiện chướng ngại vật bất ngờ
+\item Robot có thể mắc kẹt nhưng bánh vẫn quay trong môi trường hẹp, nên cần giảm tốc độ quay bánh.
 \end{itemize}
 
 \subsection{Velocity ramping trên Arduino}
@@ -934,7 +951,7 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
 
 \subsection{Kiến trúc tổng thể}
 
-\begin{figure}[!t]
+\begin{figure}[H]
 \centering
 \resizebox{0.95\textwidth}{!}{
 \begin{tikzpicture}[
@@ -948,71 +965,51 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
     dasharrow/.style={->, >=stealth, thick, dashed, blue!60}
 ]
 
-% Master PC
-\node[master, minimum width=6cm, minimum height=3cm] (master) at (0,0) {};
+% Master PC (bên trái)
+\node[master, minimum width=4.5cm, minimum height=4cm] (master) at (-5,0) {};
 \node[above=0.1cm of master.north, font=\small\bfseries] {Master PC};
-\node[font=\scriptsize] at (master.north) [yshift=-0.4cm] {i7-11800H, 16GB RAM, GTX-3050};
+\node[font=\scriptsize] at (master.north) [yshift=-0.5cm] {i7-11800H, 16GB RAM};
 
-\node[box, fill=blue!10, minimum width=2.2cm] (carto) at (-1.5, 0.3) {Cartographer\\SLAM};
-\node[box, fill=blue!10, minimum width=2.2cm] (model) at (-1.5, -0.5) {Model\\Inference};
-\node[box, fill=blue!10, minimum width=2.2cm] (rviz) at (1.2, -0.1) {RViz\\Monitoring};
+\node[box, fill=blue!10, minimum width=3.5cm] (carto) at (-5, 0.5) {Cartographer SLAM};
+\node[box, fill=blue!10, minimum width=3.5cm] (model) at (-5, -0.3) {Model Inference};
+\node[box, fill=blue!10, minimum width=3.5cm] (rviz) at (-5, -1.1) {RViz Monitoring};
 
-% Robot 1 - Jetson Nano
-\node[jetson, fill=gray!10, minimum width=3.5cm, minimum height=5cm] (jetson1) at (-5, -5) {};
-\node[above=0.1cm of jetson1.north, font=\small\bfseries] {Robot 1 - Jetson Nano};
-\node[font=\scriptsize] at (jetson1.north) [yshift=-0.4cm] {4GB RAM, 128 CUDA cores};
+\node[below=0.3cm of master, font=\scriptsize, align=center] {Static IP: 192.168.1.100\\ROS\_MASTER\_URI};
 
-\node[sensor, minimum width=2.8cm] (lidar1) at (-5, -3.5) {LiDAR 360°\\455 beams};
-\node[sensor, minimum width=2.8cm] (imu1) at (-5, -4.3) {IMU\\MPU6050};
-\node[jetson, minimum width=2.8cm] (ukf1) at (-5, -5.1) {UKF\\Serial};
+% Robot - Jetson Nano (bên phải)
+\node[jetson, fill=gray!10, minimum width=4.5cm, minimum height=4cm] (jetson) at (5, 0) {};
+\node[above=0.1cm of jetson.north, font=\small\bfseries] {Robot - Jetson Nano};
+\node[font=\scriptsize] at (jetson.north) [yshift=-0.5cm] {4GB RAM, 128 CUDA cores};
 
-% Robot 1 - Arduino
-\node[arduino, minimum width=2.5cm, minimum height=1.2cm] (arduino1) at (-5, -6.7) {Arduino};
-\node[box, fill=orange!10, minimum width=2.2cm, font=\scriptsize] (pid1) at (-5, -6.8) {PID\\Motor};
+\node[sensor, minimum width=3.5cm] (lidar) at (5, 0.5) {LiDAR 360° (455 beams)};
+\node[sensor, minimum width=3.5cm] (imu) at (5, -0.3) {IMU MPU6050};
+\node[jetson, minimum width=3.5cm] (ukf) at (5, -1.1) {UKF + Serial Comm};
 
-% Robot 2 - Jetson Nano
-\node[jetson, fill=gray!10,, minimum width=3.5cm, minimum height=5cm] (jetson2) at (5, -5) {};
-\node[above=0.1cm of jetson2.north, font=\small\bfseries] {Robot 2 - Jetson Nano};
-\node[font=\scriptsize] at (jetson2.north) [yshift=-0.4cm] {4GB RAM, 128 CUDA cores};
+\node[below=0.3cm of jetson, font=\scriptsize, align=center] {Static IP: 192.168.1.101};
 
-\node[sensor, minimum width=2.8cm] (lidar2) at (5, -3.5) {LiDAR 360°\\455 beams};
-\node[sensor, minimum width=2.8cm] (imu2) at (5, -4.3) {IMU\\MPU6050};
-\node[jetson, minimum width=2.8cm] (ukf2) at (5, -5.1) {UKF\\Serial};
+% Arduino (dưới Robot)
+\node[arduino, minimum width=3.5cm, minimum height=1.5cm] (arduino) at (5, -3.2) {};
+\node[font=\small\bfseries] at (arduino.north) [yshift=-0.3cm] {Arduino};
+\node[box, fill=orange!10, minimum width=3cm, font=\scriptsize] (pid) at (5, -3.3) {PID Motor Control};
 
-% Robot 2 - Arduino
-\node[arduino, minimum width=2.5cm, minimum height=1.2cm] (arduino2) at (5, -6.7) {Arduino};
-\node[box, fill=orange!10, minimum width=2.2cm, font=\scriptsize] (pid2) at (5, -6.8) {PID\\Motor};
-
-% ROS Network connection
-\draw[dasharrow, <-] (master.south) -- ++(0,-0.8) node[midway, right, font=\tiny] {WiFi} -- ++(-5,0) |- (jetson1.north);
-\draw[dasharrow, <-] (master.south) -- ++(0,-0.8) -- ++(5,0) |- (jetson2.north);
-
-% Robot 1 data flow
-\draw[arrow, red!70, thick] (master) -- ++(-3.0,-5) node[midway, left, font=\tiny] {cmd\_vel} |- (jetson1.east);
-\draw[arrow] (ukf1) -- (arduino1) node[midway, right, font=\tiny] {serial};
-
-% Robot 2 data flow
-\draw[arrow, red!70, thick] (master) -- ++(3,-5) node[midway, right, font=\tiny] {cmd\_vel} |- (jetson2.west);
-\draw[arrow] (ukf2) -- (arduino2) node[midway, left, font=\tiny] {serial};
-
-% Notes
-\node[below=1.0cm of master, font=\scriptsize, text width=6cm, align=center] {Static IP: 192.168.1.100\\ROS\_MASTER\_URI};
-\node[below=0.1cm of jetson1, font=\scriptsize, text width=3cm, align=center] {Static IP:\\192.168.1.101};
-\node[below=0.1cm of jetson2, font=\scriptsize, text width=3cm, align=center] {Static IP:\\192.168.1.102};
+% Connections
+\draw[dasharrow, <->] (master.east) -- (jetson.west) node[midway, above, font=\scriptsize] {WiFi / ROS Network};
+\draw[arrow, red!70, thick] (master.east) ++(0,-0.5) -- ++(2,0) node[midway, below, font=\scriptsize] {cmd\_vel} -- (jetson.west |- 0,-0.5);
+\draw[arrow] (jetson.south) -- (arduino.north) node[midway, right, font=\scriptsize] {Serial};
 
 \end{tikzpicture}
 }
-\caption{Kiến trúc hệ thống đa robot hoàn chỉnh}
+\caption{Kiến trúc hệ thống robot hoàn chỉnh}
 \label{fig:system_architecture}
 \end{figure}
 
-Hệ thống bao gồm 1 Master PC và 2 robot tự hành (mỗi robot có 1 Jetson Nano làm bộ xử lý chính). Kiến trúc được thiết kế theo nguyên tắc \textbf{decentralized} về mặt algorithm, trong đó mỗi robot đưa ra quyết định độc lập dựa trên quan sát cục bộ của chính nó, không có inter-robot communication.
+Hệ thống bao gồm 1 Master PC và 1 robot tự hành (robot có 1 Jetson Nano làm bộ xử lý chính). Kiến trúc được thiết kế theo nguyên tắc \textbf{decentralized} về mặt algorithm, trong đó mỗi robot đưa ra quyết định độc lập dựa trên quan sát cục bộ của chính nó, không có giao tiếp giữa các robot.
 
 \subsection{Cấu hình phần cứng}
 
 Bảng \ref{tab:hardware_config} liệt kê cấu hình phần cứng của các thành phần chính trong hệ thống.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Cấu hình phần cứng hệ thống}
 \label{tab:hardware_config}
@@ -1027,7 +1024,7 @@ Master PC & Intel i7-11800H & Cartographer SLAM \\
 \hline
 Jetson Nano & 4GB RAM & Lấy dữ liệu sensor \\
             & Maxwell 128 CUDA cores & Fuse sensor với UKF \\
-            & Ubuntu 18.04, ROS Melodic & Serial communication \\
+            & Ubuntu 18.04, ROS Melodic & giao tiếp Serial \\
 \hline
 Arduino  & ATmega328P & Điều khiển động cơ PID \\
              & 16 MHz & Đọc vận tốc bánh xe \\
@@ -1065,7 +1062,7 @@ export ROS_IP=<địa chỉ IP của máy hiện tại>
 
 Bảng \ref{tab:node_distribution} mô tả phân bổ các ROS nodes trên các thiết bị khác nhau.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Phân bổ ROS nodes trên các thiết bị}
 \label{tab:node_distribution}
@@ -1097,32 +1094,32 @@ PID Controller & Arduino & Serial input: target velocity \\
 
 \textbf{Luồng dữ liệu chính:}
 \begin{enumerate}[nosep]
-\item LiDAR và IMU trên Jetson publish sensor data qua ROS topics
-\item Master PC nhận sensor data, chạy Cartographer để estimate pose
+\item LiDAR và IMU trên Jetson publish dữ liệu cảm biến qua ROS topics
+\item Master PC nhận dữ liệu cảm biến, chạy Cartographer để ước lượng vị trí
 \item Policy node trên Master PC inference action $(v, \omega)$ từ observations
-\item Master publish cmd\_vel về Jetson qua ROS network
+\item Master publish cmd\_vel về Jetson qua mạng ROS
 \item Jetson forward cmd\_vel xuống Arduino qua serial (USB)
 \item Arduino chạy PID controller và điều khiển động cơ qua PWM
 \end{enumerate}
 
-Tần số điều khiển: \textbf{20 Hz} (mỗi 50ms một control cycle), đảm bảo real-time response cho collision avoidance.
+Tần số điều khiển: \textbf{20 Hz} (mỗi 50ms một control cycle), đảm bảo real-time response cho việc tránh va chạm.
 
 \subsection{Thiết kế phi tập trung với inference tập trung}
 \label{subsec:decentralized_design}
 
-\textbf{Khái niệm inference tập trung:} Inference tập trung (centralized inference) là kiến trúc trong đó tất cả các tính toán nặng (như nơ-ron network inference) được thực hiện trên một máy chủ trung tâm (Master PC) thay vì phân tán trên từng robot. Sensor data từ các robot được gửi về Master PC qua mạng, Master PC xử lý và gửi lại kết quả (action commands) cho từng robot.
+\textbf{Khái niệm inference tập trung:} Inference tập trung (centralized inference) là kiến trúc trong đó tất cả các tính toán nặng (như mạng nơ-ron inference) được thực hiện trên một máy chủ trung tâm (Master PC) thay vì phân tán trên từng robot. Sensor data từ các robot được gửi về Master PC qua mạng, Master PC xử lý và gửi lại kết quả (action commands) cho từng robot.
 
-\textbf{Phân biệt Design vs Implementation:}
+\textbf{Phân biệt thiết kế và triển khai:}
 
 \begin{itemize}[nosep] 
-\item \textbf{Về mặt thuật toán (Design):} Hệ thống được thiết kế decentralized hoàn toàn. Mỗi robot quyết định hành động CHỈ dựa trên quan sát cục bộ của chính nó (LiDAR scan, vị trí đích, vận tốc). Không có inter-robot communication - Robot B được Robot A nhận biết như một vật cản động qua LiDAR, tương tự như tường hay vật cản khác.
+\item \textbf{Về mặt thuật toán (Design):} Hệ thống được thiết kế phi tập trung hoàn toàn. Mỗi robot quyết định hành động CHỈ dựa trên quan sát cục bộ của chính nó (LiDAR scan, vị trí đích, vận tốc). Không có giao tiếp giữa các robot - Robot B được Robot A nhận biết như một vật cản động qua LiDAR, tương tự như tường hay vật cản khác.
 
 \item \textbf{Về mặt triển khai (Implementation):} Inference chạy tập trung trên Master PC do hạn chế phần cứng của Jetson Nano (4GB RAM, GPU yếu). Model inference trên Jetson mất 50-100ms, so với ~10ms trên Master PC i7 - latency quá cao.
 \end{itemize}
 
 \textbf{Khả năng mở rộng:}
 
-Code không có dependency nào với Master PC về mặt thiết kế. Với phần cứng mạnh hơn (Jetson Orin 32GB RAM, hoặc mini PC), toàn bộ pipeline (SLAM + inference) có thể chạy hoàn toàn local trên từng robot mà không cần thay đổi code - chỉ cần sửa launch file để nodes chạy local thay vì remote. Đây là ưu điểm của kiến trúc ROS.
+Code không có phụ thuộc nào với Master PC về mặt thiết kế. Với phần cứng mạnh hơn (Jetson Orin 32GB RAM, hoặc mini PC), toàn bộ pipeline (SLAM + inference) có thể chạy hoàn toàn độc lập trong từng robot mà không cần thay đổi code - chỉ cần sửa launch file để nodes chạy local. Đây là ưu điểm của kiến trúc ROS.
 
 \subsection{Tóm tắt deployment}
 
@@ -1130,10 +1127,10 @@ Hệ thống triển khai hoàn chỉnh bao gồm:
 \begin{itemize}[nosep]
 \item Kiến trúc Master-Slave với ROS network qua WiFi (static IP)
 \item Master PC (i7-11800H, 15GB RAM) chạy Cartographer SLAM và model inference
-\item 2 robots với Jetson Nano xử lý sensors, UKF fusion, và serial communication
-\item Arduino chạy PID controllers tầng thấp cho motor control
-\item Control loop 20 Hz đảm bảo real-time collision avoidance
-\item Thiết kế decentralized algorithm với centralized inference (implementation choice)
-\item Scalable: có thể chuyển sang fully decentralized deployment với hardware upgrade
+\item 1 robot với Jetson Nano xử lý sensors, UKF fusion, và giao tiếp serial
+\item Arduino chạy bộ điều khiển PID cho điều khiển động cơ
+\item Tần số điều khiển 20 Hz đảm bảo tránh va chạm real-time 
+\item Thiết kế decentralized algorithm với centralized inference
+\item Khả năng mở rộng: có thể chuyển sang fully decentralized deployment với việc nâng cấp phần cứng
 \end{itemize}
 

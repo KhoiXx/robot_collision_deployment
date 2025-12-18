@@ -1,71 +1,66 @@
 % chapters/00_cover_secondary.tex
-% Secondary cover page (Bìa phụ) for HCMUT Master's Thesis
+% Trang 1 (giống nội dung trang bìa nhưng KHÔNG có viền và logo)
+% Theo mẫu biểu mẫu 10
 % Author: Nguyễn Tấn Khôi
-% Date: 2025-11-25
+% Date: 2025-12-14
 
 %% ============================================================================
-%% SECONDARY COVER PAGE (BÌA PHỤ)
+%% TRANG 1 (KHÔNG CÓ VIỀN VÀ LOGO)
 %% ============================================================================
 
 \begin{titlepage}
 
-% Secondary cover has NO border (only main cover has border)
-
 \begin{center}
 
-% University name (Font 14, Bold)
-{\fontsize{14}{16}\selectfont\bfseries
-ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH\\
-TRƯỜNG ĐẠI HỌC BÁCH KHOA\\
+% Tên trường
+{\fontsize{14}{16}\selectfont
+ĐẠI HỌC QUỐC GIA TP. HCM\\
+\textbf{TRƯỜNG ĐẠI HỌC BÁCH KHOA}\\[0.3cm]
+--------------------
 }
 
-\vspace{2.5cm}
+% Logo
+% \includegraphics[width=3cm]{images/bk-logo.png}
 
-% Thesis title in Vietnamese (Font 16, Bold, Uppercase)
+\vspace{2cm}
+
+% Họ và tên học viên (in đậm)
+{\fontsize{15}{16}\selectfont\bfseries
+\MakeUppercase{\authorname}\\
+}
+
+
+\vspace{2cm}
+
+% Tên đề tài (in đậm, cỡ lớn hơn)
 {\fontsize{16}{19}\selectfont\bfseries
 \MakeUppercase{\thesistitleVN}\\
 }
 
 \vspace{1.5cm}
 
-% Thesis title in English (Font 14, Italic)
-{\fontsize{14}{16}\selectfont\itshape
-\thesistitleEN\\
-}
-
-\vspace{1cm}
-
-% Student information (Centered for secondary cover)
+\begin{center}
 {\fontsize{13}{15}\selectfont
-\textbf{Học viên:} \authorname\\
-\textbf{MSSV:} \studentid\\
-\textbf{Chuyên ngành:} \major\\
-\textbf{Mã số:} \majorcode\\
+\begin{tabular}{@{}l l@{}}
+Chuyên ngành: & \major \\
+Mã số:        & \majorcode \\
+\end{tabular}
 }
-
-\vspace{1cm}
-
-% Advisor information (Centered for secondary cover - KEPT as per task requirement)
-{\fontsize{13}{15}\selectfont
-\textbf{Giảng viên hướng dẫn:} \advisorname\\
-}
+\end{center}
 
 \vspace{2cm}
 
-% Degree (Font 14 as per HCMUT requirement)
-{\fontsize{14}{16}\selectfont
+% LUẬN VĂN THẠC SĨ
+{\fontsize{21}{24}\selectfont\bfseries
 LUẬN VĂN THẠC SĨ\\
 }
 
 \vfill
 
-% Submission date (Font 12 as per HCMUT requirement)
-{\fontsize{12}{14}\selectfont
-TP. Hồ Chí Minh, \submissiondate\\
+% Địa điểm và thời gian
+{\fontsize{13}{15}\selectfont
+TP. HỒ CHÍ MINH, tháng 12 năm 2025\\
 }
 
 \end{center}
 \end{titlepage}
-
-% Reset page numbering after secondary cover
-\clearpage
