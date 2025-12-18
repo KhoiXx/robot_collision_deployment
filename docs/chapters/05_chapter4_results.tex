@@ -66,7 +66,7 @@ Bảng \ref{tab:stage1_metrics} tổng hợp các metrics quan trọng tại cá
 \begin{itemize}[nosep]
 \item \textbf{Giai đoạn khởi đầu (0-200 updates):} Robots hoạt động gần như ngẫu nhiên với success rate chỉ 2.57\% và collision rate cao 76.93\%. Timeout rate cao (51.28\% tại update 200) cho thấy robots chưa học được cách di chuyển hiệu quả.
 
-\item \textbf{Giai đoạn học nhanh (200-600 updates):} Success rate tăng mạnh từ 10.76\% lên 51.78\%, collision rate giảm đáng kể. Đây là giai đoạn policy bắt đầu học được behavior cơ bản: di chuyển về goal và tránh va chạm đơn giản.
+\item \textbf{Giai đoạn học nhanh (200-600 updates):} Success rate tăng mạnh từ 10.76\% lên 51.78\%, collision rate giảm đáng kể. Đây là giai đoạn policy bắt đầu học được behavior cơ bản: hướng về goal và tránh va chạm.
 
 \item \textbf{Giai đoạn tinh chỉnh (600-1200 updates):} Success rate tiếp tục tăng nhưng chậm hơn, collision rate giảm dần. Timeout rate giảm mạnh từ 15.24\% xuống dưới 1\%, cho thấy robots đã học được cách di chuyển nhanh và hiệu quả hơn.
 
@@ -78,7 +78,7 @@ Bảng \ref{tab:stage1_metrics} tổng hợp các metrics quan trọng tại cá
 \item Success rate tối đa: \textbf{83.26\%} (tại update 1620)
 \item Collision rate tối thiểu: \textbf{14.11\%}
 \item Average reward tối đa: \textbf{53.47}
-\item Thời gian trung bình đến goal: \textbf{12.99 seconds} (giảm từ 30+ seconds ban đầu)
+\item Thời gian trung bình đến goal: \textbf{12.99 seconds}
 \end{itemize}
 
 % ----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ Bảng \ref{tab:stage2_metrics} tổng hợp các metrics quan trọng tại cá
 
 \item \textbf{Giai đoạn cải thiện (1000-3000 updates):} Success rate tăng dần từ 40\% lên 60\%, collision rate giảm từ 60\% xuống 40\%. Average reward tăng từ -5.00 lên 9.67. Policy đã bắt đầu học được cách kết hợp tránh vật cản tĩnh và động.
 
-\item \textbf{Vấn đề và điều chỉnh timeout (sau 3000 updates):} Tại khoảng 3000 updates, kết quả training bắt đầu có dấu hiệu suy giảm - collision rate tăng dù success rate vẫn đang tăng. Nguyên nhân được xác định là robots đang phát triển hành vi ``rushing'' - cố gắng di chuyển nhanh và thẳng nhất do bị timeout penalty. Hành vi này phản ánh việc policy đang tối ưu hóa sai mục tiêu: thay vì tìm đường đi an toàn, robots học cách đi thẳng về goal để tránh penalty timeout.
+\item \textbf{Vấn đề và điều chỉnh timeout (sau 3000 updates):} Tại khoảng 3000 updates, kết quả training bắt đầu có dấu hiệu suy giảm - collision rate tăng dù success rate vẫn đang tăng. Nguyên nhân được xác định là robots đang phát triển hành vi ``rushing'' - cố gắng di chuyển nhanh và thẳng nhất do bị timeout penalty. Hành vi này phản ánh việc policy đang tối ưu hóa sai mục tiêu: thay vì tìm đường đi an toàn, robots học cách đi thẳng về goal để tránh phạt timeout.
 
 Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout limit được tăng từ 500 lên 700 steps, điều này giải thích cho biểu đồ thời gian bị giựt mạnh ở khoảng sau 3000.
 
@@ -146,7 +146,6 @@ Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout 
 \item Success rate tối đa: \textbf{89.72\%} (cuối cùng: 89.18\%)
 \item Collision rate tối thiểu: \textbf{8.72\%} (cuối cùng: 9.04\%)
 \item Average reward tối đa: \textbf{62.46}
-\item Cải thiện so với Stage 1: Success rate tăng \textbf{+5.92\%}, Collision rate giảm \textbf{-5.39\%}
 \end{itemize}
 
 % ----------------------------------------------------------------------------
@@ -159,20 +158,20 @@ Checkpoint tốt nhất tại update 3000 được lưu lại, sau đó timeout 
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\textwidth]{figures/circle_5robots.png}
-\caption{Circle Test với 5 robots: Các robots (chấm màu) di chuyển từ vị trí ban đầu đến goal đối diện. Đường màu thể hiện quỹ đạo di chuyển, vùng tròn màu xanh là phạm vi quan sát của mỗi robot. Thời gian hoàn thành: 1m03s.}
+\includegraphics[width=0.5\textwidth]{figures/circle_5robots.png}
+\caption{Circle Test với 5 robots: Các robots (chấm màu) di chuyển từ vị trí ban đầu đến goal đối diện. Đường màu thể hiện quỹ đạo di chuyển, vùng tròn màu xanh là phạm vi quan sát của mỗi robot.}
 \label{fig:circle_5robots}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\begin{minipage}{0.48\textwidth}
+\begin{minipage}{0.42\textwidth}
 \centering
 \includegraphics[width=\textwidth]{figures/circle_20robots_start.png}
 \caption*{(a) Giai đoạn đầu (2m14s)}
 \end{minipage}
 \hfill
-\begin{minipage}{0.48\textwidth}
+\begin{minipage}{0.42\textwidth}
 \centering
 \includegraphics[width=\textwidth]{figures/circle_20robots_end.png}
 \caption*{(b) Giai đoạn cuối (2m38s)}

@@ -156,7 +156,7 @@ Sau khi flatten, output của convolution có chiều khoảng 3600 dimensions �
 
 Hình \ref{fig:network_architecture} minh họa kiến trúc mạng Actor-Critic hoàn chỉnh với các thành phần chính và luồng dữ liệu.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \resizebox{0.95\textwidth}{!}{
 \begin{tikzpicture}[
@@ -279,7 +279,7 @@ Trong implementation, orthogonal initialization được áp dụng với \texti
 \item Output layer của Critic (value): gain $= 1.0$
 \end{itemize}
 
-\subsubsection{Observation Normalization}
+\subsubsection{Chuẩn hóa Observation}
 
 Dữ liệu LiDAR scan có thể có scale rất khác nhau giữa các thời điểm (khi gần vật cản vs. khi không gian trống). Để giúp mạng nơ-ron học hiệu quả hơn, input được chuẩn hóa (normalize) về mean $\approx 0$ và standard deviation $\approx 1$.
 
@@ -290,7 +290,7 @@ Thay vì tính mean/std cố định từ dataset (không khả thi trong RL vì
 
 Công thức tương tự cho standard deviation. Điều này đảm bảo model luôn nhận input ở scale nhất quán, giúp quá trình học ổn định hơn.
 
-\subsubsection{Separate Optimizers cho Actor và Critic}
+\subsubsection{Dùng các optimizers riêng cho Actor và Critic}
 
 Trong Actor-Critic architecture, Actor (policy network) và Critic (value network) có vai trò khác nhau:
 \begin{itemize}[nosep]
@@ -306,7 +306,7 @@ Thay vì dùng chung một optimizer với một learning rate, hai Adam optimiz
 
 Critic learning rate cao hơn 15 lần giúp value network converge nhanh, cung cấp advantage estimate chính xác hơn cho policy gradient. Trong khi đó, Actor learning rate thấp hơn đảm bảo policy không ``nhảy'' quá xa trong mỗi update, duy trì tính ổn định theo nguyên lý của PPO.
 
-\subsubsection{Log-std Clamping}
+\subsubsection{Log-std Clamping - Giới hạn log-std}
 
 Trong Gaussian policy, mỗi action được sample từ phân phối chuẩn $a \sim \mathcal{N}(\mu, \sigma^2)$, trong đó:
 \begin{itemize}[nosep]
@@ -343,7 +343,7 @@ Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng 
 
 \textbf{Stage 1 - Foundation learning:} Huấn luyện24 robots trên môi trường cơ bản có ít vật cản, học các hành vi cơ bản: tránh va chạm cục bộ, di chuyển về đích, điều chỉnh vận tốc. Hyperparameters ưu tiên exploration cao (entropy 8e-3) và learning rates mạnh (critic 6e-3, actor 4e-4) để khám phá không gian hành động nhanh.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 % \includegraphics[width=0.85\textwidth]{figures/stage1_circle_training.png}
 \includegraphics[width=0.3\textwidth]{figures/obstacle.png}
@@ -357,7 +357,7 @@ Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng 
 
 Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng giới hạn timeout từ 500 lên 700 steps. Với giới hạn thời gian dài hơn, robots có thể chọn đường đi an toàn hơn. Kết quả được trình bày chi tiết ở Mục \ref{subsec:stage2_results}. 
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.65\textwidth]{figures/04_Fig8_training_scenarios.jpg}
 \caption{Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)}
@@ -445,7 +445,7 @@ với $c_{ent} = 0.01-0.02$ là hệ số entropy bonus.
 
 Bảng \ref{tab:stage1_hyperparams} và \ref{tab:stage2_hyperparams} liệt kê đầy đủ hyperparameters cho 2 giai đoạn huấn luyện.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Hyperparameters Stage 1 (24 robots - 83\% success)}
 \label{tab:stage1_hyperparams}
@@ -467,7 +467,7 @@ Timeout (max steps per episode) & 500 \\
 \end{tabular}
 \end{table}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Hyperparameters Stage 2 (44 robots - 89\% success)}
 \label{tab:stage2_hyperparams}
@@ -488,18 +488,18 @@ Timeout (max steps per episode) & 700 \\
 \end{tabular}
 \end{table}
 
-\subsection{Các kỹ thuật cải tiến được áp dụng}
+\subsection{Các kỹ thuật cải tiến đượi performancec áp dụng}
 
 So với Long et al. (2018) \cite{long2018towards}, 3 kỹ thuật cải tiến chính được áp dụng để tăng tốc convergence và ổn định training:
 
 \subsubsection{Adaptive Learning Rate Scheduler}
 
-\textbf{Vấn đề:} Fixed learning rate trong paper gốc gặp 2 vấn đề: (1) nếu giảm LR quá sớm khi performance đang cải thiện, sẽ làm chậm momentum; (2) nếu giữ LR cao khi stuck ở plateau, không thể thoát khỏi local minimum.
+\textbf{Vấn đề:} Learning rate cố định trong bài báo gốc gặp 2 vấn đề: (1) nếu giảm LR quá sớm khi performance đang cải thiện, sẽ làm chậm momentum; (2) nếu giữ LR cao khi mắc kẹt ở plateau, không thể thoát khỏi cực trị địa phương.
 
 \textbf{Giải pháp:} Thiết kế adaptive LR scheduler với 2 nguyên tắc:
 \begin{itemize}[nosep]
-\item \textit{Maintain LR} khi performance window (20 updates gần nhất) đang cải thiện → không làm chậm momentum
-\item \textit{Tăng LR} khi detect plateau (thay đổi < 2\% trong 60 updates) → thoát khỏi stuck state
+\item \textit{Giữ LR} khi hiệu suất trong cửa sổ gần nhất (20 updates gần nhất) đang cải thiện → không làm gián đoạn momentum
+\item \textit{Tăng LR} khi detect plateau (thay đổi < 2\% trong 60 updates) → thoát khỏi trạng thái mắc kẹt
 \end{itemize}
 
 \textbf{Cách hoạt động:} LR cao giúp escape saddle points và local minima, nhưng chỉ áp dụng khi thực sự cần (plateau), còn khi đang học tốt thì giữ nguyên để exploit momentum. Kết quả: training ổn định 200 updates không bị degradation, so với fixed LR thường cần 1000+ updates.
@@ -536,11 +536,11 @@ Robot thực tế được thiết kế với mục tiêu deploy model đã hu�
 
 \textbf{Kích thước và cấu trúc:} Khung robot kích thước 20cm × 15.7cm được gia công từ tấm nhựa acrylic 3mm, thiết kế 2 tầng: tầng dưới chứa động cơ và mạch điều khiển, tầng trên đặt LiDAR và Jetson Nano. Khoảng cách giữa 2 bánh chủ động $L = 0.205$m.
 
-\textbf{Hệ thống cảm biến:} LiDAR 360° được gắn ở trung tâm tầng trên với 455 beams, scan range ~12m, frequency 5-10Hz. LiDAR này tương thích trực tiếp với mô phỏng (cùng 455 tia laser), giúp giảm sim-to-real gap. IMU MPU6050 (gyroscope + accelerometer) đo góc xoay và gia tốc, fusion với wheel odometry qua UKF để ước lượng pose chính xác.
+\textbf{Hệ thống cảm biến:} LiDAR 360° được gắn ở trung tâm tầng trên với 455 beams, scan range ~12m, frequency 5-10Hz. LiDAR này tương thích trực tiếp với mô phỏng (cùng 455 tia laser), giúp giảm khác biệt giữa mô phỏng và thực tế. IMU MPU6050 (gyroscope + accelerometer) đo góc xoay và gia tốc, kết hợp với wheel odometry qua UKF để ước lượng pose chính xác.
 
 \textbf{Hệ thống điều khiển:} Jetson Nano (4GB RAM) chạy Ubuntu 18.04 và ROS Melodic, xử lý sensor fusion và serial giao tiếp với Arduino. Hai động cơ DC giảm tốc (tỷ số truyền 1:20) với encoder 15000 pulses/revolution điều khiển vận tốc bánh xe. Arduino nhận commands qua serial và điều khiển động cơ qua driver L298N.
 
-\textbf{Nguồn điện:} Pin Li-Po 3S 11.1V 2200mAh cung cấp điện cho động cơ (qua voltage regulator 12V), và hạ áp 5V cho Jetson Nano. Thiết kế nguồn tách biệt tránh nhiễu điện từ động cơ ảnh hưởng đến tính toán.
+\textbf{Nguồn điện:} Pin Li-Po 3S 11.1V 2200mAh cung cấp điện cho động cơ (qua ổn áp 12V), và hạ áp 5V cho Jetson Nano. Thiết kế nguồn tách biệt tránh nhiễu điện từ động cơ ảnh hưởng đến tính toán.
 
 \subsection{Kiến trúc phần mềm}
 
@@ -552,7 +552,7 @@ Hệ thống ROS gồm 5 nodes chính chạy song song:
   \item (4) \texttt{policy\_node} load PyTorch model và inference action từ observations
   \item (5) \texttt{controller\_node} convert high-level actions $(v, \omega)$ sang PWM commands qua PID controllers.
 \end{itemize}
-Giao tiếp qua ROS topics đảm bảo tính đồng bộ: dễ thay thế policy mới hoặc upgrade sensors mà không ảnh hưởng toàn hệ thống.
+Giao tiếp qua ROS topics đảm bảo tính đồng bộ: dễ thay thế policy mới hoặc thay đổi sensors mà không ảnh hưởng toàn hệ thống.
 
 \section{Thiết kế PID controller và chứng minh ổn định}
 \label{sec:pid_stability}
@@ -611,9 +611,9 @@ với $\tau = 0.05$ s là time constant (đo từ thực nghiệm step response)
 
 \textit{Time constant $\tau$:} Để đo $\tau$, động cơ được cấp step input PWM và quan sát đáp ứng vận tốc. Theo lý thuyết hệ bậc nhất, $\tau$ là thời gian để vận tốc đạt 63.2\% giá trị ổn định. Hình \ref{fig:motor_params}(a) cho thấy đáp ứng step từ 0 → 100 pulses/s: tại thời điểm $t = 0.05$s, vận tốc đạt xấp xỉ 63.2 pulses/s (đúng 63.2\% của 100). Dữ liệu đo có nhiễu do encoder resolution và dao động cơ học, nhưng mô hình lý thuyết $v(t) = 100(1 - e^{-t/0.05})$ fit tốt với xu hướng chung. Giá trị $\tau = 0.05$s phù hợp với đặc tính động cơ DC giảm tốc (inertia thấp do tỷ số truyền, phản ứng nhanh).
 
-\textit{Motor gain $K_m$:} Tham số $K_m$ thể hiện độ nhạy của vận tốc theo PWM ở chế độ ổn định. Hình \ref{fig:motor_params}(b) biểu diễn quan hệ giữa PWM command và vận tốc đo được tại 9 điểm khác nhau (PWM từ 10 đến 200). Các điểm đo có phân tán nhẹ do nhiễu sensor và ma sát thay đổi. Fitting tuyến tính cho $K_m \approx 0.81$ pulses/PWM. Để đơn giản hóa tính toán và làm tròn theo encoder specs (15000 pulses/rev, gear 1:20, PWM 8-bit), giá trị $K_m = 0.8$ được sử dụng trong mô hình.
+\textit{Motor gain $K_m$:} Tham số $K_m$ thể hiện độ nhạy của vận tốc theo PWM ở chế độ ổn định. Hình \ref{fig:motor_params}(b) biểu diễn quan hệ giữa PWM command và vận tốc đo được tại 9 điểm khác nhau (PWM từ 10 đến 200). Các điểm đo có phân tán nhẹ do nhiễu sensor và ma sát thay đổi. Dùng fitting tuyến tính thu được hệ số $K_m \approx 0.81$ pulses/PWM. Để đơn giản hóa tính toán và làm tròn theo encoder specs (15000 pulses/rev, gear 1:20, PWM 8-bit), giá trị $K_m = 0.8$ được sử dụng trong mô hình.
 
-\begin{figure}[htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{motor_parameter_identification.pdf}
 \caption{Xác định tham số động cơ từ thực nghiệm. (a) Đáp ứng step để xác định time constant $\tau = 0.05$s: các điểm đo (xanh) có nhiễu nhẹ nhưng fit tốt với mô hình lý thuyết (đường xanh đậm); tại $t = \tau$, vận tốc đạt 63.2\% giá trị ổn định. (b) Quan hệ tuyến tính PWM-vận tốc để xác định motor gain: 9 điểm đo (đỏ) cho fitting $K_m \approx 0.81$, làm tròn thành $K_m = 0.8$ cho mô hình.}
@@ -657,6 +657,15 @@ Tất cả phần tử cột đầu đều dương, do đó hệ thống ổn đ
 
 \subsection{Kết quả thực nghiệm}
 
+\textbf{Quy đổi vận tốc sang setpoint:} Bộ PID hoạt động trong không gian encoder units thay vì m/s để đảm bảo độ chính xác và đơn giản hóa việc đọc encoder. Vận tốc đích $v$ (m/s) được quy đổi sang setpoint $s$ (encoder units) thông qua ánh xạ tuyến tính:
+
+\begin{equation}
+s = \frac{v}{v_{\max}} \times 255
+\label{eq:vel_to_pulse}
+\end{equation}
+
+với $v_{\max} = 1.15$ m/s là vận tốc tối đa của robot. Ví dụ: $v = 0.4$ m/s $\rightarrow s = \frac{0.4}{1.15} \times 255 \approx 88$ units; $v = -0.3$ m/s $\rightarrow s \approx -66$ units.
+
 Thử nghiệm step response được tiến hành trên robot thực tế với 6 setpoints khác nhau: 0.2, 0.4, 0.6, -0.3, -0.5, và 0 m/s. Kết quả đo được:
 
 \textbf{Performance metrics:}
@@ -670,6 +679,13 @@ Thử nghiệm step response được tiến hành trên robot thực tế với
 \textbf{Phân tích:} Các setpoint có magnitude lớn (0.4, 0.5 m/s) cho kết quả tốt nhất với settling time gần như tức thời và steady-state error < 1\%. Ngược lại, các setpoint nhỏ (0.2, -0.3 m/s) có settling time chậm hơn và oscillation lớn hơn (std dev 1.9-2.0 pulses). Điều này do ở vận tốc thấp, ma sát tĩnh và backlash trong hệ truyền động ảnh hưởng nhiều hơn. Setpoint 0 m/s (dừng) đạt hiệu suất xuất sắc với error gần như bằng 0.
 
 \textbf{Kết luận:} Bộ PID đã thiết kế đạt mục tiêu điều khiển với steady-state error < 2\% và overshoot < 5\% ở hầu hết setpoints. Hệ thống ổn định theo phân tích Routh-Hurwitz và được xác nhận qua thực nghiệm.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/pid_step_response.png}
+\caption{Đáp ứng step response của bộ PID. Hàng trên: v = 0.4 m/s (88 units), hàng dưới: v = -0.5 m/s (-110 units). Cột trái: step response 0-1s, cột phải: zoom vào vùng steady-state (0.3-2s) để thấy dao động quanh setpoint.}
+\label{fig:pid_step_response}
+\end{figure}
 
 \textbf{Lưu ý thực tế:} Khi bánh xe quay không tải (robot được nâng lên), có xuất hiện jittering nhẹ do chất lượng encoder và độ rơ (backlash) của hộp số. Đã thử nghiệm thêm bộ lọc thông thấp (low-pass filter) nhưng gây ảnh hưởng tiêu cực đến đáp ứng PID (tăng settling time và giảm khả năng tracking). Tuy nhiên, khi chạy có tải (robot trên mặt đất), hiện tượng jittering hoàn toàn biến mất do tải cơ học làm ổn định hệ truyền động. Do đó, kết quả được xem là chấp nhận được cho ứng dụng thực tế.
 
@@ -760,7 +776,7 @@ Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson 
 
 \textbf{Iteration 3 - Vấn đề loop closure:} Khi gọi \texttt{finish\_trajectory}, optimization làm biến dạng bản đồ. Giải pháp: tắt hoàn toàn pose graph optimization bằng \texttt{optimize\_every\_n\_nodes = 0} và \texttt{sampling\_ratio = 0.0}.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19}
 \label{tab:carto_params}
@@ -800,7 +816,7 @@ Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson 
 
 Sau khi có bản đồ (\texttt{.pbstream}), chuyển sang chế độ \textit{pure localization} để robot định vị trong bản đồ có sẵn mà không tạo submap mới.
 
-\textbf{File cấu hình localization:} File \texttt{robot\_2d\_localization.lua} kế thừa từ \texttt{robot\_2d.lua} với các thay đổi:
+\textbf{File cấu hình localization:} File \texttt{robot\_2d\_localization.lua} kế thừa từ \texttt{robot\_2d.lua} với:
 \begin{lstlisting}[basicstyle=\small\ttfamily, caption={Cấu hình Cartographer cho localization}, label={lst:carto_localization}]
 include "robot_2d.lua"
 
@@ -935,7 +951,7 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
 
 \subsection{Kiến trúc tổng thể}
 
-\begin{figure}[!t]
+\begin{figure}[H]
 \centering
 \resizebox{0.95\textwidth}{!}{
 \begin{tikzpicture}[
@@ -993,7 +1009,7 @@ Hệ thống bao gồm 1 Master PC và 1 robot tự hành (robot có 1 Jetson Na
 
 Bảng \ref{tab:hardware_config} liệt kê cấu hình phần cứng của các thành phần chính trong hệ thống.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Cấu hình phần cứng hệ thống}
 \label{tab:hardware_config}
@@ -1046,7 +1062,7 @@ export ROS_IP=<địa chỉ IP của máy hiện tại>
 
 Bảng \ref{tab:node_distribution} mô tả phân bổ các ROS nodes trên các thiết bị khác nhau.
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering
 \caption{Phân bổ ROS nodes trên các thiết bị}
 \label{tab:node_distribution}

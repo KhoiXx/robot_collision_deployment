@@ -154,7 +154,7 @@ trong đó $\hat{A}_t$ là ước lượng độ lợi (advantage estimate), $\b
     \label{fig:training_scenarios}
 \end{figure}
 
-\textbf{Cấu hình cảm biến:} Laser scanner 180° gắn ở phía trước robot, tầm quét 4m, 512 tia/lần quét. Observation được chuẩn hóa (mean=0, std=1) trên toàn bộ dữ liệu huấn luyện để cải thiện độ ổn định và hội tụ.
+\textbf{Cấu hình cảm biến:} Laser scanner 180° gắn ở phía trước robot, tầm quét 4m, 512 tia/lần quét.
 
 \subsection{Chiến lược huấn luyện hai giai đoạn}
 \label{subsec:long_curriculum}
@@ -486,13 +486,6 @@ Học tăng cường (Reinforcement Learning - RL) là phương pháp học máy
 \end{itemize}
 
 Policy $\pi(a|s)$ là phân phối xác suất của hành động cho trước trạng thái. Mục tiêu của RL là tìm policy tối ưu $\pi^*$ cực đại hóa phần thưởng kỳ vọng $G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}$.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.6\textwidth]{figures/02_Fig2_agent_environment_rl.jpg}
-    \caption{Tương tác giữa Agent và Environment trong Reinforcement Learning}
-    \label{fig:agent_environment_rl}
-\end{figure}
 
 \textbf{Value function} $V^\pi(s)$ ước lượng kết quả kỳ vọng khi bắt đầu từ trạng thái $s$ và theo policy $\pi$:
 \begin{equation}
@@ -828,9 +821,9 @@ y[n] = \sum_{k=0}^{K-1} w[k] \cdot x[n + k] + b
 trong đó:
 \begin{itemize}
 \item $x$: Input sequence (ví dụ: LiDAR 360 points)
-\item $w$: Filter weights (learnable parameters)
+\item $w$: Filter weights
 \item $K$: Kernel size (ví dụ: 5)
-\item $b$: Bias (learnable)
+\item $b$: Bias
 \item $y$: Output feature map
 \end{itemize}
 
@@ -918,9 +911,9 @@ Sau khi có $\delta^{[l]}$ cho tất cả các lớp, ta tính gradient của h�
 \end{equation}
 Gradient của trọng số phụ thuộc vào giá trị kích hoạt từ lớp trước $\mathbf{a}^{[l-1]}$ - đây là lý do tại sao lan truyền ngược cần lưu lại giá trị kích hoạt từ pha lan truyền xuôi.
 
-hạng phạt\textbf{Vấn đề vanishing và exploding gradient:} Khi mạng có nhiều lớp, gradient có thể trở nên cực nhỏ (vanishing) hoặc cực lớn (exploding) khi nhân qua nhiều lớp. Triệt tiêu gradient xảy ra với sigmoid/tanh vì đạo hàm của chúng nhỏ hơn 1 ($\sigma'(x) \leq 0.25$, $\tanh'(x) \leq 1$), nhân nhiều lần sẽ tiến về 0 - khiến các lớp đầu không học được. Exploding gradient xảy ra khi trọng số quá lớn hoặc tốc độ học không phù hợp. Các giải pháp phổ biến: dùng hàm kích hoạt ReLU (không bị triệt tiêu vì $\text{ReLU}'(x) = 1$ khi $x > 0$), cắt gradient (chặn gradient lớn), chuẩn hóa batch (ổn định giá trị kích hoạt), và khởi tạo trọng số phù hợp.
+\textbf{Vấn đề vanishing và exploding gradient:} Khi mạng có nhiều lớp, gradient có thể trở nên cực nhỏ (vanishing) hoặc cực lớn (exploding) khi nhân qua nhiều lớp. Triệt tiêu gradient xảy ra với sigmoid/tanh vì đạo hàm của chúng nhỏ hơn 1 ($\sigma'(x) \leq 0.25$, $\tanh'(x) \leq 1$), nhân nhiều lần sẽ tiến về 0 - khiến các lớp đầu không học được. Exploding gradient xảy ra khi trọng số quá lớn hoặc tốc độ học không phù hợp. Các giải pháp phổ biến: dùng hàm kích hoạt ReLU (không bị triệt tiêu vì $\text{ReLU}'(x) = 1$ khi $x > 0$), cắt gradient (chặn gradient lớn), chuẩn hóa batch (ổn định giá trị kích hoạt), và khởi tạo trọng số phù hợp.
 
-\subsubsection{Regularization Techniques}
+\subsubsection{Kỹ thuật Regularization}
 
 Regularization là các kỹ thuật giúp mạng nơ-ron tránh overfitting (học quá sát với dữ liệu huấn luyện) và tổng quát hóa tốt hơn cho dữ liệu chưa thấy.
 
