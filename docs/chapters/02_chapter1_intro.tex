@@ -87,17 +87,19 @@ Luận văn tập trung vào các khía cạnh sau:
 Luận văn đóng góp vào lĩnh vực nghiên cứu đa robot và học tăng cường thông qua:
 
 \begin{itemize}
-    \item Đánh giá tính ứng dụng của mô hình học tăng cường trong điều khiển hệ robot phân tán 
+    \item Đánh giá tính ứng dụng của mô hình học tăng cường trong điều khiển hệ robot phân tán
     \item Đề xuất các cải tiến về thuật toán huấn luyện PPO:
     \begin{itemize}
-        \item \textit{Adaptive Learning Rate Scheduler}: Duy trì learning rate khi performance cải thiện
+        \item \textit{Adaptive Learning Rate Scheduler}: Điều chỉnh learning rate động dựa trên performance để thoát khỏi plateau và duy trì momentum khi đang học tốt
+        \item \textit{Dense Rewards}: Cải tiến hàm reward với các thành phần chi tiết (timeout penalty, heading guidance, safety margin, smoothness) để hướng dẫn robot học hiệu quả hơn
+        \item \textit{Observation Normalization}: Chuẩn hóa input sử dụng running statistics để ổn định quá trình học
+        \item \textit{Entropy Decay}: Giảm dần entropy coefficient từ 8×10⁻³ xuống 2×10⁻³ để cân bằng exploration và exploitation
         \item \textit{Value Clipping}: Giảm instability trong quá trình huấn luyện
-        \item \textit{Separate Optimizers}: Sử dụng learning rate khác nhau cho actor và critic
-        \item \textit{Learning Rate Warmup}: Tăng dần learning rate trong giai đoạn đầu
+        \item \textit{Two-stage Training}: Chiến lược huấn luyện hai giai đoạn để cải thiện khả năng mở rộng
     \end{itemize}
 
     \item Nghiên cứu khả năng thực tiễn của mô hình với robot Nonholonomic
-    
+
 \end{itemize}
 
 \subsection{Ý nghĩa thực tiễn}

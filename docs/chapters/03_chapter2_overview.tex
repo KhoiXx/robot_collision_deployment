@@ -67,7 +67,7 @@ Trong những năm gần đây, học sâu (Deep Learning - DL) \cite{lecun2015d
 
 Đối với bài toán đa robot, có hai cách tiếp cận chính: tập trung (centralized) và phân tán (decentralized). Cách tiếp cận tập trung sử dụng một agent trung tâm điều khiển tất cả robots, có ưu điểm là dễ tối ưu hóa toàn cục nhưng gặp khó khăn về khả năng mở rộng và đòi hỏi giao tiếp đáng tin cậy. Ngược lại, cách tiếp cận phân tán \cite{chen2017decentralized} cho phép mỗi robot có policy riêng và ra quyết định độc lập dựa trên quan sát cục bộ. Cách tiếp cận này mở rộng tốt hơn cho số lượng robot lớn và không yêu cầu giao tiếp, phù hợp cho ứng dụng thực tế.
 
-\section{Phương pháp PPO với hệ robot phi tập trung}
+\section{Phương pháp huấn luyện với PPO được đề xuất}
 \label{sec:long_method}
 
 Bài báo của Long et al. \cite{long2018towards} đề xuất phương pháp điều khiển phân tán cho hệ đa robot tránh va chạm sử dụng deep reinforcement learning. Đây là công trình nền tảng cho luận văn này.
@@ -147,26 +147,6 @@ trong đó $\hat{A}_t$ là ước lượng độ lợi (advantage estimate), $\b
 
 \textbf{Môi trường mô phỏng:} Sử dụng thư viện mô phỏng Stage với 2 môi trường huấn luyện tương ứng với 2 giai đoạn khác nhau. Giai đoạn 1: môi trường đơn giản, ít vật cản. Giai đoạn 2: 7 kịch bản đa dạng: (1-3, 5-6) Môi trường có tường/vật cản với điểm bắt đầu/kết thúc cố định, (4) Trường hợp vòng tròn với các robot đổi chỗ qua tâm, (7) Kịch bản ngẫu nhiên với vị trí robot và vật cản ngẫu nhiên. Tất cả robot di chuyển đồng thời.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\textwidth]{figures/04_Fig8_training_scenarios.jpg}
-    \caption{7 kịch bản trong huấn luyện}
-    \label{fig:training_scenarios}
-\end{figure}
-
-\textbf{Cấu hình cảm biến:} Laser scanner 180° gắn ở phía trước robot, tầm quét 4m, 512 tia/lần quét.
-
-\subsection{Chiến lược huấn luyện hai giai đoạn}
-\label{subsec:long_curriculum}
-
-Áp dụng curriculum learning \cite{bengio2009curriculum} với 2 giai đoạn để tránh bị kẹt ở cực trị địa phương:
-
-\textbf{Giai đoạn 1 - Học nền tảng:} Huấn luyện 24 robot trên kịch bản ngẫu nhiên không có vật cản (~6 giờ, 300 vòng lặp). Mục tiêu: học tránh va chạm cơ bản và đến đích. Kết thúc khi tỉ lệ thành công $> 0.9$.
-
-\textbf{Giai đoạn 2 - Transfer learning:} Tiếp tục huấn luyện 58 robot trên tất cả 7 kịch bản phức tạp (~6 giờ, 300 vòng lặp) với learning rate thấp hơn ($2 \times 10^{-5}$). Khởi tạo từ trọng số Giai đoạn 1. Mục tiêu: tổng quát hóa cho quy mô lớn, có vật cản, môi trường đa dạng.
-
-\textbf{Kết quả:} Pre-training ở Giai đoạn 1 giúp đạt reward cao hơn ở Giai đoạn 2 so với huấn luyện từ đầu. Tổng thời gian khoảng 12 giờ, khoảng 4.8 triệu timestep. Thuật toán mở rộng tốt nhờ thu thập dữ liệu song song.
-
 \section{Cơ sở lý thuyết}
 \label{sec:theory}
 
@@ -217,260 +197,152 @@ trong đó $\ell$ là loss function cho một sample (ví dụ: Mean Squared Err
     \label{fig:gradient_descent}
 \end{figure}
 
-\subsubsection{Stochastic Gradient Descent (SGD)}
+\subsubsection{Adam Optimizer (Adaptive Moment Estimation)}
 
-Để giải quyết vấn đề tính toán chậm của Batch GD, Stochastic Gradient Descent chỉ sử dụng một sample ngẫu nhiên hoặc một mini-batch để ước lượng gradient:
+Adam (Adaptive Moment Estimation) \cite{kingma2014adam} là thuật toán tối ưu hiện đại nhất và được sử dụng rộng rãi nhất trong deep learning và reinforcement learning. Adam kết hợp ưu điểm của hai phương pháp: \textbf{momentum} (tích lũy hướng di chuyển) và \textbf{adaptive learning rate} (điều chỉnh LR riêng cho từng tham số).
 
-\begin{equation}
-\nabla_\theta J(\theta) \approx \nabla_\theta \ell(f_\theta(x^{(i)}), y^{(i)})
-\end{equation}
-
-hoặc với mini-batch size $B$:
-
-\begin{equation}
-\nabla_\theta J(\theta) \approx \frac{1}{B} \sum_{i \in \mathcal{B}} \nabla_\theta \ell(f_\theta(x^{(i)}), y^{(i)})
-\end{equation}
-
-\textbf{Thuật toán SGD với mini-batch:}
-
-\begin{enumerate}
-\item Khởi tạo tham số $\theta_0$ (thường từ phân phối chuẩn hoặc Xavier/He initialization)
-\item Đặt learning rate $\alpha$, batch size $B$
-\item Lặp cho đến khi hội tụ:
-\begin{itemize}
-\item Shuffle dataset $\mathcal{D}$
-\item Chia dataset thành mini-batches: $\{\mathcal{B}_1, \mathcal{B}_2, \ldots, \mathcal{B}_M\}$
-\item Với mỗi mini-batch $\mathcal{B}_j$:
-\begin{itemize}
-\item Tính loss: $J_j(\theta) = \frac{1}{B} \sum_{(x,y) \in \mathcal{B}_j} \ell(f_\theta(x), y)$
-\item Tính gradient: $g_j = \nabla_\theta J_j(\theta)$
-\item Cập nhật: $\theta \leftarrow \theta - \alpha g_j$
-\end{itemize}
-\end{itemize}
-\end{enumerate}
-
-\textbf{Ưu điểm:}
-\begin{itemize}
-\item Nhanh hơn nhiều so với Batch GD, có thể xử lý dữ liệu lớn
-\item Cập nhật online, có thể học từ dữ liệu liên tục
-\item Noise trong gradient giúp thoát local minima
-\item Hỗ trợ GPU tốt hơn với mini-batch
+\textbf{Động lực thiết kế:} Các thuật toán gradient descent truyền thống (SGD, Momentum, RMSProp) có những hạn chế:
+\begin{itemize}[nosep]
+\item SGD: gradient noisy, learning rate global không phù hợp cho tất cả tham số
+\item Momentum: tăng tốc nhưng vẫn dùng LR global
+\item RMSProp: adaptive LR nhưng thiếu momentum
 \end{itemize}
 
-\textbf{Nhược điểm:}
-\begin{itemize}
-\item Gradient noisy, cập nhật không ổn định
-\item Learning rate cố định không tối ưu cho mọi tham số
-\item Vẫn có thể oscillate xung quanh minimum
-\item Cần tuning cẩn thận batch size và learning rate
-\end{itemize}
+Adam giải quyết tất cả các vấn đề trên bằng cách duy trì hai moment estimates:
 
-\textbf{Chọn batch size:} Batch size nhỏ (32-64) $\rightarrow$ update nhanh, gradient dao động, generalization tốt. Batch size lớn (256-512) $\rightarrow$ gradient stable, tận dụng GPU, có thể overfitting. Với RL và PPO, thường dùng batch size lớn (1024-4096 timesteps) để ổn định policy update.
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.75\textwidth]{figures/02_Fig5_sgd_vs_gd.jpg}
-    \caption{So sánh Stochastic Gradient Descent và Gradient Descent: SGD có noise nhưng hội tụ nhanh hơn}
-    \label{fig:sgd_vs_gd}
-\end{figure}
-
-\subsubsection{Momentum-based Gradient Descent}
-
-Momentum giải quyết vấn đề oscillation của SGD bằng cách tích lũy hướng di chuyển từ các bước trước:
+\textbf{Công thức Adam:}
 
 \begin{equation}
 \begin{aligned}
-v_{t+1} &= \beta v_t + (1 - \beta) g_t \\
-\theta_{t+1} &= \theta_t - \alpha v_{t+1}
+m_{t+1} &= \beta_1 m_t + (1 - \beta_1) g_t \quad \text{(first moment: momentum)} \\
+v_{t+1} &= \beta_2 v_t + (1 - \beta_2) g_t^2 \quad \text{(second moment: adaptive LR)} \\
+\hat{m}_{t+1} &= \frac{m_{t+1}}{1 - \beta_1^{t+1}} \quad \text{(bias correction cho $m$)} \\
+\hat{v}_{t+1} &= \frac{v_{t+1}}{1 - \beta_2^{t+1}} \quad \text{(bias correction cho $v$)} \\
+\theta_{t+1} &= \theta_t - \alpha \frac{\hat{m}_{t+1}}{\sqrt{\hat{v}_{t+1}} + \epsilon} \quad \text{(parameter update)}
 \end{aligned}
 \end{equation}
 
 trong đó:
-\begin{itemize}
-\item $v_t$ là velocity (trung bình trượt của gradient)
-\item $g_t = \nabla_\theta J(\theta_t)$ là gradient tại bước $t$
-\item $\beta \in [0, 1]$ là momentum coefficient (thường $\beta = 0.9$)
-\item $\alpha$ là learning rate
+\begin{itemize}[nosep]
+\item $g_t = \nabla_\theta J(\theta_t)$ là gradient tại iteration $t$
+\item $m_t$ là exponential moving average của gradient (first moment)
+\item $v_t$ là exponential moving average của squared gradient (second moment)
+\item $\beta_1 \in [0, 1)$ là decay rate cho first moment (thường $\beta_1 = 0.9$)
+\item $\beta_2 \in [0, 1)$ là decay rate cho second moment (thường $\beta_2 = 0.999$)
+\item $\alpha$ là learning rate (thường $\alpha = 10^{-3}$ hoặc $3 \times 10^{-4}$ cho RL)
+\item $\epsilon$ là hằng số nhỏ để tránh chia cho 0 (thường $\epsilon = 10^{-8}$)
+\item Tất cả phép toán trên vector/tensor được thực hiện element-wise
 \end{itemize}
 
-\textbf{Giải thích trực quan:} Hãy tưởng tượng một quả bóng lăn xuống dốc. Momentum cho phép quả bóng tích lũy vận tốc khi đi xuống và có thể vượt qua các local minima nhỏ nhờ quán tính. Thuật toán này giúp:
-\begin{itemize}
-\item Tăng tốc trong các hướng có gradient nhất quán
-\item Giảm oscillation trong các hướng có gradient thay đổi
-\item Vượt qua saddle points và local minima phẳng
+\textbf{Pseudocode của Adam:}
+
+\begin{algorithm}[H]
+\caption{Adam Optimizer}
+\begin{algorithmic}[1]
+\REQUIRE Learning rate $\alpha$, decay rates $\beta_1, \beta_2$, epsilon $\epsilon$
+\REQUIRE Khởi tạo parameters $\theta_0$
+\STATE $m_0 \leftarrow 0$ (khởi tạo first moment)
+\STATE $v_0 \leftarrow 0$ (khởi tạo second moment)
+\STATE $t \leftarrow 0$ (iteration counter)
+\WHILE{$\theta_t$ chưa hội tụ}
+    \STATE $t \leftarrow t + 1$
+    \STATE $g_t \leftarrow \nabla_\theta J(\theta_{t-1})$ \hfill // Tính gradient
+    \STATE $m_t \leftarrow \beta_1 m_{t-1} + (1 - \beta_1) g_t$ \hfill // Update first moment
+    \STATE $v_t \leftarrow \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ \hfill // Update second moment
+    \STATE $\hat{m}_t \leftarrow m_t / (1 - \beta_1^t)$ \hfill // Bias correction first moment
+    \STATE $\hat{v}_t \leftarrow v_t / (1 - \beta_2^t)$ \hfill // Bias correction second moment
+    \STATE $\theta_t \leftarrow \theta_{t-1} - \alpha \cdot \hat{m}_t / (\sqrt{\hat{v}_t} + \epsilon)$ \hfill // Update params
+\ENDWHILE
+\RETURN $\theta_t$
+\end{algorithmic}
+\end{algorithm}
+
+\textbf{Giải thích chi tiết các thành phần:}
+
+\textbf{1. First moment $m_t$ (Momentum):}
+\begin{itemize}[nosep]
+\item $m_t$ là exponentially weighted moving average (EWMA) của gradients
+\item Với $\beta_1 = 0.9$: $m_t = 0.9 m_{t-1} + 0.1 g_t$, nghĩa là $m_t$ chứa 90\% thông tin từ quá khứ và 10\% từ gradient hiện tại
+\item Công dụng: Tích lũy hướng di chuyển (momentum), giúp tăng tốc trong hướng gradient nhất quán và giảm oscillation khi gradient thay đổi dấu
+\item Ví dụ: Nếu gradient luôn dương trong 10 iterations, $m_t$ sẽ tích lũy và tăng dần, tạo "quán tính" giúp parameter di chuyển nhanh hơn
 \end{itemize}
 
-\textbf{Nesterov Accelerated Gradient (NAG):} Cải tiến momentum bằng cách "nhìn trước" vị trí tiếp theo:
+\textbf{2. Second moment $v_t$ (Adaptive Learning Rate):}
+\begin{itemize}[nosep]
+\item $v_t$ là EWMA của squared gradients: $v_t = \beta_2 v_{t-1} + (1-\beta_2) g_t^2$
+\item Với $\beta_2 = 0.999$: $v_t$ có "bộ nhớ" dài hơn $m_t$ (99.9\% vs 90\%), giúp ước lượng variance ổn định hơn
+\item Công dụng: Điều chỉnh learning rate riêng cho từng tham số
+  \begin{itemize}[nosep]
+  \item Tham số có $v_t$ lớn (gradient thường lớn) → LR giảm (chia cho $\sqrt{v_t}$ lớn) → tránh overshoot
+  \item Tham số có $v_t$ nhỏ (gradient thường nhỏ) → LR tăng (chia cho $\sqrt{v_t}$ nhỏ) → tăng tốc hội tụ
+  \end{itemize}
+\item Ví dụ: Weight ở layer đầu có gradient lớn, weight ở layer cuối có gradient nhỏ → Adam tự động cân bằng tốc độ học
+\end{itemize}
 
+\textbf{3. Bias Correction:}
+
+Do khởi tạo $m_0 = v_0 = 0$, trong các iterations đầu tiên, $m_t$ và $v_t$ bị bias về 0.
+
+Ví dụ cụ thể với $\beta_1 = 0.9$:
+\begin{itemize}[nosep]
+\item Iteration 1: $m_1 = 0.9 \times 0 + 0.1 g_1 = 0.1 g_1$ (rất nhỏ so với $g_1$)
+\item Iteration 2: $m_2 = 0.9 \times 0.1g_1 + 0.1g_2 = 0.09g_1 + 0.1g_2$
+\item Expectation: $E[m_t] = E[g](1 - \beta_1^t)$ thay vì $E[g]$
+\end{itemize}
+
+Giải pháp: Chia cho $(1 - \beta_1^t)$ để khử bias:
 \begin{equation}
-\begin{aligned}
-v_{t+1} &= \beta v_t + (1 - \beta) \nabla_\theta J(\theta_t - \alpha \beta v_t) \\
-\theta_{t+1} &= \theta_t - \alpha v_{t+1}
-\end{aligned}
+\hat{m}_t = \frac{m_t}{1 - \beta_1^t}
 \end{equation}
 
-NAG tính gradient tại vị trí "lookahead" $\theta_t - \alpha \beta v_t$ thay vì $\theta_t$, giúp điều chỉnh momentum kịp thời trước khi overshoot.
+Với ví dụ trên: $\hat{m}_1 = 0.1g_1 / (1-0.9) = 0.1g_1 / 0.1 = g_1$ ✓
 
-\textbf{Ưu điểm so với SGD:}
-\begin{itemize}
-\item Hội tụ nhanh hơn, ít oscillation hơn
-\item Ổn định hơn với learning rate lớn
-\item Hiệu quả với ravines (gradient lớn theo một hướng, nhỏ theo hướng khác)
-\end{itemize}
+Khi $t \to \infty$: $(1 - \beta_1^t) \to 1$, bias correction không còn ảnh hưởng.
 
-\textbf{Nhược điểm:}
-\begin{itemize}
-\item Thêm một hyperparameter ($\beta$) cần tuning
-\item Vẫn sử dụng learning rate global cho tất cả tham số
-\item Không thích nghi với sparse gradients
-\end{itemize}
-
-\subsubsection{RMSProp (Root Mean Square Propagation)}
-
-RMSProp giải quyết vấn đề learning rate toàn cục bằng cách điều chỉnh learning rate riêng cho từng tham số dựa trên magnitude của gradients gần đây:
-
+\textbf{4. Update Rule - Kết hợp tất cả:}
 \begin{equation}
-\begin{aligned}
-E[g^2]_{t+1} &= \beta E[g^2]_t + (1 - \beta) g_t^2 \\
-\theta_{t+1} &= \theta_t - \frac{\alpha}{\sqrt{E[g^2]_{t+1} + \epsilon}} g_t
-\end{aligned}
+\theta_{t+1} = \theta_t - \alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
 \end{equation}
 
-trong đó:
-\begin{itemize}
-\item $E[g^2]_t$ là trung bình trượt của bình phương gradient (second moment)
-\item $g_t = \nabla_\theta J(\theta_t)$ là gradient
-\item $\beta$ là decay rate (thường 0.9 hoặc 0.99)
-\item $\epsilon$ là hằng số nhỏ (thường $10^{-8}$) để tránh chia cho 0
-\item Phép chia và căn bậc hai được thực hiện element-wise
+Giải thích:
+\begin{itemize}[nosep]
+\item Tử số $\hat{m}_t$: hướng di chuyển (momentum)
+\item Mẫu số $\sqrt{\hat{v}_t}$: scaling factor (adaptive LR)
+\item $\epsilon$: tránh chia cho 0 khi $v_t$ rất nhỏ
+\item Step size thực tế: $\alpha \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}$ khác nhau cho mỗi parameter
 \end{itemize}
 
-\textbf{Ý tưởng chính:} Nếu gradient của một tham số thường lớn $\rightarrow$ $E[g^2]$ lớn $\rightarrow$ learning rate giảm. Nếu gradient nhỏ $\rightarrow$ learning rate tăng. Điều này giúp cân bằng tốc độ học giữa các chiều (dimensions) khác nhau.
-
-\textbf{Lợi ích của adaptive learning rate:}
-\begin{itemize}
-\item Tham số với gradient lớn, frequent updates $\rightarrow$ LR giảm, tránh oscillation
-\item Tham số với gradient nhỏ, sparse updates $\rightarrow$ LR tăng, hội tụ nhanh hơn
-\item Phù hợp với non-stationary objectives (objective thay đổi theo thời gian)
-\item Hiệu quả với sparse data (NLP, recommendation systems)
-\end{itemize}
-
-\textbf{Ưu điểm:}
-\begin{itemize}
-\item Adaptive learning rate cho từng tham số
-\item Hiệu quả với non-convex optimization
-\item Ít nhạy cảm với global learning rate $\alpha$
-\item Phù hợp với recurrent neural networks
-\end{itemize}
-
-\textbf{Nhược điểm:}
-\begin{itemize}
-\item $E[g^2]$ có thể tích lũy và trở nên rất lớn, làm learning rate quá nhỏ
-\item Không có momentum để tăng tốc trong hướng consistent
-\item Vẫn cần tuning learning rate $\alpha$ và decay rate $\beta$
-\end{itemize}
-
-\subsubsection{Adam (Adaptive Moment Estimation)}
-
-Adam \cite{kingma2014adam} kết hợp momentum (first moment) và RMSProp (second moment) để tạo ra thuật toán tối ưu hiện đại nhất, được sử dụng rộng rãi nhất trong deep learning:
-
-\begin{equation}
-\begin{aligned}
-m_{t+1} &= \beta_1 m_t + (1 - \beta_1) g_t \\
-v_{t+1} &= \beta_2 v_t + (1 - \beta_2) g_t^2 \\
-\hat{m}_{t+1} &= \frac{m_{t+1}}{1 - \beta_1^{t+1}} \\
-\hat{v}_{t+1} &= \frac{v_{t+1}}{1 - \beta_2^{t+1}} \\
-\theta_{t+1} &= \theta_t - \alpha \frac{\hat{m}_{t+1}}{\sqrt{\hat{v}_{t+1}} + \epsilon}
-\end{aligned}
-\end{equation}
-
-trong đó:
-\begin{itemize}
-\item $m_t$ là first moment estimate (trung bình gradient - momentum)
-\item $v_t$ là second moment estimate (trung bình bình phương gradient - variance)
-\item $\beta_1, \beta_2 \in [0, 1)$ là decay rates (default: $\beta_1=0.9$, $\beta_2=0.999$)
-\item $\hat{m}_t, \hat{v}_t$ là bias-corrected moments
-\item $\epsilon$ là hằng số nhỏ (default: $10^{-8}$)
-\item $t$ là iteration number
-\end{itemize}
-
-\textbf{Bias correction:} Ở các bước đầu tiên ($t$ nhỏ), $m_t$ và $v_t$ bị bias về 0 do khởi tạo $m_0 = v_0 = 0$. Chia cho $(1 - \beta_1^{t+1})$ và $(1 - \beta_2^{t+1})$ giúp khử bias này. Khi $t \to \infty$, $(1 - \beta_1^{t+1}) \to 1$ và bias correction không còn ảnh hưởng.
-
-\textbf{Giải thích các thành phần:}
-
-1. \textbf{First moment $m_t$ (momentum):}
-\begin{itemize}
-\item Tích lũy hướng di chuyển từ các bước trước
-\item Giúp tăng tốc trong hướng nhất quán
-\item Giảm oscillation khi gradient thay đổi dấu
-\end{itemize}
-
-2. \textbf{Second moment $v_t$ (adaptive learning rate):}
-\begin{itemize}
-\item Theo dõi magnitude của gradients
-\item Điều chỉnh learning rate riêng cho từng tham số
-\item Tham số với gradient lớn $\rightarrow$ LR nhỏ, tham số với gradient nhỏ $\rightarrow$ LR lớn
-\end{itemize}
-
-3. \textbf{Update rule:}
-\begin{equation}
-\Delta \theta = - \alpha \cdot \frac{\text{momentum}}{\text{scale}} = - \alpha \cdot \frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon}
-\end{equation}
-
-\textbf{Tham số mặc định:} Adam hoạt động tốt với các giá trị:
-\begin{itemize}
-\item Learning rate: $\alpha = 0.001$ (hoặc 0.0003 cho RL)
-\item First moment decay: $\beta_1 = 0.9$
-\item Second moment decay: $\beta_2 = 0.999$
-\item Epsilon: $\epsilon = 10^{-8}$
+\textbf{Tham số khuyến nghị:}
+\begin{itemize}[nosep]
+\item \textbf{Learning rate $\alpha$}: $10^{-3}$ cho supervised learning, $3 \times 10^{-4}$ cho RL/PPO
+\item \textbf{$\beta_1$}: 0.9 (default cho mọi bài toán)
+\item \textbf{$\beta_2$}: 0.999 (default cho mọi bài toán)
+\item \textbf{$\epsilon$}: $10^{-8}$ (numerical stability)
 \end{itemize}
 
 \textbf{Ưu điểm của Adam:}
-\begin{itemize}
-\item Kết hợp momentum và adaptive LR $\rightarrow$ hiệu quả cao
-\item Hoạt động tốt với default hyperparameters $\rightarrow$ ít cần tuning
-\item Hiệu quả với sparse gradients và dữ liệu nhiễu
-\item Thích hợp cho non-convex optimization và high-dimensional parameter spaces
-\item Tối ưu tính toán và bộ nhớ (chỉ cần lưu $m_t, v_t$)
+\begin{itemize}[nosep]
+\item Kết hợp momentum + adaptive LR → hiệu quả cao nhất trong các optimizer
+\item Hoạt động tốt với default hyperparameters → ít cần tuning
+\item Hiệu quả với sparse gradients, noisy gradients, và non-stationary objectives
+\item Computational cost thấp: chỉ cần lưu $m_t, v_t$ (bằng kích thước parameters)
+\item Phù hợp với high-dimensional parameter spaces (millions of parameters)
+\item Là default choice cho hầu hết bài toán deep learning và RL
 \end{itemize}
 
-\textbf{Nhược điểm và biến thể:}
-\begin{itemize}
-\item Có thể không hội tụ cho một số bài toán (do `second moment` không decay đủ nhanh)
-\item \textbf{AdamW}: Sửa weight decay (regularization) bằng cách tách weight decay khỏi gradient update
-\item \textbf{AMSGrad}: Giữ max của $v_t$ để đảm bảo learning rate không tăng
+\textbf{Nhược điểm và cách khắc phục:}
+\begin{itemize}[nosep]
+\item \textbf{Vấn đề}: Có thể không hội tụ cho một số bài toán do $v_t$ không decay đủ nhanh
+\item \textbf{Giải pháp - AdamW}: Tách weight decay khỏi gradient update để regularization chính xác hơn
+\item \textbf{Giải pháp - AMSGrad}: Giữ $\max(v_1, ..., v_t)$ thay vì $v_t$ để đảm bảo LR monotonically giảm
 \end{itemize}
 
-\textbf{Khi nào dùng Adam:}
-\begin{itemize}
-\item Phù hợp và dùng cho hầu hết các bài toán deep learning
-\item Đặc biệt hiệu quả với RNN, GAN, VAE
-\item Phù hợp khi không muốn tốn nhiều thời gian điều chỉnh optimizer
-\item Trong RL và PPO, Adam thường được dùng riêng cho Actor và Critic với learning rates khác nhau
+\textbf{Ứng dụng trong luận văn:}
+\begin{itemize}[nosep]
+\item Adam được sử dụng làm optimizer cho cả Actor và Critic network trong thuật toán PPO
+\item Learning rate được điều chỉnh động bằng Adaptive LR Scheduler (tăng khi plateau, giữ nguyên khi đang cải thiện)
+\item Default parameters ($\beta_1=0.9$, $\beta_2=0.999$) hoạt động tốt, không cần tuning
 \end{itemize}
-
-\textbf{So sánh các thuật toán tối ưu:}
-
-\begin{table}[ht]
-\centering
-\caption{So sánh các thuật toán tối ưu}
-\label{tab:optimizer_comparison}
-\begin{tabular}{|p{2.5cm}|p{3cm}|p{3cm}|p{3cm}|p{2cm}|}
-\hline
-\textbf{Thuật toán} & \textbf{Ưu điểm chính} & \textbf{Nhược điểm chính} & \textbf{Ứng dụng phù hợp} & \textbf{Tuning} \\
-\hline
-Batch GD & Hội tụ ổn định, chính xác & Rất chậm, không scale & Bài toán nhỏ, convex & Dễ \\
-\hline
-SGD & Nhanh, scale tốt & Oscillation, cần tuning LR & Classification, không dùng nhiều nữa & Khó \\
-\hline
-Momentum & Tăng tốc, ít oscillation & Thêm hyperparameter $\beta$ & Computer vision (với SGD) & Trung bình \\
-\hline
-RMSProp & Adaptive LR, phù hợp RNN & Không có momentum & Recurrent networks & Trung bình \\
-\hline
-Adam & Kết hợp momentum + adaptive LR, ít cần tuning & Có thể không hội tụ một số bài toán & Default choice, RL, NLP, GANs & Dễ \\
-\hline
-\end{tabular}
-\end{table}
 
 \subsection{Reinforcement Learning}
 \label{subsec:rl_basics}
@@ -519,6 +391,55 @@ Kiến trúc \textbf{Actor-Critic} kết hợp policy-based và value-based meth
     \label{fig:actor_critic}
 \end{figure}
 
+\subsection{Multi-Agent Reinforcement Learning (MARL)}
+\label{subsec:marl}
+
+Multi-Agent Reinforcement Learning (MARL) mở rộng RL cho hệ thống với nhiều agent tương tác trong cùng môi trường. Trong MARL, mỗi agent $i$ có policy $\pi_i$ và nhận observation $o_i$ từ môi trường. Thách thức chính của MARL là môi trường trở nên \textit{non-stationary} từ góc nhìn của mỗi agent, vì các agent khác cũng đang học và thay đổi policy.
+
+\textbf{Phân loại MARL theo mức độ hợp tác:}
+\begin{itemize}
+\item \textbf{Cooperative:} Các agent có chung mục tiêu, tối đa hóa reward chung. Ví dụ: đội robot cùng hoàn thành nhiệm vụ.
+\item \textbf{Competitive:} Các agent có mục tiêu đối lập (zero-sum game). Ví dụ: game đối kháng.
+\item \textbf{Mixed:} Kết hợp cooperative và competitive. Ví dụ: robot tránh va chạm (cooperative) nhưng cạnh tranh tài nguyên.
+\end{itemize}
+
+\textbf{Phân loại theo kiến trúc điều khiển:}
+\begin{itemize}
+\item \textbf{Centralized:} Một controller trung tâm điều khiển tất cả agents. Ưu điểm: tối ưu toàn cục. Nhược điểm: không scale, single point of failure.
+\item \textbf{Decentralized:} Mỗi agent quyết định độc lập dựa trên observation cục bộ. Ưu điểm: scale tốt, robust. Nhược điểm: khó đạt tối ưu toàn cục.
+\item \textbf{Centralized Training with Decentralized Execution (CTDE):} Kết hợp ưu điểm cả hai - huấn luyện tập trung với thông tin toàn cục, thực thi độc lập với observation cục bộ.
+\end{itemize}
+
+\subsubsection{Centralized Training with Decentralized Execution (CTDE)}
+\label{subsubsec:ctde}
+
+CTDE là paradigm phổ biến nhất trong MARL hiện đại, giải quyết trade-off giữa khả năng học hiệu quả và khả năng triển khai thực tế.
+
+\textbf{Ý tưởng chính:}
+\begin{itemize}
+\item \textbf{Giai đoạn huấn luyện (Centralized):} Có quyền truy cập thông tin toàn cục - observations, actions, và rewards của tất cả agents. Điều này giúp:
+\begin{itemize}
+    \item Ước lượng chính xác gradient và value function
+    \item Giải quyết vấn đề credit assignment (phân bổ reward cho từng agent)
+    \item Học được coordination giữa các agents
+\end{itemize}
+
+\item \textbf{Giai đoạn thực thi (Decentralized):} Mỗi agent chỉ sử dụng observation cục bộ $o_i$ để quyết định action $a_i = \pi_i(o_i)$. Không cần:
+\begin{itemize}
+    \item Truyền thông giữa các agents
+    \item Server trung tâm
+    \item Thông tin về vị trí/hành động của agents khác
+\end{itemize}
+\end{itemize}
+
+Ưu điểm của CTDE cho bài toán robot navigation:
+\begin{enumerate}
+\item \textbf{Scalability:} Thêm robot mới không cần retrain, chỉ cần deploy cùng policy.
+\item \textbf{Robustness:} Hệ thống vẫn hoạt động khi một số robots fail hoặc mất kết nối.
+\item \textbf{Latency thấp:} Quyết định tại chỗ, không cần round-trip đến server.
+\item \textbf{Privacy:} Robots không cần chia sẻ vị trí hay trajectory với nhau.
+\end{enumerate}
+
 \subsection{Proximal Policy Optimization (PPO)}
 \label{subsec:ppo}
 
@@ -558,56 +479,9 @@ Advantage function $A^\pi(s_t, a_t) = G_t - V^\pi(s_t)$ giúp giảm variance m�
 \item Khó điều chỉnh learning rate - quá nhỏ $\rightarrow$ chậm, quá lớn $\rightarrow$ collapse
 \end{itemize}
 
-\subsubsection{Trust Region Policy Optimization (TRPO)}
+\subsubsection{Proximal Policy Optimization (PPO)}
 
-\textbf{Ý tưởng chính:} Thay vì cố định learning rate, TRPO đảm bảo mỗi update giữ policy mới "gần" policy cũ bằng constraint KL divergence:
-
-\begin{equation}
-\begin{aligned}
-\text{maximize}_\theta \quad & \mathbb{E}_t \left[ \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{old}}(a_t|s_t)} \hat{A}_t \right] \\
-\text{subject to} \quad & \mathbb{E}_t \left[ \text{KL}[\pi_{\theta_{old}}(\cdot|s_t) \| \pi_\theta(\cdot|s_t)] \right] \leq \delta
-\end{aligned}
-\end{equation}
-
-trong đó:
-\begin{itemize}
-\item Objective: Expected advantage khi sử dụng actions từ $\pi_{\theta_{old}}$ nhưng đánh giá theo $\pi_\theta$
-\item Constraint: KL divergence giữa policy mới và cũ không vượt quá $\delta$ (thường 0.01-0.05)
-\end{itemize}
-
-\textbf{KL divergence:} Đo sự khác biệt giữa hai phân phối xác suất:
-\begin{equation}
-\text{KL}[p \| q] = \mathbb{E}_{x \sim p} \left[ \log \frac{p(x)}{q(x)} \right] = \sum_x p(x) \log \frac{p(x)}{q(x)}
-\end{equation}
-
-$\text{KL} = 0$ khi $p = q$ (identical), và $\text{KL} > 0$ ngược lại. KL không đối xứng: $\text{KL}[p \| q] \neq \text{KL}[q \| p]$.
-
-\textbf{Giải bài toán TRPO:} Sử dụng conjugate gradient để giải bài toán tối ưu có constraint:
-\begin{enumerate}
-\item Linearize objective: $L(\theta) \approx g^T (\theta - \theta_{old})$ với $g = \nabla_\theta L|_{\theta_{old}}$
-\item Quadratic approximation của KL constraint: $\text{KL} \approx \frac{1}{2} (\theta - \theta_{old})^T H (\theta - \theta_{old}) \leq \delta$
-\item Giải hệ tuyến tính: $H x = g$ bằng conjugate gradient
-\item Line search để đảm bảo constraint satisfied
-\end{enumerate}
-
-\textbf{Ưu điểm của TRPO:}
-\begin{itemize}
-\item Đảm bảo monotonic improvement (performance không giảm)
-\item Robust với nhiều loại bài toán
-\item Không cần tuning learning rate
-\end{itemize}
-
-\textbf{Nhược điểm của TRPO:}
-\begin{itemize}
-\item Phức tạp trong triển khai
-\item Tốn kém tính toán (Hessian-vector product, lặp lại forward passes)
-\item Không scale tốt cho large models
-\item Khó kết hợp với các kỹ thuật khác (shared parameters giữa policy và value)
-\end{itemize}
-
-\subsubsection{PPO-Clip: First-order Approximation}
-
-PPO đơn giản hóa TRPO bằng cách thay constraint bằng clipped objective function. Thay vì giải bài toán tối ưu có constraint, PPO sử dụng first-order optimization (SGD hoặc Adam) với clipping:
+PPO giải quyết vấn đề learning rate của Policy Gradient bằng cách sử dụng clipped objective function. Ý tưởng chính: thay vì dùng learning rate cố định, PPO giới hạn mức độ thay đổi policy giữa các lần update thông qua clipping mechanism:
 
 \begin{equation}
 L^{CLIP}(\theta) = \mathbb{E}_t \left[ \min \left( r_t(\theta) \hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \hat{A}_t \right) \right]
@@ -743,6 +617,51 @@ Robustness & Robust với nhiều loại môi trường & Cần tuning $\text{KL
 
 \textbf{Kết luận:} PPO-Clip được ưa chuộng hơn do đơn giản, robust, và performance tốt với default hyperparameters.
 
+\subsubsection{Lý do chọn PPO cho bài toán đa robot}
+
+Trong bài toán điều khiển đa robot tránh va chạm, PPO được chọn thay vì các thuật toán RL khác vì những lý do sau:
+
+\textbf{So sánh với các thuật toán RL phổ biến:}
+
+\begin{table}[ht]
+\centering
+\caption{So sánh PPO với các thuật toán RL khác cho bài toán robot navigation}
+\label{tab:rl_comparison}
+\begin{tabular}{|p{2.2cm}|p{4cm}|p{4cm}|p{3.5cm}|}
+\hline
+\textbf{Thuật toán} & \textbf{Ưu điểm} & \textbf{Nhược điểm} & \textbf{Phù hợp?} \\
+\hline
+\textbf{Q-Learning} & Đơn giản, hội tụ đảm bảo & Chỉ discrete state/action, không scale với state space lớn (LiDAR 1362 chiều) & Không \\
+\hline
+\textbf{DQN} & Xử lý state lớn nhờ neural network & Chỉ discrete actions & Không (robot cần continuous control) \\
+\hline
+\textbf{DDPG} & Continuous actions, off-policy & Không ổn định, sensitive với hyperparameters & Có thể nhưng khó tune \\
+\hline
+\textbf{A3C} & Parallel training, on-policy & Asynchronous gây inconsistency, khó debug & Có thể nhưng phức tạp \\
+\hline
+\textbf{SAC} & Sample efficient, automatic entropy tuning & Cần replay buffer lớn, phức tạp & Có thể nhưng overhead cao \\
+\hline
+\textbf{PPO} & Ổn định, đơn giản, parallel training & On-policy (sample inefficient) & \textbf{Rất phù hợp} \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Lý do PPO phù hợp với bài toán này:}
+
+\begin{enumerate}
+\item \textbf{Continuous action space:} Robot cần điều khiển vận tốc tuyến tính $v \in [0, 0.3]$ m/s và vận tốc góc $\omega \in [-1, 1]$ rad/s - là continuous actions. DQN chỉ hỗ trợ discrete actions, còn PPO native support continuous actions thông qua Gaussian policy.
+
+\item \textbf{Ổn định trong huấn luyện:} Với 24-44 robots chạy song song, gradient variance rất cao. PPO với clipped objective ngăn policy thay đổi quá nhanh, tránh collapse. DDPG và A3C thường gặp instability trong môi trường multi-agent.
+
+\item \textbf{Parallel data collection:} Bài toán có sẵn 24-44 robots song song trong simulator. PPO tận dụng tốt điều này - mỗi robot là một ``worker'' thu thập experience đồng thời, tăng tốc huấn luyện mà không cần replay buffer phức tạp như off-policy methods.
+
+\item \textbf{Đơn giản trong implementation:} So với SAC (cần 2 Q-networks + entropy tuning) hay DDPG (cần target networks + replay buffer), PPO chỉ cần Actor-Critic đơn giản với clipped loss. Điều này giúp dễ debug và tune hyperparameters.
+
+\item \textbf{Robust với hyperparameters:} PPO hoạt động tốt với default hyperparameters ($\epsilon = 0.2$, $\gamma = 0.99$). Các thuật toán khác như DDPG cực kỳ sensitive với learning rate và noise parameters.
+\end{enumerate}
+
+\textbf{Hạn chế:} PPO là on-policy algorithm nên sample efficiency thấp hơn các phương pháp off-policy (SAC, DDPG). Tuy nhiên, với simulator có thể chạy nhanh và song song (24-44 robots), điều này không phải vấn đề lớn. Ổn định và đơn giản quan trọng và an toàn hơn trong bài toán này.
+
 \subsubsection{PPO Hyperparameters}
 
 Các hyperparameters quan trọng của PPO:
@@ -856,6 +775,23 @@ Kích thước đầu ra được tính:
 \item Bất biến với dịch chuyển: Phát hiện mẫu ở mọi vị trí
 \item Đặc trưng phân cấp: Các lớp sâu học các mẫu trừu tượng từ đặc trưng cấp thấp
 \item Hiệu quả với dữ liệu không gian và thời gian
+\end{itemize}
+
+\textbf{Lý do chọn CNN (Conv1D) cho xử lý LiDAR:}
+
+Dữ liệu LiDAR 360° có đặc điểm đặc biệt phù hợp với CNN:
+\begin{itemize}
+\item \textit{Tính liên tục không gian:} Các tia laser liền kề thường có giá trị tương tự (cùng quét một vật thể), tạo thành patterns cục bộ mà CNN có thể học hiệu quả.
+\item \textit{Bất biến vị trí:} Vật cản có thể xuất hiện ở bất kỳ góc nào trong scan. CNN với weight sharing phát hiện cùng một pattern (ví dụ: góc tường, cạnh vật cản) ở mọi vị trí trong dữ liệu.
+\item \textit{Giảm chiều hiệu quả:} LiDAR 454 tia × 3 frames = 1362 chiều. Conv1D với stride=2 nén xuống còn ~100 features trong khi giữ thông tin quan trọng.
+\item \textit{So sánh với Fully Connected:} FC layer cần $454 \times 3 \times 256 \approx 350K$ parameters, trong khi Conv1D chỉ cần $\sim 5K$ parameters với hiệu quả tương đương.
+\end{itemize}
+
+Các phương pháp thay thế và lý do không chọn:
+\begin{itemize}
+\item \textit{Fully Connected (MLP):} Không khai thác được cấu trúc không gian của LiDAR, cần nhiều parameters hơn, dễ overfit.
+\item \textit{Recurrent (LSTM/GRU):} Phù hợp cho chuỗi thời gian tuần tự, nhưng LiDAR scan là dữ liệu không gian vòng tròn, không có thứ tự tự nhiên.
+\item \textit{Transformer:} Hiệu quả nhưng computational cost cao, không cần thiết cho bài toán với input size nhỏ như LiDAR.
 \end{itemize}
 
 \subsubsection{Loss Functions}

@@ -5,50 +5,50 @@
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {2.1}{\ignorespaces So sánh các phương pháp tránh va chạm truyền thống\relax }}{4}{table.caption.5}%
+\contentsline {table}{\numberline {2.1}{\ignorespaces So sánh các phương pháp tránh va chạm truyền thống\relax }}{5}{table.caption.5}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {2.2}{\ignorespaces So sánh các thuật toán tối ưu\relax }}{13}{table.caption.9}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces So sánh PPO-Clip và PPO-Penalty\relax }}{20}{table.caption.9}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {2.3}{\ignorespaces So sánh PPO-Clip và PPO-Penalty\relax }}{18}{table.caption.12}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces So sánh PPO với các thuật toán RL khác cho bài toán robot navigation\relax }}{21}{table.caption.10}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {2.4}{\ignorespaces So sánh UKF và EKF\relax }}{25}{table.caption.13}%
-\defcounter {refsection}{0}\relax 
-\addvspace {10\p@ }
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters Stage 1 (24 robots - 83\% success)\relax }}{37}{table.caption.18}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameters Stage 2 (44 robots - 89\% success)\relax }}{37}{table.caption.19}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.3}{\ignorespaces Bảng Routh-Hurwitz cho hệ PID bậc 3\relax }}{41}{table.caption.21}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{45}{table.caption.23}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{48}{table.caption.25}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{49}{table.caption.26}%
+\contentsline {table}{\numberline {2.4}{\ignorespaces So sánh UKF và EKF\relax }}{30}{table.caption.11}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.1}{\ignorespaces Metrics huấn luyện Stage 1 qua các mốc chính\relax }}{52}{table.caption.29}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters Stage 1 (24 robots - 83\% success)\relax }}{45}{table.caption.17}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.2}{\ignorespaces Metrics huấn luyện Stage 2 qua các mốc chính\relax }}{54}{table.caption.32}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Hyperparameters Stage 2 (44 robots - 89\% success)\relax }}{45}{table.caption.18}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.3}{\ignorespaces Kết quả Circle Test theo số lượng robots\relax }}{56}{table.caption.35}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Bảng Routh-Hurwitz cho hệ PID bậc 3\relax }}{51}{table.caption.20}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.4}{\ignorespaces Mối quan hệ giữa khoảng cách inter-robot và success rate\relax }}{56}{table.caption.36}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Tham số Cartographer sau tinh chỉnh cho Jetson Nano + LiDAR LD19\relax }}{57}{table.caption.22}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả Circle Test với bài báo gốc CADRL và NH-ORCA\relax }}{56}{table.caption.37}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Cấu hình phần cứng hệ thống\relax }}{61}{table.caption.24}%
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.6}{\ignorespaces Tổng hợp kết quả thực nghiệm theo nhóm các trường hợp\relax }}{58}{table.caption.39}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.7}{\ignorespaces Chi tiết kết quả test không có vật cản\relax }}{58}{table.caption.40}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.8}{\ignorespaces Chi tiết kết quả test với vật cản tĩnh\relax }}{58}{table.caption.41}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.9}{\ignorespaces Chi tiết kết quả test với vật cản động (người)\relax }}{59}{table.caption.43}%
-\defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {4.10}{\ignorespaces So sánh kết quả thực nghiệm với mô phỏng\relax }}{60}{table.caption.45}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Phân bổ ROS nodes trên các thiết bị\relax }}{62}{table.caption.25}%
 \defcounter {refsection}{0}\relax 
 \addvspace {10\p@ }
 \defcounter {refsection}{0}\relax 
-\contentsline {table}{\numberline {5.1}{\ignorespaces Dữ liệu chi tiết toàn bộ kết quả thực nghiệm\relax }}{68}{table.caption.49}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Metrics huấn luyện Stage 1 qua các mốc chính\relax }}{66}{table.caption.28}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.2}{\ignorespaces Metrics huấn luyện Stage 2 qua các mốc chính\relax }}{68}{table.caption.31}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.3}{\ignorespaces Kết quả Circle Test theo số lượng robots\relax }}{70}{table.caption.34}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.4}{\ignorespaces Mối quan hệ giữa khoảng cách inter-robot và success rate\relax }}{70}{table.caption.35}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.5}{\ignorespaces So sánh kết quả Circle Test với bài báo gốc CADRL và NH-ORCA\relax }}{70}{table.caption.36}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.6}{\ignorespaces Tổng hợp kết quả thực nghiệm theo nhóm các trường hợp\relax }}{72}{table.caption.38}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.7}{\ignorespaces Chi tiết kết quả test không có vật cản\relax }}{73}{table.caption.39}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.8}{\ignorespaces Chi tiết kết quả test với vật cản tĩnh\relax }}{73}{table.caption.40}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.9}{\ignorespaces Chi tiết kết quả test với vật cản động (người)\relax }}{74}{table.caption.42}%
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {4.10}{\ignorespaces So sánh kết quả thực nghiệm với mô phỏng\relax }}{75}{table.caption.44}%
+\defcounter {refsection}{0}\relax 
+\addvspace {10\p@ }
+\defcounter {refsection}{0}\relax 
+\contentsline {table}{\numberline {5.1}{\ignorespaces Dữ liệu chi tiết toàn bộ kết quả thực nghiệm\relax }}{86}{table.caption.48}%

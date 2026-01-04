@@ -6,12 +6,31 @@
 
 Chương này trình bày chi tiết phương pháp nghiên cứu bao gồm môi trường mô phỏng, thiết kế hàm reward, kiến trúc mạng nơ-ron, quy trình huấn luyện, xây dựng robot thực tế, thiết kế các module điều khiển (PID), sensor fusion (UKF), mapping và localization (Cartographer SLAM), và triển khai hệ thống robot hoàn chỉnh.
 
-\section{Môi trường mô phỏng}
+\section{Sơ đồ khối tổng thể}
+\label{sec:overview_diagram}
+
+Hình~\ref{fig:system_overview} minh họa toàn bộ quy trình từ huấn luyện trong mô phỏng đến triển khai trên robot thực tế.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/system_overview.png}
+\caption{Sơ đồ khối tổng thể hệ thống: Huấn luyện MARL trong mô phỏng (trái) và triển khai trên robot thực (phải)}
+\label{fig:system_overview}
+\end{figure}
+
+\textbf{Phần huấn luyện} (trái): Môi trường Stage Simulator chạy 24-44 robots song song. Mỗi robot quan sát (LiDAR, goal, velocity) được xử lý qua CNN để trích xuất đặc trưng, sau đó Actor-Critic network xuất hành động. PPO với Adam optimizer cập nhật policy dựa trên reward thu thập được.
+
+\textbf{Phần triển khai} (phải): Robot thực sử dụng LiDAR LD19, IMU và encoder. Jetson Nano chạy ROS nodes để thu thập dữ liệu cảm biến. UKF fusion kết hợp odometry và IMU, Cartographer SLAM định vị robot. Master PC chạy inference model đã huấn luyện, gửi lệnh điều khiển $(v, \omega)$ về Arduino để PID điều khiển động cơ.
+
+\section{Huấn luyện trên môi trường mô phỏng}
+\label{sec:simulation_training}
+
+\subsection{Môi trường huấn luyện}
 \label{sec:environment}
 
 Hệ đa robot tránh va chạm được huấn luyện trong môi trường mô phỏng dựa trên Stage simulator kết hợp với ROS (Robot Operating System). Bài toán điều khiển được mô hình hóa dưới dạng Partially Observable Markov Decision Process (POMDP), trong đó mỗi robot đưa ra quyết định dựa trên quan sát cục bộ của chính nó mà không cần giao tiếp với các robot khác.
 
-\subsection{Không gian quan sát}
+\subsubsection{Không gian quan sát}
 
 Tại thời điểm $t$, robot $i$ nhận được vector quan sát $o_t^i \in \mathcal{O}$ bao gồm ba thành phần:
 
@@ -28,7 +47,7 @@ trong đó:
 
 \textbf{Vận tốc hiện tại} $o_v^t \in \mathbb{R}^2$: Vận tốc tuyến tính $v$ (m/s) và vận tốc góc $\omega$ (rad/s) của robot, giúp model nhận biết trạng thái chuyển động hiện tại.
 
-\subsection{Không gian hành động}
+\subsubsection{Không gian hành động}
 
 Robot điều khiển chuyển động thông qua cặp hành động liên tục:
 
@@ -39,12 +58,12 @@ a_t = [v_t, \omega_t]
 
 với $v_t \in [0, v_{\max}]$ là vận tốc tuyến tính giới hạn trong khoảng 0-0.3 m/s, và $\omega_t \in [-\omega_{\max}, \omega_{\max}]$ là vận tốc góc giới hạn trong $\pm 1.0$ rad/s. Mạng Actor xuất ra phân phối Gaussian $\mathcal{N}(\mu, \sigma^2)$ cho mỗi thành phần, sau đó lấy mẫu để thu được hành động cụ thể.
 
-\section{Thiết kế hàm reward}
+\subsection{Thiết kế hàm reward}
 \label{sec:reward_design}
 
 Hàm reward đóng vai trò quyết định trong việc định hình hành vi của robot. Reward function được thiết kế với mục tiêu cân bằng giữa hiệu quả (đến đích nhanh) và an toàn (tránh va chạm), đồng thời đảm bảo tín hiệu học tập rõ ràng không mâu thuẫn. Đồng thời kế thừa những ưu điểm đã được chứng minh ở bài báo gốc \cite{long2018towards}
 
-\subsection{Terminal rewards}
+\subsubsection{Terminal rewards}
 
 Reward được cấp khi episode kết thúc:
 
@@ -56,7 +75,7 @@ Reward được cấp khi episode kết thúc:
 
 Các giá trị terminal rewards được thiết kế mạnh hơn so với bài báo gốc (30/-25 thay vì 15/-15 \cite{long2018towards}) để tạo tín hiệu rõ ràng hơn cho quá trình học.
 
-\subsection{Step rewards - Stage 1}
+\subsubsection{Step rewards - Stage 1}
 
 Tại mỗi bước thời gian $t$, reward được tính từ 5 thành phần:
 
@@ -118,7 +137,7 @@ r_{\text{smooth}} = \begin{cases}
 
 Phạt này ngăn robot tăng/giảm tốc đột ngột, giúp chuyển động mượt mà hơn và giảm hao mòn động cơ khi triển khai lên robot thực.
 
-\subsection{Điều chỉnh reward cho Stage 2}
+\subsubsection{Điều chỉnh reward cho Stage 2}
 
 Stage 2 sử dụng cùng cấu trúc reward như Stage 1 nhưng có 3 điều chỉnh quan trọng để phù hợp với môi trường phức tạp hơn:
 
@@ -138,97 +157,71 @@ Lý do: trong Stage 2 với nhiều vật cản, việc ưu tiên heading về g
 
 Các thành phần khác (progress, safety, rotation) giữ nguyên giá trị để đảm bảo transfer learning từ Stage 1 sang Stage 2 hoạt động hiệu quả - policy đã học không bị nhiễu bởi reward function khác biệt quá nhiều.
 
-\section{Kiến trúc mạng nơ-ron}
+\subsection{Chiến lược huấn luyện 2 giai đoạn}
+
+Áp dụng curriculum learning theo 2 stages tương tự Long et al. (2018) \cite{long2018towards} nhưng điều chỉnh cho phù hợp với môi trường Stage simulator và số lượng robots khác nhau. Các kịch bản huấn luyện đa dạng (đã mô tả ở Mục \ref{subsec:long_environment}) được sử dụng xuyên suốt quá trình training.
+
+\textbf{Stage 1 - Foundation learning:} Huấn luyện 24 robots trên môi trường cơ bản có ít vật cản, học các hành vi cơ bản: tránh va chạm cục bộ, di chuyển về đích, điều chỉnh vận tốc. Hyperparameters ưu tiên exploration cao (entropy 8e-3) để khám phá không gian hành động nhanh.
+
+\begin{figure}[H]
+\centering
+% \includegraphics[width=0.85\textwidth]{figures/stage1_circle_training.png}
+\includegraphics[width=0.3\textwidth]{figures/obstacle.png}
+\caption{Stage 1: môi trường đơn giản cho 24 robots}
+\label{fig:stage1_env}
+\end{figure}
+
+\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_env} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
+
+\textit{Vấn đề timeout trong Stage 2:} Trong quá trình huấn luyện Stage 2, sau khoảng 3000 updates, kết quả bắt đầu suy giảm dù đã đạt success rate khá cao. Phân tích behavior của robots cho thấy chúng đang học cách di chuyển nhanh và thẳng nhất có thể - hành vi này có thể phản ánh việc reward phạt do timeout'. Do timeout limit ban đầu (500 steps) không đủ cho môi trường phức tạp hơn với 44 robots, policy học được rằng cách tốt nhất để tránh phạt timeout là lao thẳng về goal bất chấp có vật cản, dẫn đến tỉ lệ va chạm tăng.
+
+Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng giới hạn timeout từ 500 lên 700 steps. Với giới hạn thời gian dài hơn, robots có thể chọn đường đi an toàn hơn. Kết quả được trình bày chi tiết ở Mục \ref{subsec:stage2_results}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.65\textwidth]{figures/04_Fig8_training_scenarios.jpg}
+\caption{Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)}
+\label{fig:stage2_env}
+\end{figure}
+
+\subsection{Kiến trúc mạng nơ-ron}
 \label{sec:network}
 
-Kiến trúc Actor-Critic với encoder chung được sử dụng để xử lý dữ liệu laser scan và tạo ra cả chính sách hành động (Actor) và ước lượng giá trị trạng thái (Critic). Thiết kế này cho phép chia sẻ features chung giữa Actor và Critic, tăng hiệu quả học tập.
+Kiến trúc Actor-Critic với hai encoder hoàn toàn độc lập được sử dụng để xử lý dữ liệu laser scan và tạo ra chính sách hành động (Actor) và ước lượng giá trị trạng thái (Critic). Thiết kế này cho phép Actor và Critic học các đặc trưng tối ưu riêng biệt cho từng mục tiêu (action selection vs value estimation), đồng thời sử dụng learning rates khác nhau (Critic LR gấp 15 lần Actor LR) để tăng hiệu quả học tập.
 
-\subsection{Encoder chung - Xử lý LiDAR}
+\subsubsection{Encoder - Xử lý LiDAR}
 
-Dữ liệu laser scan đầu vào $o_z^t \in \mathbb{R}^{3 \times 454}$ được xử lý qua 2 lớp convolution 1D:
+Dữ liệu laser scan đầu vào $o_z^t \in \mathbb{R}^{3 \times 454}$ được xử lý qua 2 encoder riêng biệt cho Actor và Critic, mỗi encoder có cấu trúc giống nhau với 2 lớp convolution 1D:
 
 \begin{itemize}[nosep]
 \item \textbf{Conv1D Layer 1:} 32 filters, kernel size 5, stride 2, theo sau bởi ReLU
 \item \textbf{Conv1D Layer 2:} 32 filters, kernel size 3, stride 2, theo sau bởi ReLU
 \end{itemize}
 
-Sau khi flatten, output của convolution có chiều khoảng 3600 dimensions được nén xuống qua fully connected layer với 256 nơ-ron. Các lớp convolution này trích xuất đặc trưng không gian từ laser scans: kernel size 5 ở layer đầu học các pattern rộng hơn (nhóm vật cản), kernel size 3 ở layer thứ hai tinh chỉnh các chi tiết. Stride 2 giúp giảm chiều dữ liệu nhanh để tránh overfitting.
+Sau khi flatten, output của convolution có chiều khoảng 3600 dimensions được nén xuống qua fully connected layer với 256 nơ-ron. Việc sử dụng 2 encoder riêng biệt cho phép:
 
-Hình \ref{fig:network_architecture} minh họa kiến trúc mạng Actor-Critic hoàn chỉnh với các thành phần chính và luồng dữ liệu.
+\begin{itemize}[nosep]
+\item \textbf{Actor encoder} học các đặc trưng tối ưu cho action selection (tập trung vào local obstacles, immediate threats)
+\item \textbf{Critic encoder} học các đặc trưng tối ưu cho value estimation (tập trung vào global path, long-term outcomes)
+\item Tránh gradient conflict giữa policy loss và value loss, cho phép mỗi network tối ưu hóa đặc trưng phù hợp với mục tiêu riêng
+\end{itemize}
+
+Hình \ref{fig:network_architecture} minh họa kiến trúc mạng Actor-Critic với hai encoder độc lập và luồng dữ liệu.
 
 \begin{figure}[H]
 \centering
-\resizebox{0.95\textwidth}{!}{
-\begin{tikzpicture}[
-    node distance=1cm,
-    box/.style={rectangle, draw, minimum width=2.2cm, minimum height=0.7cm, align=center, font=\small},
-    input/.style={box, fill=blue!15, thick},
-    conv/.style={box, fill=orange!25, thick},
-    fc/.style={box, fill=green!25, thick},
-    output/.style={box, fill=red!25, thick},
-    arrow/.style={->, >=stealth, very thick}
-]
-
-% Input layer (left side)
-\node[input] (laser) {LiDAR\\$3 \times 454$};
-\node[input, below=0.5cm of laser] (goal) {Goal\\$(r, \theta)$};
-\node[input, below=0.4cm of goal] (vel) {Velocity\\$(v, \omega)$};
-
-% Encoder (Shared) - horizontal flow
-\node[conv, right=1.8cm of laser] (conv1) {Conv1D\\32×5, s=2};
-\node[conv, right=1.3cm of conv1] (conv2) {Conv1D\\32×3, s=2};
-\node[fc, right=1.3cm of conv2] (flatten) {Flatten\\FC 256};
-
-% Concat point
-\node[right=1cm of flatten] (split) {};
-
-% Actor branch (upper)
-\node[fc, above right=0.3cm and 1.5cm of split] (actor_fc) {FC 128 + ReLU};
-\node[output, right=1.3cm of actor_fc] (actor_out) {Actor output\\$\mu_v, \mu_\omega$};
-
-% Critic branch (lower)
-\node[fc, below right=0.3cm and 1.5cm of split] (critic_fc) {FC 128 + ReLU};
-\node[output, right=1.3cm of critic_fc] (critic_out) {Critic output\\$V(s)$};
-
-% Arrows - Main encoder path
-\draw[arrow] (laser) -- (conv1);
-\draw[arrow] (conv1) -- (conv2);
-\draw[arrow] (conv2) -- (flatten);
-\draw[arrow] (flatten) -- (split);
-
-% Arrows - Goal and velocity bypass
-\draw[arrow, blue!60] (goal.east) -- ++(0.8,0) |- (actor_fc.west);
-\draw[arrow, blue!60] (vel.east) -- ++(0.8,0) |- (actor_fc.west);
-\draw[arrow, blue!60] (goal.east) -- ++(0.8,0) |- (critic_fc.west);
-\draw[arrow, blue!60] (vel.east) -- ++(0.8,0) |- (critic_fc.west);
-
-% Arrows - Actor branch
-\draw[arrow] (split) |- (actor_fc);
-\draw[arrow] (actor_fc) -- (actor_out);
-
-% Arrows - Critic branch
-\draw[arrow] (split) |- (critic_fc);
-\draw[arrow] (critic_fc) -- (critic_out);
-
-% Section labels with background
-\node[above=0.15cm of laser, font=\small\bfseries, fill=white] {Inputs};
-\node[above=0.15cm of conv1, font=\small\bfseries, fill=white] {Shared Encoder};
-\node[above=0.15cm of actor_fc, font=\small\bfseries, fill=white] {Actor Head};
-\node[above=0.15cm of critic_fc, font=\small\bfseries, fill=white] {Critic Head};
-
-\end{tikzpicture}
-}
-\caption{Kiến trúc mạng Actor-Critic với encoder chung. LiDAR data được xử lý qua 2 lớp Conv1D và FC layer tạo thành encoder chung, sau đó kết hợp với goal và velocity để tạo ra Actor (policy network) và Critic (value network) với các FC layers riêng biệt.}
+\includegraphics[width=\textwidth]{figures/network_architecture.jpg}
+\caption{Kiến trúc mạng Actor-Critic.}
 \label{fig:network_architecture}
 \end{figure}
 
-\subsection{Mạng Actor - Sinh policy}
+\subsubsection{Mạng Actor - Sinh policy}
 
-Output của encoder được kết hợp với vị trí đích $(r, \theta)$ và vận tốc hiện tại $(v, \omega)$, sau đó đi qua:
+Actor có encoder riêng biệt để xử lý LiDAR data. Output của Actor encoder được kết hợp với vị trí đích $(r, \theta)$ và vận tốc hiện tại $(v, \omega)$, sau đó đi qua:
 
 \begin{itemize}[nosep]
-\item Fully connected layer 128 nơ-ron + ReLU
-\item Output layer: 2 nơ-ron (giá trị trung bình cho $v$ và $\omega$)
+\item Actor Fully Connected layer 128 nơ-ron + ReLU
+\item Actor Output layer: 2 nơ-ron (giá trị trung bình cho $v$ và $\omega$)
 \item Separate learnable log-standard deviation parameters
 \end{itemize}
 
@@ -239,17 +232,28 @@ Actor xuất ra phân phối Gaussian cho mỗi chiều của action:
 
 với $\mu_\theta$ là giá trị mean được tính từ mạng nơ-ron, và $\sigma_\theta = \exp(\text{log\_std})$ với log\_std là tham số độc lập được học. Mean value $\mu_v$ cho vận tốc tuyến tính đi qua sigmoid để giới hạn trong $[0, v_{\max}]$, còn $\mu_\omega$ cho vận tốc góc đi qua tanh để giới hạn trong $[-\omega_{\max}, \omega_{\max}]$.
 
-\subsection{Mạng Critic - Ước lượng giá trị}
+\subsubsection{Mạng Critic - Ước lượng giá trị}
 
-Critic sử dụng chung encoder với Actor nhưng có output head riêng:
+Critic có encoder hoàn toàn riêng biệt với Actor, cùng cấu trúc nhưng parameters độc lập:
 
 \begin{itemize}[nosep]
-\item Concatenate encoder output với goal và velocity
-\item Fully connected layer 128 nơ-ron + ReLU
-\item Output layer: 1 nơ-ron (giá trị estimate)
+\item Critic Encoder: 2 lớp Conv1D + FC 256 (giống Actor về cấu trúc nhưng khác parameters)
+\item Concatenate Critic encoder output với goal và velocity
+\item Critic Fully Connected layer 128 nơ-ron + ReLU
+\item Critic Output layer: 1 nơ-ron (giá trị estimate)
 \end{itemize}
 
-\textbf{Ý nghĩa của output head riêng:} Việc tách riêng output head cho Actor và Critic trong khi chia sẻ encoder có 2 lợi ích: (1) Encoder học được đặc trưng đại diện chung hữu ích cho cả việc ra quyết định (policy) và đánh giá trạng thái (value), tăng hiệu quả học tập; (2) Output heads riêng cho phép mỗi network tối ưu cho mục tiêu khác nhau - Actor tối ưu cho action selection, Critic tối ưu cho value prediction - mà không xung đột gradient.
+\textbf{Ý nghĩa của encoder độc lập:} Việc sử dụng encoder hoàn toàn riêng biệt cho Actor và Critic có 3 lợi ích quan trọng:
+
+\begin{enumerate}[nosep]
+\item \textbf{Tránh gradient conflict:} Actor loss muốn thay đổi encoder theo hướng tối ưu cho action selection, trong khi Critic loss muốn thay đổi encoder theo hướng tối ưu cho value estimation. Nếu chia sẻ encoder, 2 gradient này xung đột, làm cả hai đều học chậm.
+
+\item \textbf{Specialized feature extraction:} Actor encoder học features tốt cho local obstacle avoidance (immediate decisions), Critic encoder học features tốt cho long-term value prediction (global path evaluation). Các đặc trưng này có thể khác nhau và tối ưu cho từng mục tiêu riêng.
+
+\item \textbf{Training stability:} Encoder riêng biệt cho phép áp dụng các kỹ thuật như value clipping và separate gradient clipping norms mà không ảnh hưởng Actor.
+\end{enumerate}
+
+\textbf{Hạn chế:} Encoder độc lập tốn gấp đôi số tham số (~250K vs ~150K nếu shared), nhưng đổi lại training ổn định hơn nhiều và hiệu năng cao hơn.
 
 Critic ước lượng value function:
 \begin{equation}
@@ -258,111 +262,33 @@ V_\phi(o_t) \approx \mathbb{E}\left[\sum_{k=0}^{\infty} \gamma^k r_{t+k} \mid o_
 
 với $\gamma$ là discount factor. Value này được sử dụng để tính advantage function trong thuật toán PPO.
 
-\subsection{Các kỹ thuật cải tiến}
+\subsubsection{Entropy và Exploration}
 
-So với kiến trúc trong bài báo gốc \cite{long2018towards}, một số kỹ thuật được bổ sung để cải thiện hiệu năng và độ ổn định trong quá trình huấn luyện:
-
-\subsubsection{Orthogonal Initialization}
-
-Trong deep learning, \textit{initialization} (khởi tạo) là quá trình gán giá trị ban đầu cho các trọng số (weights) của mạng nơ-ron trước khi bắt đầu huấn luyện. Việc khởi tạo đúng cách rất quan trọng vì:
-\begin{itemize}[nosep]
-\item Nếu trọng số quá lớn: gradient sẽ explode (tăng vô hạn), model không học được
-\item Nếu trọng số quá nhỏ: gradient sẽ vanish (tiến về 0), model học rất chậm
-\end{itemize}
-
-Phương pháp \textbf{Orthogonal initialization} khởi tạo ma trận trọng số $W \in \mathbb{R}^{m \times n}$ sao cho các cột trực giao với nhau, tức là $W^T W = I_n$ (ma trận đơn vị). Điều này đảm bảo khi input đi qua layer, độ lớn của activation không bị co hay giãn quá mức. So với Xavier initialization tiêu chuẩn, orthogonal initialization cho gradient flow ổn định hơn trong các mạng sâu và đặc biệt hiệu quả với reinforcement learning.
-
-Trong implementation, orthogonal initialization được áp dụng với \textit{gain} (hệ số khuếch đại) khác nhau tùy activation function:
-\begin{itemize}[nosep]
-\item Convolutional và FC layers với ReLU: gain $= \sqrt{2}$ (bù cho việc ReLU ``tắt'' 50\% nơ-ron)
-\item Output layer của Actor (mean): gain $= 0.01$ (giá trị nhỏ để policy ban đầu gần uniform)
-\item Output layer của Critic (value): gain $= 1.0$
-\end{itemize}
-
-\subsubsection{Chuẩn hóa Observation}
-
-Dữ liệu LiDAR scan có thể có scale rất khác nhau giữa các thời điểm (khi gần vật cản vs. khi không gian trống). Để giúp mạng nơ-ron học hiệu quả hơn, input được chuẩn hóa (normalize) về mean $\approx 0$ và standard deviation $\approx 1$.
-
-Thay vì tính mean/std cố định từ dataset (không khả thi trong RL vì data sinh ra liên tục), phương pháp \textbf{running statistics} được sử dụng: mean và std được cập nhật liên tục theo từng batch data mới:
+Trong học tăng cường, \textbf{entropy} đo mức độ ngẫu nhiên (randomness) của policy. Đối với Gaussian policy $\pi(a|o) = \mathcal{N}(\mu, \sigma^2)$, entropy được tính bằng:
 \begin{equation}
-\mu_{new} = (1-\alpha) \cdot \mu_{old} + \alpha \cdot \mu_{batch}, \quad \alpha = 0.01
+H[\pi(\cdot|o)] = \frac{1}{2}(1 + \log(2\pi) + 2\log\sigma)
 \end{equation}
 
-Công thức tương tự cho standard deviation. Điều này đảm bảo model luôn nhận input ở scale nhất quán, giúp quá trình học ổn định hơn.
+\textbf{Vai trò của entropy trong exploration:}
 
-\subsubsection{Dùng các optimizers riêng cho Actor và Critic}
-
-Trong Actor-Critic architecture, Actor (policy network) và Critic (value network) có vai trò khác nhau:
 \begin{itemize}[nosep]
-\item \textbf{Critic} cần học nhanh để cung cấp ước lượng value chính xác, làm baseline cho Actor
-\item \textbf{Actor} cần học chậm hơn để policy thay đổi từ từ, tránh ``quên'' những gì đã học
+\item \textbf{High entropy} ($\sigma$ lớn): Policy có nhiều sự ngẫu nhiên, action được sample có variance cao → robot thử nhiều hành động khác nhau → \textit{exploration} (khám phá không gian hành động)
+
+\item \textbf{Low entropy} ($\sigma$ nhỏ): Policy deterministic hơn, action gần với mean $\mu$ → robot chọn hành động tốt nhất đã biết → \textit{exploitation} (khai thác kinh nghiệm đã học)
 \end{itemize}
 
-Thay vì dùng chung một optimizer với một learning rate, hai Adam optimizers riêng biệt được sử dụng:
-\begin{itemize}[nosep]
-\item Critic learning rate: $6 \times 10^{-3}$ (Stage 1) hoặc $1 \times 10^{-3}$ (Stage 2)
-\item Actor learning rate: $4 \times 10^{-4}$ (cả hai stages)
-\end{itemize}
-
-Critic learning rate cao hơn 15 lần giúp value network converge nhanh, cung cấp advantage estimate chính xác hơn cho policy gradient. Trong khi đó, Actor learning rate thấp hơn đảm bảo policy không ``nhảy'' quá xa trong mỗi update, duy trì tính ổn định theo nguyên lý của PPO.
-
-\subsubsection{Log-std Clamping - Giới hạn log-std}
-
-Trong Gaussian policy, mỗi action được sample từ phân phối chuẩn $a \sim \mathcal{N}(\mu, \sigma^2)$, trong đó:
-\begin{itemize}[nosep]
-\item $\mu$ (mean): giá trị trung bình, được predict bởi Actor network
-\item $\sigma$ (standard deviation): độ ``lan tỏa'' của phân phối, quyết định mức độ exploration
-\end{itemize}
-
-Thay vì dự đoán $\sigma$ trực tiếp, mạng sẽ dự đoán $\log(\sigma)$ (gọi là \textbf{log-std}). Lý do:
-\begin{itemize}[nosep]
-\item $\sigma$ phải luôn dương, nhưng đầu ra của mạng nơ-ron có thể âm
-\item $\log(\sigma)$ có thể nhận giá trị âm/dương, sau đó lấy $\sigma = e^{\log(\sigma)}$ luôn dương
-\item Việc học $\log(\sigma)$ ổn định hơn về mặt giá trị
-\end{itemize}
-
-Log-std được \textbf{clamp} (giới hạn) trong khoảng $[-2.5, -0.8]$:
+Trong thuật toán PPO, entropy bonus được thêm vào loss function:
 \begin{equation}
-\log(\sigma) \in [-2.5, -0.8] \Rightarrow \sigma \in [e^{-2.5}, e^{-0.8}] \approx [0.082, 0.449]
+L_{actor} = -L^{CLIP}(\theta) - c_{ent} \cdot H[\pi_\theta]
 \end{equation}
 
-Ý nghĩa của việc giới hạn này:
+với $c_{ent}$ là hệ số entropy. Khi huấn luyện:
 \begin{itemize}[nosep]
-\item \textbf{Giới hạn dưới} $\sigma \geq 0.082$: ngăn policy trở nên quá \textit{deterministic}. Nếu $\sigma \to 0$, policy sẽ luôn chọn cùng một action với mọi observation, mất khả năng khám phá (exploration) các action tốt hơn.
-\item \textbf{Giới hạn trên} $\sigma \leq 0.449$: ngăn policy quá \textit{stochastic}. Nếu $\sigma$ quá lớn, action được sample sẽ quá ngẫu nhiên, robot di chuyển hỗn loạn và không học được gì.
+\item \textit{Giai đoạn đầu}: $c_{ent}$ cao (8e-3) khuyến khích policy explore nhiều hành động khác nhau, giúp tìm ra các chiến lược tốt
+\item \textit{Giai đoạn sau}: $c_{ent}$ decay xuống (2e-3) để policy converge về deterministic policy, tận dụng kinh nghiệm đã học
 \end{itemize}
 
-Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng giữa exploration (khám phá) và exploitation (khai thác những gì đã biết).
-
-\section{Quy trình huấn luyện}
-\label{sec:training}
-
-\subsection{Chiến lược huấn luyện 2 giai đoạn}
-
-Áp dụng curriculum learning theo 2 stages tương tự Long et al. (2018) \cite{long2018towards} nhưng điều chỉnh cho phù hợp với môi trường Stage simulator và số lượng robots khác nhau. Các kịch bản huấn luyện đa dạng (đã mô tả ở Mục \ref{subsec:long_environment}) được sử dụng xuyên suốt quá trình training.
-
-\textbf{Stage 1 - Foundation learning:} Huấn luyện24 robots trên môi trường cơ bản có ít vật cản, học các hành vi cơ bản: tránh va chạm cục bộ, di chuyển về đích, điều chỉnh vận tốc. Hyperparameters ưu tiên exploration cao (entropy 8e-3) và learning rates mạnh (critic 6e-3, actor 4e-4) để khám phá không gian hành động nhanh.
-
-\begin{figure}[H]
-\centering
-% \includegraphics[width=0.85\textwidth]{figures/stage1_circle_training.png}
-\includegraphics[width=0.3\textwidth]{figures/obstacle.png}
-\caption{Stage 1: môi trường đơn giản cho 24 robots}
-\label{fig:stage1_env}
-\end{figure}
-
-\textbf{Stage 2 - Transfer learning:} Khởi tạo từ Stage 1 weights, tiếp tục huấn luyện 44 robots trên random scatter scenarios phức tạp hơn. Hình \ref{fig:stage2_env} (từ Long et al. 2018) cho thấy đa dạng tình huống. Hyperparameters điều chỉnh: tăng entropy (exploration nhiều hơn), giảm learning rates (critic 1e-3, actor 4e-4), tăng epochs lên 5, thêm value clipping để ổn định training với mật độ cao.
-
-\textit{Vấn đề timeout trong Stage 2:} Trong quá trình huấn luyện Stage 2, sau khoảng 3000 updates, kết quả bắt đầu suy giảm dù đã đạt success rate khá cao. Phân tích behavior của robots cho thấy chúng đang học cách di chuyển nhanh và thẳng nhất có thể - hành vi này có thể phản ánh việc reward phạt do timeout'. Do timeout limit ban đầu (500 steps) không đủ cho môi trường phức tạp hơn với 44 robots, policy học được rằng cách tốt nhất để tránh phạt timeout là lao thẳng về goal bất chấp có vật cản, dẫn đến tỉ lệ va chạm tăng.
-
-Giải pháp được áp dụng: giữ lại checkpoint tốt nhất và tăng giới hạn timeout từ 500 lên 700 steps. Với giới hạn thời gian dài hơn, robots có thể chọn đường đi an toàn hơn. Kết quả được trình bày chi tiết ở Mục \ref{subsec:stage2_results}. 
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.65\textwidth]{figures/04_Fig8_training_scenarios.jpg}
-\caption{Stage 2: 7 tình huống huấn luyện đa dạng từ đơn giản đến phức tạp giúp policy generalize tốt (nguồn: Long et al. 2018)}
-\label{fig:stage2_env}
-\end{figure}
+Cân bằng exploration-exploitation thông qua entropy decay giúp robot học hiệu quả: khám phá đủ rộng ở đầu, sau đó tập trung vào chiến lược tốt nhất.
 
 \subsection{Thuật toán PPO với GAE}
 
@@ -488,9 +414,65 @@ Timeout (max steps per episode) & 700 \\
 \end{tabular}
 \end{table}
 
-\subsection{Các kỹ thuật cải tiến đượi performancec áp dụng}
+\subsection{Các kỹ thuật cải tiến}
 
-So với Long et al. (2018) \cite{long2018towards}, 3 kỹ thuật cải tiến chính được áp dụng để tăng tốc convergence và ổn định training:
+So với kiến trúc và quy trình huấn luyện trong bài báo gốc \cite{long2018towards}, một số kỹ thuật được bổ sung để cải thiện hiệu năng và độ ổn định trong quá trình huấn luyện:
+
+\subsubsection{Orthogonal Initialization}
+
+Trong deep learning, \textit{initialization} (khởi tạo) là quá trình gán giá trị ban đầu cho các trọng số (weights) của mạng nơ-ron trước khi bắt đầu huấn luyện. Việc khởi tạo đúng cách rất quan trọng vì:
+\begin{itemize}[nosep]
+\item Nếu trọng số quá lớn: gradient sẽ explode (tăng vô hạn), model không học được
+\item Nếu trọng số quá nhỏ: gradient sẽ vanish (tiến về 0), model học rất chậm
+\end{itemize}
+
+Phương pháp \textbf{Orthogonal initialization} khởi tạo ma trận trọng số $W \in \mathbb{R}^{m \times n}$ sao cho các cột trực giao với nhau, tức là $W^T W = I_n$ (ma trận đơn vị). Điều này đảm bảo khi input đi qua layer, độ lớn của activation không bị co hay giãn quá mức. So với Xavier initialization tiêu chuẩn, orthogonal initialization cho gradient flow ổn định hơn trong các mạng sâu và đặc biệt hiệu quả với reinforcement learning.
+
+Trong implementation, orthogonal initialization được áp dụng với \textit{gain} (hệ số khuếch đại) khác nhau tùy activation function:
+\begin{itemize}[nosep]
+\item Convolutional và FC layers với ReLU: gain $= \sqrt{2}$ (bù cho việc ReLU ``tắt'' 50\% nơ-ron)
+\item Output layer của Actor (mean): gain $= 0.01$ (giá trị nhỏ để policy ban đầu gần uniform)
+\item Output layer của Critic (value): gain $= 1.0$
+\end{itemize}
+
+\subsubsection{Chuẩn hóa Observation}
+
+Dữ liệu LiDAR scan có thể có scale rất khác nhau giữa các thời điểm (khi gần vật cản vs. khi không gian trống). Để giúp mạng nơ-ron học hiệu quả hơn, input được chuẩn hóa (normalize) về mean $\approx 0$ và standard deviation $\approx 1$.
+
+Thay vì tính mean/std cố định từ dataset (không khả thi trong RL vì data sinh ra liên tục), phương pháp \textbf{running statistics} được sử dụng: mean và std được cập nhật liên tục theo từng batch data mới:
+\begin{equation}
+\mu_{new} = (1-\alpha) \cdot \mu_{old} + \alpha \cdot \mu_{batch}, \quad \alpha = 0.01
+\end{equation}
+
+Công thức tương tự cho standard deviation. Điều này đảm bảo model luôn nhận input ở scale nhất quán, giúp quá trình học ổn định hơn.
+
+\subsubsection{Log-std Clamping - Giới hạn log-std}
+
+Trong Gaussian policy, mỗi action được sample từ phân phối chuẩn $a \sim \mathcal{N}(\mu, \sigma^2)$, trong đó:
+\begin{itemize}[nosep]
+\item $\mu$ (mean): giá trị trung bình, được predict bởi Actor network
+\item $\sigma$ (standard deviation): độ ``lan tỏa'' của phân phối, quyết định mức độ exploration
+\end{itemize}
+
+Thay vì dự đoán $\sigma$ trực tiếp, mạng sẽ dự đoán $\log(\sigma)$ (gọi là \textbf{log-std}). Lý do:
+\begin{itemize}[nosep]
+\item $\sigma$ phải luôn dương, nhưng đầu ra của mạng nơ-ron có thể âm
+\item $\log(\sigma)$ có thể nhận giá trị âm/dương, sau đó lấy $\sigma = e^{\log(\sigma)}$ luôn dương
+\item Việc học $\log(\sigma)$ ổn định hơn về mặt giá trị
+\end{itemize}
+
+Log-std được \textbf{clamp} (giới hạn) trong khoảng $[-2.5, -0.8]$:
+\begin{equation}
+\log(\sigma) \in [-2.5, -0.8] \Rightarrow \sigma \in [e^{-2.5}, e^{-0.8}] \approx [0.082, 0.449]
+\end{equation}
+
+Ý nghĩa của việc giới hạn này:
+\begin{itemize}[nosep]
+\item \textbf{Giới hạn dưới} $\sigma \geq 0.082$: ngăn policy trở nên quá \textit{deterministic}. Nếu $\sigma \to 0$, policy sẽ luôn chọn cùng một action với mọi observation, mất khả năng khám phá (exploration) các action tốt hơn.
+\item \textbf{Giới hạn trên} $\sigma \leq 0.449$: ngăn policy quá \textit{stochastic}. Nếu $\sigma$ quá lớn, action được sample sẽ quá ngẫu nhiên, robot di chuyển hỗn loạn và không học được gì.
+\end{itemize}
+
+Khoảng $[0.082, 0.449]$ được chọn qua thực nghiệm để cân bằng giữa exploration (khám phá) và exploitation (khai thác những gì đã biết).
 
 \subsubsection{Adaptive Learning Rate Scheduler}
 
@@ -504,18 +486,6 @@ So với Long et al. (2018) \cite{long2018towards}, 3 kỹ thuật cải tiến 
 
 \textbf{Cách hoạt động:} LR cao giúp escape saddle points và local minima, nhưng chỉ áp dụng khi thực sự cần (plateau), còn khi đang học tốt thì giữ nguyên để exploit momentum. Kết quả: training ổn định 200 updates không bị degradation, so với fixed LR thường cần 1000+ updates.
 
-\subsubsection{Asymmetric Critic/Actor Training}
-
-\textbf{Vấn đề:} Trong Actor-Critic, nếu critic (value function) học chậm, sẽ cung cấp value estimates không chính xác cho actor, dẫn đến policy updates theo sai hướng. Ngược lại, nếu actor updates quá nhanh, policy thay đổi đột ngột gây instability.
-
-\textbf{Giải pháp:} Sử dụng 2 Adam optimizers riêng biệt với LR asymmetric:
-\begin{itemize}[nosep]
-\item Critic LR = 6e-3 (cao hơn 15× so với actor)
-\item Actor LR = 4e-4 (thấp để tránh thay đổi đột ngột)
-\end{itemize}
-
-\textbf{Cách hoạt động:} Critic học nhanh hơn → value estimates converge sớm → cung cấp stable baseline cho policy gradient. Actor học chậm hơn → policy thay đổi  → tránh catastrophic forgetting. Trade-off này phù hợp với multi-agent environment phức tạp cần value function chính xác.
-
 \subsubsection{Aggressive Exploration Strategy (Chiến lược khám phá)}
 
 \textbf{Vấn đề:} Entropy coefficient thấp (1e-3 như paper gốc) khiến policy converge nhanh về deterministic policy, dẫn đến premature convergence - stuck ở solution tốt cục bộ nhưng không phải global optimum.
@@ -527,22 +497,31 @@ So với Long et al. (2018) \cite{long2018towards}, 3 kỹ thuật cải tiến 
 
 \textbf{Cách hoạt động:} Entropy cao ban đầu khuyến khích khám phá diverse behaviors (nhiều cách tránh va chạm khác nhau), sau đó decay dần để policy exploit learned strategies. Điều này đặc biệt quan trọng trong multi-robot settings với exponential action space - cần explore đủ trước khi exploit.
 
-\section{Xây dựng robot thực tế}
+\section{Triển khai model và robot thực tế}
+\label{sec:deployment}
+
+Sau khi huấn luyện model trên môi trường mô phỏng, phần này trình bày chi tiết quy trình triển khai lên robot thực tế, bao gồm xây dựng phần cứng, thiết kế các module điều khiển (PID, UKF, Cartographer SLAM), và tích hợp hệ thống hoàn chỉnh.
+
+\subsection{Xây dựng robot thực tế}
 \label{sec:hardware_design}
 
 Robot thực tế được thiết kế với mục tiêu deploy model đã huấn luyện lên phần cứng nhỏ gọn, chi phí thấp, phù hợp cho nghiên cứu multi-robot systems.
 
-\subsection{Thông số kỹ thuật}
+\subsubsection{Thông số kỹ thuật}
 
 \textbf{Kích thước và cấu trúc:} Khung robot kích thước 20cm × 15.7cm được gia công từ tấm nhựa acrylic 3mm, thiết kế 2 tầng: tầng dưới chứa động cơ và mạch điều khiển, tầng trên đặt LiDAR và Jetson Nano. Khoảng cách giữa 2 bánh chủ động $L = 0.205$m.
 
-\textbf{Hệ thống cảm biến:} LiDAR 360° được gắn ở trung tâm tầng trên với 455 beams, scan range ~12m, frequency 5-10Hz. LiDAR này tương thích trực tiếp với mô phỏng (cùng 455 tia laser), giúp giảm khác biệt giữa mô phỏng và thực tế. IMU MPU6050 (gyroscope + accelerometer) đo góc xoay và gia tốc, kết hợp với wheel odometry qua UKF để ước lượng pose chính xác.
-
+\textbf{Hệ thống cảm biến của robot:}
+\begin{itemize}
+    \item \textbf{LiDAR 2D:} Cảm biến quét môi trường 360°, độ phân giải góc $0.8^\circ$, quan sát môi trường và định vị.
+    \item \textbf{IMU 9-axis:} Đo gia tốc, vận tốc góc và từ trường; dữ liệu được kết hợp với encoder bánh xe thông qua bộ lọc UKF để ước lượng trạng thái chuyển động.
+    \item \textbf{Encoder bánh xe:} Độ phân giải 7500 xung/vòng, cung cấp thông tin odometry, được hợp nhất với IMU trong UKF nhằm giảm nhiễu và sai số tích lũy.
+\end{itemize}
 \textbf{Hệ thống điều khiển:} Jetson Nano (4GB RAM) chạy Ubuntu 18.04 và ROS Melodic, xử lý sensor fusion và serial giao tiếp với Arduino. Hai động cơ DC giảm tốc (tỷ số truyền 1:20) với encoder 15000 pulses/revolution điều khiển vận tốc bánh xe. Arduino nhận commands qua serial và điều khiển động cơ qua driver L298N.
 
 \textbf{Nguồn điện:} Pin Li-Po 3S 11.1V 2200mAh cung cấp điện cho động cơ (qua ổn áp 12V), và hạ áp 5V cho Jetson Nano. Thiết kế nguồn tách biệt tránh nhiễu điện từ động cơ ảnh hưởng đến tính toán.
 
-\subsection{Kiến trúc phần mềm}
+\subsubsection{Kiến trúc phần mềm}
 
 Hệ thống ROS gồm 5 nodes chính chạy song song: 
 \begin{itemize}
@@ -554,12 +533,12 @@ Hệ thống ROS gồm 5 nodes chính chạy song song:
 \end{itemize}
 Giao tiếp qua ROS topics đảm bảo tính đồng bộ: dễ thay thế policy mới hoặc thay đổi sensors mà không ảnh hưởng toàn hệ thống.
 
-\section{Thiết kế PID controller và chứng minh ổn định}
+\subsection{Thiết kế PID controller}
 \label{sec:pid_stability}
 
 Để điều khiển robot thực tế theo hành động đầu ra từ mạng nơ-ron $(v_{\text{ref}}, \omega_{\text{ref}})$, bộ điều khiển PID được thiết kế cho động cơ bánh xe. Phần này trình bày mô hình động học, thiết kế controller, chứng minh ổn định, và kết quả thực nghiệm.
 
-\subsection{Mô hình động học differential drive robot}
+\subsubsection{Mô hình động học differential drive robot}
 
 Robot sử dụng cấu trúc differential drive với 2 bánh chủ động. Mô hình động học trong hệ tọa độ body frame:
 
@@ -581,7 +560,7 @@ v_L = v - \frac{L\omega}{2}, \quad v_R = v + \frac{L\omega}{2}
 
 với $L = 0.205$ m là khoảng cách giữa 2 bánh. Mỗi bánh được điều khiển bởi động cơ DC giảm tốc kèm encoder phản hồi, đo vận tốc dưới dạng encoder pulses per second.
 
-\subsection{Thiết kế PID controller}
+\subsubsection{Thiết kế PID controller}
 
 Cho mỗi bánh, PID controller riêng biệt được thiết kế theo công thức:
 
@@ -594,7 +573,7 @@ với $e(t) = v_{\text{ref}}(t) - v_{\text{measured}}(t)$ là sai số vận t�
 
 Các tham số PID được tuning thông qua phương pháp trial-and-error với mục tiêu: (1) settling time < 3s, (2) overshoot < 5\%, (3) steady-state error < 2\%. Giá trị cuối cùng cho cả hai bánh là $K_p = 11.6$, $K_i = 4.9$, $K_d = 0.04$. Ba tham số này điều khiển: $K_p$ phản ứng tỷ lệ với lỗi hiện tại (chính), $K_i$ loại bỏ lỗi tích lũy lâu dài (phụ), $K_d$ giảm dao động bằng cách dự đoán xu hướng (nhỏ nhất).
 
-\subsection{Phân tích ổn định}
+\subsubsection{Phân tích ổn định}
 
 Để phân tích tính ổn định của closed-loop system, mô hình động cơ DC được kết hợp với PID controller.
 
@@ -655,7 +634,7 @@ $s^0$ & $c_1 = a_3 = 3.92$ & \\
 
 Tất cả phần tử cột đầu đều dương, do đó hệ thống ổn định. Không có pole nằm bên phải mặt phẳng phức hay trên trục ảo.
 
-\subsection{Kết quả thực nghiệm}
+\subsubsection{Kết quả thực nghiệm}
 
 \textbf{Quy đổi vận tốc sang setpoint:} Bộ PID hoạt động trong không gian encoder units thay vì m/s để đảm bảo độ chính xác và đơn giản hóa việc đọc encoder. Vận tốc đích $v$ (m/s) được quy đổi sang setpoint $s$ (encoder units) thông qua ánh xạ tuyến tính:
 
@@ -689,18 +668,50 @@ Thử nghiệm step response được tiến hành trên robot thực tế với
 
 \textbf{Lưu ý thực tế:} Khi bánh xe quay không tải (robot được nâng lên), có xuất hiện jittering nhẹ do chất lượng encoder và độ rơ (backlash) của hộp số. Đã thử nghiệm thêm bộ lọc thông thấp (low-pass filter) nhưng gây ảnh hưởng tiêu cực đến đáp ứng PID (tăng settling time và giảm khả năng tracking). Tuy nhiên, khi chạy có tải (robot trên mặt đất), hiện tượng jittering hoàn toàn biến mất do tải cơ học làm ổn định hệ truyền động. Do đó, kết quả được xem là chấp nhận được cho ứng dụng thực tế.
 
-\section{Thiết kế sensor fusion với UKF}
+\subsection{Thiết kế sensor fusion với UKF}
 \label{sec:ukf_implementation}
 
 Để ước lượng chính xác pose và vận tốc của robot, Unscented Kalman Filter (UKF) được sử dụng để kết hợp dữ liệu từ IMU (gyroscope, accelerometer) và wheel odometry. UKF được chọn vì: (1) không cần tính Jacobian như EKF - tiết kiệm công sức cho nonlinear models, (2) cho độ chính xác cao hơn thông qua unscented transform, (3) computational cost chấp nhận được với Jetson Nano (~5ms/update ở 50Hz).
 
-\subsection{Ý tưởng chính của UKF}
+\subsubsection{Sensor fusion - Đầu vào và đầu ra}
+
+UKF nhận đầu vào từ 2 sensor và tạo ra odometry đã được fusion:
+
+\textbf{Đầu vào:}
+
+1. \textbf{Sensor 0 - Wheel Odometry} (topic: \texttt{/robot\_0/odom}):
+\begin{itemize}[nosep]
+\item Position: $x$, $y$ (từ encoder integration)
+\item Orientation: $\theta$ (yaw từ differential wheel speeds)
+\item Velocity: $v_x$, $v_y$ (computed từ wheel speeds)
+\end{itemize}
+
+2. \textbf{Sensor 1 - IMU} (topic: \texttt{/robot\_0/imu/data},):
+\begin{itemize}[nosep]
+\item Orientation: $\theta$ (yaw từ gyroscope integration)
+\item Angular velocity: $\omega$ (từ gyroscope trực tiếp)
+\item Linear acceleration: $a_x$, $a_y$ (từ accelerometer)
+\end{itemize}
+
+\textbf{Đầu ra:}
+\begin{itemize}[nosep]
+\item Fused odometry (topic: \texttt{/odometry/filtered}) với pose $(x, y, \theta)$ chính xác hơn, kết hợp ưu điểm của cả encoder (chính xác về position) và IMU (chính xác về orientation, nhanh hơn)
+\end{itemize}
+
+\textbf{Ví dụ cụ thể:} Khi robot xoay tại chỗ, wheel encoder có thể bị trượt (slip) làm ước lượng $\theta$ sai số lớn. IMU gyroscope đo trực tiếp vận tốc góc $\omega$ không bị ảnh hưởng bởi slip. UKF kết hợp cả hai: tin tưởng IMU hơn cho orientation ($\theta$), tin tưởng encoder hơn cho position ($x, y$). Rejection thresholds được cấu hình chặt (Mahalanobis distance $< 1.5$) để loại bỏ outliers từ IMU spike hoặc encoder slip đột ngột.
+
+\subsubsection{Ý tưởng chính của UKF}
 
 Thay vì linearize hệ phi tuyến như EKF, UKF sử dụng kỹ thuật \textbf{unscented transform}: chọn một tập các điểm đại diện (gọi là \textbf{sigma points}) xung quanh state estimate hiện tại, sau đó truyền từng điểm qua hàm phi tuyến để tính mean và covariance mới. Phương pháp này cho approximation chính xác hơn nhiều so với Taylor expansion bậc nhất của EKF, đặc biệt với hệ có nonlinearity cao như differential drive robot.
 
-\subsection{Mô hình state và measurements}
+\subsubsection{Mô hình state và measurements}
 
-\textbf{State vector} $\mathbf{x}_t = [x, y, \theta, v_x, v_y, \omega]^T \in \mathbb{R}^6$ mô tả đầy đủ trạng thái robot: pose $(x, y, \theta)$ trong world frame, vận tốc tuyến tính $(v_x, v_y)$ trong body frame, và vận tốc góc $\omega$.
+\textbf{State vector} $\mathbf{x}_t \in \mathbb{R}^{15}$ mô tả đầy đủ trạng thái robot trong không gian 15 chiều:
+\begin{equation}
+\mathbf{x}_t = [x, y, z, \text{roll}, \text{pitch}, \theta, v_x, v_y, v_z, \omega_{\text{roll}}, \omega_{\text{pitch}}, \omega, a_x, a_y, a_z]^T
+\end{equation}
+
+Trong đó, với robot 2D: $z = 0$, roll $= 0$, pitch $= 0$. Các biến quan trọng: pose $(x, y, \theta)$, vận tốc tuyến tính $(v_x, v_y)$, vận tốc góc $\omega$, và gia tốc $(a_x, a_y)$.
 
 \textbf{Process model} mô tả chuyển động robot theo differential drive kinematics (tương tự eq. \ref{eq:kinematics}). Tại mỗi bước, state được cập nhật dựa trên command velocity từ PID và thêm process noise để model uncertainty (slip, backlash):
 
@@ -708,15 +719,17 @@ Thay vì linearize hệ phi tuyến như EKF, UKF sử dụng kỹ thuật \text
 \mathbf{x}_{t+1} = f(\mathbf{x}_t, \mathbf{u}_t) + \mathbf{w}_t
 \end{equation}
 
-với $\mathbf{u}_t = [v_{\text{cmd}}, \omega_{\text{cmd}}]$ và $\mathbf{w}_t \sim \mathcal{N}(0, \mathbf{Q})$. Process noise covariance $\mathbf{Q} = \text{diag}([0.01, 0.01, 0.005, 0.05, 0.05, 0.02])$ được chọn dựa trên thực nghiệm: pose có uncertainty thấp (odometry tương đối chính xác), velocity có uncertainty cao hơn (do slip và backlash).
+với $\mathbf{u}_t = [v_{\text{cmd}}, \omega_{\text{cmd}}]$ và $\mathbf{w}_t \sim \mathcal{N}(0, \mathbf{Q})$. Process noise covariance $\mathbf{Q} = \text{diag}([0.001, 0.001, ..., 0.005, 0.005, 0.02])$ được chọn dựa trên thực nghiệm: pose có uncertainty thấp (odometry tương đối chính xác), velocity có uncertainty cao hơn (do slip và backlash).
 
-\textbf{Measurement models} gồm 2 nguồn:
+\textbf{Measurement noise covariance:} Trọng số fusion được UKF tự động điều chỉnh dựa trên rejection thresholds:
+\begin{itemize}[nosep]
+\item Wheel odometry: pose rejection threshold = 1.5, twist rejection threshold = 2.0 (tin cậy cao)
+\item IMU: pose rejection threshold = 1.5, twist rejection threshold = 1.2, acceleration rejection threshold = 1.5 (reject spike nghiêm ngặt)
+\end{itemize}
 
-1. \textbf{IMU} (MPU6050) cung cấp gyroscope đo trực tiếp $\omega$ và accelerometer liên hệ với vận tốc. Measurement noise $\mathbf{R}_{\text{IMU}} = \text{diag}([0.1, 0.5, 0.5])$ phản ánh độ chính xác của sensor (gyro chính xác hơn accel).
+Khi encoder và IMU đồng ý với nhau (sai số nhỏ), cả hai được tin tưởng. Khi xung đột, nguồn có measurement noise thấp hơn sẽ được ưu tiên.
 
-2. \textbf{Wheel odometry} đo vận tốc bánh trái-phải, chuyển sang $(v, \omega)$ qua eq. \ref{eq:wheel_velocity}. Measurement noise $\mathbf{R}_{\text{odom}} = \text{diag}([0.01, 0.02])$ rất thấp do encoder có độ phân giải cao (15000 pulses/rev với tỷ số truyền 1:20). Do đó, trong UKF fusion, trọng số odometry được đặt cao hơn IMU (measurement noise thấp hơn 5-10 lần), ưu tiên tin cậy vào encoder thay vì gyro khi có xung đột giữa hai nguồn.
-
-\subsection{Thuật toán UKF - Các bước chính}
+\subsubsection{Thuật toán UKF - Các bước chính}
 
 UKF hoạt động qua 3 bước lặp lại mỗi chu kỳ:
 
@@ -726,12 +739,12 @@ UKF hoạt động qua 3 bước lặp lại mỗi chu kỳ:
 
 \textbf{Bước 3 - Cập nhật:} Khi có phép đo mới từ IMU hoặc odometry, so sánh với giá trị dự đoán để tính sai lệch. Độ lợi Kalman quyết định mức độ tin tưởng vào dự đoán hay phép đo dựa trên độ bất định của mỗi nguồn. Trạng thái được cập nhật bằng cách kết hợp dự đoán với sai lệch theo trọng số độ lợi Kalman.
 
-\section{Triển khai Cartographer SLAM}
+\subsection{Triển khai Cartographer SLAM}
 \label{sec:cartographer_implementation}
 
 Phần này trình bày chi tiết triển khai Google Cartographer cho robot thực tế, bao gồm quy trình mapping, tinh chỉnh tham số, chuyển đổi sang chế độ localization, và các công cụ debug. Lý thuyết thuật toán Cartographer được trình bày trong Chương \ref{chap:overview} Mục \ref{subsec:cartographer_slam}.
 
-\subsection{Quy trình Mapping}
+\subsubsection{Quy trình Mapping}
 \label{subsec:mapping_workflow}
 
 Quy trình tạo bản đồ (mapping) sử dụng Cartographer bao gồm các bước: cấu hình file Lua, khởi chạy ROS launch, giám sát quá trình mapping qua RViz, và lưu bản đồ dưới dạng file \texttt{.pbstream}.
@@ -763,7 +776,7 @@ rosservice call /write_state "filename: 'map.pbstream'"
 
 File \texttt{.pbstream} chứa toàn bộ submaps và pose graph, có thể load lại cho localization hoặc tiếp tục mapping.
 
-\subsection{Quá trình Tinh chỉnh Tham số}
+\subsubsection{Quá trình Tinh chỉnh Tham số}
 \label{subsec:param_tuning}
 
 Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson Nano + LiDAR LD19) đòi hỏi nhiều iteration thử nghiệm. Bảng \ref{tab:carto_params} tổng hợp các tham số quan trọng sau quá trình tinh chỉnh.
@@ -811,7 +824,7 @@ Việc tinh chỉnh tham số Cartographer cho phần cứng cụ thể (Jetson 
 \end{tabular}
 \end{table}
 
-\subsection{Quy trình Navigation/Localization}
+\subsubsection{Quy trình Navigation/Localization}
 \label{subsec:navigation_workflow}
 
 Sau khi có bản đồ (\texttt{.pbstream}), chuyển sang chế độ \textit{pure localization} để robot định vị trong bản đồ có sẵn mà không tạo submap mới.
@@ -840,7 +853,7 @@ roslaunch robot_controller cartographer_localization.launch \
 
 Robot sẽ tự động match scan hiện tại với bản đồ và publish pose qua topic \texttt{/robot\_0/tracked\_pose}. Chế độ localization tiêu tốn khoảng 10-15\% CPU (so với 25-30\% khi mapping), phù hợp cho Jetson Nano chạy đồng thời với model inference.
 
-\subsection{Công cụ Debug và Tinh chỉnh}
+\subsubsection{Công cụ Debug và Tinh chỉnh}
 \label{subsec:debug_tools}
 
 Cartographer cung cấp các công cụ hỗ trợ debug và kiểm tra chất lượng:
@@ -869,12 +882,12 @@ Publish bản đồ dạng \texttt{OccupancyGrid} để visualize trong RViz mà
 
 Tài liệu tham khảo chi tiết về tuning và debugging: \cite{cartographer_tuning}
 
-\section{Thiết kế an toàn trong thực nghiệm}
+\subsection{Thiết kế an toàn trong thực nghiệm}
 \label{sec:safety_design}
 
 Khi triển khai model từ mô phỏng sang robot thực tế, an toàn là yếu tố quan trọng hàng đầu. Phần này trình bày các cơ chế an toàn được thiết kế để bảo vệ robot và môi trường trong quá trình thực nghiệm.
 
-\subsection{Giới hạn tốc độ tối đa}
+\subsubsection{Giới hạn tốc độ tối đa}
 
 Model được huấn luyện với tốc độ tối đa giới hạn xuống \textbf{0.3 m/s} mặc dù tối đa robot có thể chạy được với 1m/s (~3.6km). Có hai lý do chính:
 
@@ -893,7 +906,7 @@ Model được huấn luyện với tốc độ tối đa giới hạn xuống \
 \item Robot có thể mắc kẹt nhưng bánh vẫn quay trong môi trường hẹp, nên cần giảm tốc độ quay bánh.
 \end{itemize}
 
-\subsection{Velocity ramping trên Arduino}
+\subsubsection{Velocity ramping trên Arduino}
 
 Để tránh thay đổi vận tốc đột ngột gây giật cơ học và mất ổn định, Arduino được bổ sung hàm \texttt{applyRamp()} để làm mượt quá trình tăng/giảm tốc:
 
@@ -912,44 +925,12 @@ float applyRamp(float target, float current, float dt) {
 
 Với \texttt{maxAcceleration = 2.5 m/s$^2$}, robot mất khoảng 120ms để tăng từ 0 lên 0.3 m/s, đảm bảo chuyển động mượt mà và giảm tải cho hộp số bánh xe.
 
-\subsection{Safety check và recovery}
-
-Node \texttt{run\_model\_safe.py} bổ sung các cơ chế an toàn so với phiên bản gốc:
-
-\textbf{1. Safety check trước khi thực thi action:}
-\begin{itemize}[nosep]
-\item Kiểm tra khoảng cách vật cản trong vùng phía trước 120° (±60° từ hướng di chuyển).
-\item Nếu vật cản gần hơn 0.18m (khoảng cách an toàn tối thiểu), robot dừng ngay và kích hoạt recovery.
-\item Chỉ kiểm tra khi robot đang di chuyển về phía trước ($v > 0$).
-\end{itemize}
-
-\textbf{2. Stuck detection:}
-\begin{itemize}[nosep]
-\item Theo dõi vị trí robot liên tục. Nếu robot được lệnh di chuyển ($v > 0.05$ m/s) nhưng không tiến được quá 5cm trong 2 giây, xác định là bị kẹt.
-\item Khi phát hiện kẹt, robot thực hiện recovery: lùi an toàn 8cm/s trong 2 giây rồi tiếp tục.
-\item Tối đa 3 lần retry, nếu vẫn kẹt thì dừng hẳn và báo lỗi.
-\end{itemize}
-
-\textbf{3. Emergency stop:}
-\begin{itemize}[nosep]
-\item Subscribe topic \texttt{/robot\_X/emergency\_stop} để dừng khẩn cấp từ xa.
-\item Khi nhận tín hiệu emergency, robot dừng ngay lập tức và không tiếp tục cho đến khi reset.
-\end{itemize}
-
-\textbf{4. Timeout protection:}
-\begin{itemize}[nosep]
-\item Giới hạn tối đa 500 steps per goal (khoảng 25 giây ở 20Hz).
-\item Nếu vượt quá timeout, robot dừng và báo task thất bại, tránh trường hợp chạy mãi không đến đích.
-\end{itemize}
-
-Các cơ chế an toàn này đảm bảo robot hoạt động tin cậy trong môi trường thực tế mà không gây hư hại cho bản thân hoặc môi trường xung quanh.
-
-\section{Triển khai hệ robot hoàn chỉnh}
+\subsection{Triển khai hệ robot hoàn chỉnh}
 \label{sec:system_deployment}
 
 Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần cứng, cấu hình mạng ROS, phân bổ các module, và giải thích cách hệ thống đảm bảo tính phi tập trung mặc dù inference được thực hiện tập trung.
 
-\subsection{Kiến trúc tổng thể}
+\subsubsection{Kiến trúc tổng thể}
 
 \begin{figure}[H]
 \centering
@@ -982,7 +963,7 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
 \node[font=\scriptsize] at (jetson.north) [yshift=-0.5cm] {4GB RAM, 128 CUDA cores};
 
 \node[sensor, minimum width=3.5cm] (lidar) at (5, 0.5) {LiDAR 360° (455 beams)};
-\node[sensor, minimum width=3.5cm] (imu) at (5, -0.3) {IMU MPU6050};
+\node[sensor, minimum width=3.5cm] (imu) at (5, -0.3) {IMU};
 \node[jetson, minimum width=3.5cm] (ukf) at (5, -1.1) {UKF + Serial Comm};
 
 \node[below=0.3cm of jetson, font=\scriptsize, align=center] {Static IP: 192.168.1.101};
@@ -1005,7 +986,7 @@ Phần này trình bày kiến trúc hệ thống hoàn chỉnh bao gồm phần
 
 Hệ thống bao gồm 1 Master PC và 1 robot tự hành (robot có 1 Jetson Nano làm bộ xử lý chính). Kiến trúc được thiết kế theo nguyên tắc \textbf{decentralized} về mặt algorithm, trong đó mỗi robot đưa ra quyết định độc lập dựa trên quan sát cục bộ của chính nó, không có giao tiếp giữa các robot.
 
-\subsection{Cấu hình phần cứng}
+\subsubsection{Cấu hình phần cứng}
 
 Bảng \ref{tab:hardware_config} liệt kê cấu hình phần cứng của các thành phần chính trong hệ thống.
 
@@ -1026,13 +1007,13 @@ Jetson Nano & 4GB RAM & Lấy dữ liệu sensor \\
             & Maxwell 128 CUDA cores & Fuse sensor với UKF \\
             & Ubuntu 18.04, ROS Melodic & giao tiếp Serial \\
 \hline
-Arduino  & ATmega328P & Điều khiển động cơ PID \\
+Arduino ESP32 & Điều khiển động cơ PID \\
              & 16 MHz & Đọc vận tốc bánh xe \\
 \hline
 LiDAR 360° & Quét 360° & Phát hiện vật cản \\
                 & Độ phân giải 455 tia & SLAM \\
 \hline
-IMU MPU6050 & 3-axis gyro + accel & Ước lượng vị trí \\
+IMU & 9-axis & Ước lượng vị trí \\
                  & I2C interface &  \\
 \hline
 Động cơ DC  & Encoder 15000 pulses/rev & Điều hướng robot \\
@@ -1041,7 +1022,7 @@ IMU MPU6050 & 3-axis gyro + accel & Ước lượng vị trí \\
 \end{tabular}
 \end{table}
 
-\subsection{Cấu hình mạng ROS}
+\subsubsection{Cấu hình mạng ROS}
 
 Hệ thống sử dụng ROS network qua WiFi với cấu hình tĩnh (static IP) để đảm bảo kết nối ổn định. Master PC đóng vai trò ROS Master node, quản lý tất cả topics và services.
 
@@ -1058,7 +1039,7 @@ export ROS_MASTER_URI=http://192.168.1.100:11311
 export ROS_IP=<địa chỉ IP của máy hiện tại>
 \end{verbatim}
 
-\subsection{Phân bổ các ROS nodes}
+\subsubsection{Phân bổ các ROS nodes}
 
 Bảng \ref{tab:node_distribution} mô tả phân bổ các ROS nodes trên các thiết bị khác nhau.
 
@@ -1104,7 +1085,7 @@ PID Controller & Arduino & Serial input: target velocity \\
 
 Tần số điều khiển: \textbf{20 Hz} (mỗi 50ms một control cycle), đảm bảo real-time response cho việc tránh va chạm.
 
-\subsection{Thiết kế phi tập trung với inference tập trung}
+\subsubsection{Thiết kế phi tập trung với inference tập trung}
 \label{subsec:decentralized_design}
 
 \textbf{Khái niệm inference tập trung:} Inference tập trung (centralized inference) là kiến trúc trong đó tất cả các tính toán nặng (như mạng nơ-ron inference) được thực hiện trên một máy chủ trung tâm (Master PC) thay vì phân tán trên từng robot. Sensor data từ các robot được gửi về Master PC qua mạng, Master PC xử lý và gửi lại kết quả (action commands) cho từng robot.
@@ -1121,7 +1102,7 @@ Tần số điều khiển: \textbf{20 Hz} (mỗi 50ms một control cycle), đ�
 
 Code không có phụ thuộc nào với Master PC về mặt thiết kế. Với phần cứng mạnh hơn (Jetson Orin 32GB RAM, hoặc mini PC), toàn bộ pipeline (SLAM + inference) có thể chạy hoàn toàn độc lập trong từng robot mà không cần thay đổi code - chỉ cần sửa launch file để nodes chạy local. Đây là ưu điểm của kiến trúc ROS.
 
-\subsection{Tóm tắt deployment}
+\subsubsection{Tóm tắt deployment}
 
 Hệ thống triển khai hoàn chỉnh bao gồm:
 \begin{itemize}[nosep]

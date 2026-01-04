@@ -53,5 +53,5 @@ LEFT_WHEEL = 0
 RIGHT_WHEEL = 1
 
 # Path
-POLICY_PATH = cwd / Path('policy')
+POLICY_PATH = cwd / Path('policy') / Path("cnn_modern_latest_update_1.pth")
 MAP_FILE_PATH = cwd / Path('map')

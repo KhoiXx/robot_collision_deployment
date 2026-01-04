@@ -306,6 +306,129 @@ class RobotEnv:
 
         return reward, False, None
 
+    def get_reward_and_terminate_update(self, t):
+        """
+        Improved reward function - Synced with training stage_world2.py
+        Enhanced with reactive obstacle avoidance and anti-freeze mechanisms
+        """
+        # Get current robot state
+        laser_scan_raw = self.get_laser_observation()  # Normalized [-0.5, 0.5]
+        laser_scan = (laser_scan_raw + 0.5) * 6.0  # Denormalize to [0, 6] meters
+        [x, y, theta] = self.state_GT
+        [v, w] = self.speed
+
+        self.pre_distance = copy.deepcopy(self.distance)
+        self.distance = np.sqrt((self.goal_point[0] - x) ** 2 + (self.goal_point[1] - y) ** 2)
+
+        # Get obstacle distances by region (360° FOV, 454 beams)
+        n = len(laser_scan)
+
+        # Front 90° (center quarter)
+        front_start, front_end = n//4, 3*n//4
+        front_distances = laser_scan[front_start:front_end]
+        front_distances = front_distances[front_distances < 6.0]
+        min_front_dist = np.mean(np.sort(front_distances)[:5]) if len(front_distances) > 0 else 6.0
+
+        # Left 90° (first quarter)
+        left_distances = laser_scan[:n//4]
+        left_distances = left_distances[left_distances < 6.0]
+        min_left_dist = np.min(left_distances) if len(left_distances) > 0 else 6.0
+
+        # Right 90° (last quarter)
+        right_distances = laser_scan[3*n//4:]
+        right_distances = right_distances[right_distances < 6.0]
+        min_right_dist = np.min(right_distances) if len(right_distances) > 0 else 6.0
+
+        min_obstacle_dist = min_front_dist  # For compatibility
+
+        # ========================================
+        # TERMINAL REWARDS
+        # ========================================
+        if self.distance < self.goal_size:
+            return 30.0, True, 'Reach Goal'
+        if self.is_crash:
+            return -25.0, True, 'Crash'
+        if t >= 700:  # Match training timeout
+            return -10.0, True, 'Timeout'
+
+        # ========================================
+        # STEP REWARDS
+        # ========================================
+        reward = 0.0
+        progress = self.pre_distance - self.distance
+
+        # 1. Progress reward
+        reward += 2.0 * progress
+
+        # 2. Safety reward - 2-zone system
+        if self.distance < 0.5:
+            # Very close to goal - strong speed penalty
+            safe_speed = 0.2
+            if v > safe_speed:
+                reward -= 0.3 * (v - safe_speed)
+        elif min_obstacle_dist < 0.6:
+            # Close to obstacle - moderate speed limit
+            safe_speed = 0.4
+            if v > safe_speed:
+                reward -= 0.1 * (v - safe_speed)
+
+        # 3. Rotation penalty
+        if np.abs(w) > 0.8:
+            reward -= 0.06 * np.abs(w)
+
+        # 4. Heading bonus - encourage alignment with goal
+        local_goal = self.get_local_goal()
+        if min_obstacle_dist > 0.5:
+            goal_angle = np.arctan2(local_goal[1], local_goal[0])
+            heading_error = np.abs(goal_angle) / np.pi
+            if heading_error < 0.3:  # Only reward when reasonably aligned
+                reward += 0.02 * (1.0 - heading_error)
+
+        # 5. Velocity smoothing - penalize sudden changes
+        if hasattr(self, 'prev_linear_vel'):
+            vel_change = abs(v - self.prev_linear_vel)
+            if vel_change > 0.1:  # Threshold for sudden change
+                reward -= 0.05 * vel_change
+        self.prev_linear_vel = v
+
+        # 6. Reactive obstacle avoidance - turn away from obstacles
+        # Front 180° = indices n/4 to 3n/4
+        front_region = laser_scan[n//4:3*n//4]  # 180° front region
+
+        # Find closest obstacle in front region
+        if len(front_region) > 0 and np.min(front_region) < 1.0:
+            # Index of closest obstacle (in front_region)
+            min_idx_local = np.argmin(front_region)
+            min_dist = front_region[min_idx_local]
+
+            # Convert to global index and calculate angle
+            # Index n/4 = -90°, n/2 = 0°, 3n/4 = +90°
+            global_idx = n//4 + min_idx_local
+            # Angle: -90° to +90° corresponding to n/4 to 3n/4
+            obstacle_angle = (global_idx - n//2) * 180.0 / (n//2)  # degrees
+
+            # Desired turn: turn opposite to obstacle
+            # obstacle at +30° (left) → turn right (w < 0)
+            # obstacle at -30° (right) → turn left (w > 0)
+            desired_w_sign = -np.sign(obstacle_angle) if abs(obstacle_angle) > 5 else 0
+
+            # Urgency: closer = need to turn harder
+            urgency = max(0, (1.0 - min_dist) / 1.0)  # 0 when far (1m), 1 when close (0m)
+
+            if desired_w_sign != 0:
+                # Reward if turning in correct direction
+                if np.sign(w) == desired_w_sign:
+                    reward += 0.15 * urgency * min(abs(w), 0.8)
+                elif abs(w) > 0.1:
+                    # Penalty if turning in wrong direction
+                    reward -= 0.1 * urgency * min(abs(w), 0.5)
+
+        # 7. Penalty for standing still - prevent frozen robot
+        if v < 0.02 and abs(w) < 0.1:
+            reward -= 0.08
+
+        return reward, False, None
+
     def control_vel(self, action):
         move_cmd = Twist()
         move_cmd.linear.x = action[0]
